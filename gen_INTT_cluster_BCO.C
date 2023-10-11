@@ -143,6 +143,8 @@ void gen_INTT_cluster_BCO(string sub_folder_string, string file_name, int DAC_ru
     long long N_event = tree -> GetEntries();
     cout<<Form("N_event in file %s : %lli",file_name.c_str(), N_event)<<endl;
 
+    if (run_Nevent > N_event) run_Nevent = (N_event/1000)*1000;
+
     int fNhits;
     int pid[100000];
     int module[100000];
@@ -263,25 +265,25 @@ void gen_INTT_cluster_BCO(string sub_folder_string, string file_name, int DAC_ru
                 // todo : change the BCO cut
                 int bco_diff = ( ((bco_full[i1]&0x7F) - bco[i1]) < 0 ) ? ((bco_full[i1]&0x7F) - bco[i1]) + 128 : ((bco_full[i1]&0x7F) - bco[i1]);
 
-                // note : bco_diff cut for the run 20869
-                bool bco_tag_3001 = (bco_diff == 21 || bco_diff == 22)                   ? true : false;
-                bool bco_tag_3002 = (bco_diff == 21 || bco_diff == 22 || bco_diff == 23) ? true : false;
-                bool bco_tag_3003 = (bco_diff == 81)                                     ? true : false;
-                bool bco_tag_3004 = (bco_diff == 113)                                    ? true : false;
-                bool bco_tag_3005 = (bco_diff == 63 || bco_diff == 64)                   ? true : false;
-                bool bco_tag_3006 = (bco_diff == 39 || bco_diff == 40)                   ? true : false;
-                bool bco_tag_3007 = (bco_diff == 82)                                     ? true : false;
-                bool bco_tag_3008 = (bco_diff == 20)                                     ? true : false;
+                // todo : bco_diff cut for the run 20869
+                // bool bco_tag_3001 = (bco_diff == 21 || bco_diff == 22)                   ? true : false;
+                // bool bco_tag_3002 = (bco_diff == 21 || bco_diff == 22 || bco_diff == 23) ? true : false;
+                // bool bco_tag_3003 = (bco_diff == 81)                                     ? true : false;
+                // bool bco_tag_3004 = (bco_diff == 113)                                    ? true : false;
+                // bool bco_tag_3005 = (bco_diff == 63 || bco_diff == 64)                   ? true : false;
+                // bool bco_tag_3006 = (bco_diff == 39 || bco_diff == 40)                   ? true : false;
+                // bool bco_tag_3007 = (bco_diff == 82)                                     ? true : false;
+                // bool bco_tag_3008 = (bco_diff == 20)                                     ? true : false;
 
                 // note : the bco_diff cut
-                if (pid[i1] == 3001 && bco_tag_3001 == false) continue;
-                if (pid[i1] == 3002 && bco_tag_3002 == false) continue;
-                if (pid[i1] == 3003 && bco_tag_3003 == false) continue;
-                if (pid[i1] == 3004 && bco_tag_3004 == false) continue;
-                if (pid[i1] == 3005 && bco_tag_3005 == false) continue;
-                if (pid[i1] == 3006 && bco_tag_3006 == false) continue;
-                if (pid[i1] == 3007 && bco_tag_3007 == false) continue;
-                if (pid[i1] == 3008 && bco_tag_3008 == false) continue;
+                // if (pid[i1] == 3001 && bco_tag_3001 == false) continue;
+                // if (pid[i1] == 3002 && bco_tag_3002 == false) continue;
+                // if (pid[i1] == 3003 && bco_tag_3003 == false) continue;
+                // if (pid[i1] == 3004 && bco_tag_3004 == false) continue;
+                // if (pid[i1] == 3005 && bco_tag_3005 == false) continue;
+                // if (pid[i1] == 3006 && bco_tag_3006 == false) continue;
+                // if (pid[i1] == 3007 && bco_tag_3007 == false) continue;
+                // if (pid[i1] == 3008 && bco_tag_3008 == false) continue;
 
 
                 if (hot_ch_cut != 0){

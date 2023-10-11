@@ -34,16 +34,16 @@ to_ch_str convertToIndices(int input) {
     return result;
 }
 
-void hot_chan_finder()
+void hot_chan_finder(string run_ID)
 {   
-    
-    string folder_directory = "/sphenix/user/ChengWei/INTT/INTT_commissioning/ZeroField/20869";
-    string file_name = "beam_inttall-00020869-0000_event_base_ana";
+    // string run_ID = "20864";
+    string folder_directory = "/sphenix/user/ChengWei/INTT/INTT_commissioning/ZeroField/" + run_ID;
+    string file_name = "beam_inttall-000"+ run_ID +"-0000_event_base_ana";
     string output_directory = folder_directory + "/PreCheck_" + file_name;
     double standard_ch_ratio_typeA = 1. / (8*14*16*128); // note : typeA, 16 sensor cells
     double standard_ch_ratio_typeB = 1. / (8*14*10*128); // note : typeB, 10 sensor cells
     int criterion = 3;
-    bool All_event_used = false;
+    bool All_event_used = true;
     long long defined_event = 200000; // note : only the in the case that the All_event_used is false
 
     system(Form("mkdir %s",output_directory.c_str()));
@@ -313,7 +313,7 @@ void hot_chan_finder()
                             chip_id_out = i2 + 1;
                             chan_id_out = i3;
                             Nhit_out = ch_hit_after_all[i0][i1][i2][i3];
-                            ratio_out = ((ch_hit_after_all[i0][i1][i2][i3] / double(hit_after_all_typeB)) / standard_ch_ratio_typeB);
+                            ratio_out = ((ch_hit_after_all[i0][i1][i2][i3] / double(hit_after_all_typeA)) / standard_ch_ratio_typeA);
                             tree_out -> Fill();
 
                             HL_hotch_map -> Fill(i3,i2+1);

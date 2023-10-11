@@ -363,7 +363,10 @@ void dNdeta_Z(/*pair<double,double>beam_origin*/)
 
     system(Form("mkdir %s/folder_%s_advanced",mother_folder_directory.c_str(),file_name.c_str()));
     system(Form("mkdir %s/folder_%s_advanced/good_track",mother_folder_directory.c_str(),file_name.c_str()));
-
+    
+    // note :                   0      5   10     15    20    25    30    35    40   45   50
+    int centrality_line[20] = {8000, 4813, 3882, 3092, 2450, 1944, 1551, 1234, 980, 768, 594, 454, 345, 262, 195, 139, 91, 47, 13, 3};
+    pair<int,int>centrality_interval = {10,15};
     pair<double,double> beam_origin = {-0,2};
     double temp_Y_align = 0.;
     double temp_X_align = -0.;
@@ -371,12 +374,12 @@ void dNdeta_Z(/*pair<double,double>beam_origin*/)
     double zvtx_hist_l = -500;
     double zvtx_hist_r = 500;
 
-    int Nhit_cut = 20000;           // note : if (> Nhit_cut)          -> continue
-    int Nhit_cutl = 400;          // note : if (< Nhit_cutl)         -> continue 
+    int Nhit_cut = 15000;           // note : if (> Nhit_cut)          -> continue
+    int Nhit_cutl = 500;          // note : if (< Nhit_cutl)         -> continue 
     int clu_size_cut = 4;           // note : if (> clu_size_cut)      -> continue
     double clu_sum_adc_cut = 31;    // note : if (< clu_sum_adc_cut)   -> continue
-    int N_clu_cut = 15000;          // note : if (> N_clu_cut)         -> continue  unit number
-    int N_clu_cutl = 500;           // note : if (< N_clu_cutl)        -> continue  unit number
+    int N_clu_cut = centrality_line[ centrality_interval.first/5 ];          // note : if (> N_clu_cut)         -> continue  unit number
+    int N_clu_cutl = centrality_line[ centrality_interval.second/5 ];;           // note : if (< N_clu_cutl)        -> continue  unit number
     double phi_diff_cut = 3.5;      // note : if (< phi_diff_cut)      -> pass      unit degree
     double DCA_cut = 4;             // note : if (< DCA_cut)           -> pass      unit mm
     int zvtx_cal_require = 15;      // note : if (> zvtx_cal_require)  -> pass
@@ -390,10 +393,12 @@ void dNdeta_Z(/*pair<double,double>beam_origin*/)
 
     double mean_zvtx = -198.38; // note : unit : mm
 
-    bool full_event = false;
-    long long used_event = 20000;
+    cout<<" Centality line : "<<N_clu_cutl<<" "<<N_clu_cut<<endl;
 
-    double dNdeta_upper_range = 100;
+    bool full_event = false;
+    long long used_event = 10000;
+
+    double dNdeta_upper_range = 650;
 
     int geo_mode_id = 1;
     string conversion_mode = (geo_mode_id == 0) ? "ideal" : "survey_1_XYAlpha_Peek";
@@ -421,6 +426,21 @@ void dNdeta_Z(/*pair<double,double>beam_origin*/)
     vector<double>* z_vec = new vector<double>();
     vector<int>* layer_vec = new vector<int>();
     vector<double>* phi_vec = new vector<double>();
+
+    tree -> SetBranchStatus("*",0);
+    tree -> SetBranchStatus("nhits",1);
+    tree -> SetBranchStatus("nclu_inner",1);
+    tree -> SetBranchStatus("nclu_outer",1);
+    tree -> SetBranchStatus("column",1);
+    tree -> SetBranchStatus("avg_chan",1);
+    tree -> SetBranchStatus("sum_adc",1);
+    tree -> SetBranchStatus("sum_adc_conv",1);
+    tree -> SetBranchStatus("size",1);
+    tree -> SetBranchStatus("x",1);
+    tree -> SetBranchStatus("y",1);
+    tree -> SetBranchStatus("z",1);
+    tree -> SetBranchStatus("layer",1);
+    tree -> SetBranchStatus("phi",1);
 
     tree -> SetBranchAddress("nhits",&N_hits);
     tree -> SetBranchAddress("nclu_inner",&N_cluster_inner);
@@ -596,12 +616,17 @@ void dNdeta_Z(/*pair<double,double>beam_origin*/)
     vector<double> DCA_info_vec; DCA_info_vec.clear(); 
     pair<double,double> Get_eta_pair;
 
+    int inner_1_check = 0;  int inner_2_check = 0;  int inner_3_check = 0;  int inner_4_check = 0;
+    int outer_1_check = 0;  int outer_2_check = 0;  int outer_3_check = 0;  int outer_4_check = 0;
+    unsigned int length;
+    vector<int> used_outer_check_eta; used_outer_check_eta.clear();
+
     for (int event_i = 0; event_i < N_event; event_i++)
     {
-        if (event_i % 10 == 0) cout<<"code running... "<<event_i<<endl;
+        if (event_i % 100 == 0) cout<<"code running... "<<event_i<<endl;
 
         tree -> GetEntry(event_i);
-        unsigned int length = column_vec -> size();
+        length = column_vec -> size();
 
         if (event_i == 13) cout<<"test, eID : "<<event_i<<" Nhits "<<N_hits<<endl;
 
@@ -693,10 +718,10 @@ void dNdeta_Z(/*pair<double,double>beam_origin*/)
                 });            
         }
 
-        int inner_1_check = 0;
-        int inner_2_check = 0;
-        int inner_3_check = 0;
-        int inner_4_check = 0;
+        inner_1_check = 0;
+        inner_2_check = 0;
+        inner_3_check = 0;
+        inner_4_check = 0;
         for (int inner_i = 0; inner_i < temp_sPH_inner_nocolumn_vec.size(); inner_i++) {
             if (temp_sPH_inner_nocolumn_vec[inner_i].phi >= 0 && temp_sPH_inner_nocolumn_vec[inner_i].phi < 90)    inner_1_check = 1;
             if (temp_sPH_inner_nocolumn_vec[inner_i].phi >= 90 && temp_sPH_inner_nocolumn_vec[inner_i].phi < 180)  inner_2_check = 1;
@@ -706,10 +731,10 @@ void dNdeta_Z(/*pair<double,double>beam_origin*/)
             if ( (inner_1_check + inner_2_check + inner_3_check + inner_4_check) == 4 ) break;
         }
 
-        int outer_1_check = 0;
-        int outer_2_check = 0;
-        int outer_3_check = 0;
-        int outer_4_check = 0;
+        outer_1_check = 0;
+        outer_2_check = 0;
+        outer_3_check = 0;
+        outer_4_check = 0;
         for (int outer_i = 0; outer_i < temp_sPH_outer_nocolumn_vec.size(); outer_i++) {
             if (temp_sPH_outer_nocolumn_vec[outer_i].phi >= 0 && temp_sPH_outer_nocolumn_vec[outer_i].phi < 90)    outer_1_check = 1;
             if (temp_sPH_outer_nocolumn_vec[outer_i].phi >= 90 && temp_sPH_outer_nocolumn_vec[outer_i].phi < 180)  outer_2_check = 1;
@@ -749,8 +774,8 @@ void dNdeta_Z(/*pair<double,double>beam_origin*/)
             continue;
         }
 
-
-        vector<int> used_outer_check_eta(temp_sPH_outer_nocolumn_vec.size(),0);
+        used_outer_check_eta.clear();
+        used_outer_check_eta = vector<int>(temp_sPH_outer_nocolumn_vec.size(),0);
 
         for ( int inner_i = 0; inner_i < temp_sPH_inner_nocolumn_vec.size(); inner_i++ ) {
             for ( int outer_i = 0; outer_i < temp_sPH_outer_nocolumn_vec.size(); outer_i++ ) {
@@ -870,7 +895,7 @@ void dNdeta_Z(/*pair<double,double>beam_origin*/)
     // c1 -> Clear();
 
     //   note : normalized
-    dNdeta_hist -> Scale(1./double(N_good_event));    
+    dNdeta_hist -> Scale(1./double(N_good_event * dNdeta_hist -> GetBinWidth(1) ));    
     dNdeta_hist -> GetYaxis() -> SetRangeUser(0,dNdeta_upper_range);
     dNdeta_2P_inner_hist -> Scale(1./double(N_good_event));
     dNdeta_2P_inner_hist -> GetYaxis() -> SetRangeUser(0,dNdeta_upper_range);
@@ -897,7 +922,8 @@ void dNdeta_Z(/*pair<double,double>beam_origin*/)
     ltx->DrawLatex(gPad->GetLeftMargin(), 1 - gPad->GetTopMargin() + 0.01, "#it{#bf{sPHENIX INTT}} Work-in-progress");
     ltx->DrawLatex(0.48, 0.835, "Run 20869");
     ltx->DrawLatex(0.48, 0.785, "Au+Au #sqrt{s_{NN}} = 200 GeV");
-    c3 -> Print(Form("%s/folder_%s_advanced/dNdeta.pdf",mother_folder_directory.c_str(),file_name.c_str()));
+    ltx->DrawLatex(0.48, 0.735, Form("%i%% - %i%%",centrality_interval.first,centrality_interval.second));
+    c3 -> Print(Form("%s/folder_%s_advanced/dNdeta_%i_%i.pdf",mother_folder_directory.c_str(),file_name.c_str(),centrality_interval.first,centrality_interval.second));
     pad_obj -> Clear();
 
     // pad_obj -> cd();
@@ -919,6 +945,9 @@ void dNdeta_Z(/*pair<double,double>beam_origin*/)
     // pad_obj -> Clear();
 
 
+    MemInfo_t test_aaa;
+    gSystem->GetMemInfo(&test_aaa);
 
+    cout<<"Memory usage ? "<<test_aaa.fMemUsed<<endl;
 
 }

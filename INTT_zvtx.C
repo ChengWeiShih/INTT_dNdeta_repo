@@ -348,9 +348,11 @@ pair<double,double> Get_possible_zvtx(double rvtx, vector<double> p0, vector<dou
 // note : use "ls *.root > file_list.txt" to create the list of the file in the folder, full directory in the file_list.txt
 // note : set_folder_name = "folder_xxxx"
 // note : server_name = "inttx"
-void INTT_zvtx(/*pair<double,double>beam_origin*/)
+void INTT_zvtx(string run_ID, string file_event)
 {
     
+    SetsPhenixStyle();
+
     TCanvas * c4 = new TCanvas("","",850,800);    
     c4 -> cd();
     
@@ -368,7 +370,7 @@ void INTT_zvtx(/*pair<double,double>beam_origin*/)
     Characterize_Pad(pad_z, 0.15, 0.1, 0.1, 0.1 , 0, 0);
     pad_z -> Draw();
 
-    TCanvas * c1 = new TCanvas("","",1000,800);
+    TCanvas * c1 = new TCanvas("","",850,800);
     c1 -> cd();
 
     
@@ -377,8 +379,9 @@ void INTT_zvtx(/*pair<double,double>beam_origin*/)
     // string file_name = "beam_inttall-00020869-0000_event_base_ana_cluster_ideal_excludeR1500_100kEvent";
     // string file_name = "beam_inttall-00020869-0000_event_base_ana_cluster_survey_1_XYAlpha_Peek_3.32mm_excludeR1500_100kEvent";
 
-    string mother_folder_directory = "/sphenix/user/ChengWei/INTT/INTT_commissioning/ZeroField/20869";
-    string file_name = "beam_inttall-00020869-0000_event_base_ana_cluster_survey_1_XYAlpha_Peek_3.32mm_excludeR20000_150kEvent_3HotCut";
+    // string run_ID = "20869"; string file_event = "150";
+    string mother_folder_directory = "/sphenix/user/ChengWei/INTT/INTT_commissioning/ZeroField/" + run_ID;
+    string file_name = "beam_inttall-000" +run_ID+ "-0000_event_base_ana_cluster_survey_1_XYAlpha_Peek_3.32mm_excludeR20000_"+ file_event +"kEvent_3HotCut";
 
     // string mother_folder_directory = "/home/phnxrc/INTT/cwshih/DACscan_data/new_DAC_Scan_0722/AllServer/DAC2";
     // string file_name = "beam_inttall-00023058-0000_event_base_ana_cluster_ideal_excludeR2000_100kEvent";
@@ -473,7 +476,7 @@ void INTT_zvtx(/*pair<double,double>beam_origin*/)
 
     TLatex *draw_text = new TLatex();
     draw_text -> SetNDC();
-    draw_text -> SetTextSize(0.02);
+    draw_text -> SetTextSize(0.03);
 
     vector<clu_info> temp_sPH_inner_nocolumn_vec; temp_sPH_inner_nocolumn_vec.clear();
     vector<clu_info> temp_sPH_outer_nocolumn_vec; temp_sPH_outer_nocolumn_vec.clear();
@@ -616,8 +619,21 @@ void INTT_zvtx(/*pair<double,double>beam_origin*/)
 
     vector<float> avg_event_zvtx_vec; avg_event_zvtx_vec.clear();
     TH1F * avg_event_zvtx = new TH1F("","avg_event_zvtx",125,zvtx_hist_l,zvtx_hist_r);
-    avg_event_zvtx -> GetXaxis() -> SetTitle("Z vertex position (mm)");
-    avg_event_zvtx -> GetYaxis() -> SetTitle("entry");
+    // avg_event_zvtx -> SetMarkerStyle(20);
+    // avg_event_zvtx -> SetMarkerSize(0.8);
+    // avg_event_zvtx -> SetMarkerColor(TColor::GetColor("#1A3947"));
+    avg_event_zvtx -> SetLineColor(TColor::GetColor("#1A3947"));
+    avg_event_zvtx -> SetLineWidth(2);
+    avg_event_zvtx -> GetYaxis() -> SetTitle("Entry");
+    avg_event_zvtx -> GetXaxis() -> SetTitle("Z vertex position [mm]");
+    avg_event_zvtx -> GetYaxis() -> SetRangeUser(0,50);
+    avg_event_zvtx -> SetTitleSize(0.06, "X");
+    avg_event_zvtx -> SetTitleSize(0.06, "Y");
+	avg_event_zvtx -> GetXaxis() -> SetTitleOffset (0.82);
+    avg_event_zvtx -> GetYaxis() -> SetTitleOffset (1.1);
+	avg_event_zvtx -> GetXaxis() -> CenterTitle(true);
+    avg_event_zvtx -> GetYaxis() -> CenterTitle(true);
+    avg_event_zvtx -> GetXaxis() -> SetNdivisions  (505);
 
     TH1F * zvtx_evt_width = new TH1F("","zvtx_evt_width",150,0,800);
     zvtx_evt_width -> GetXaxis() -> SetTitle(" mm ");
@@ -634,13 +650,17 @@ void INTT_zvtx(/*pair<double,double>beam_origin*/)
     TH2F * zvtx_evt_nclu_corre = new TH2F("","zvtx_evt_nclu_corre",200,0,10000,200,-500,500);
     zvtx_evt_nclu_corre -> GetXaxis() -> SetTitle(" # of clusters ");
     zvtx_evt_nclu_corre -> GetYaxis() -> SetTitle(" zvtx [mm] ");
+    zvtx_evt_nclu_corre -> GetXaxis() -> SetNdivisions  (505);
 
     TH1F * width_density = new TH1F("","width_density",200,0,1); // note : N good hits / width
     width_density -> GetXaxis() -> SetTitle(" N good zvtx / width ");
     width_density -> GetYaxis() -> SetTitle(" Entry ");
     
-
-
+    int inner_1_check = 0; int inner_2_check = 0; int inner_3_check = 0; int inner_4_check = 0;
+    int outer_1_check = 0; int outer_2_check = 0; int outer_3_check = 0; int outer_4_check = 0;
+    vector<int> used_outer_check(temp_sPH_outer_nocolumn_vec.size(),0);
+    vector<float> N_comb; vector<float> N_comb_e; vector<float> z_mid; vector<float> z_range;
+    vector<double> effi_N_comb; vector<double> effi_z_mid; vector<double> effi_N_comb_e; vector<double> effi_z_range;
 
     int N_event_pass_number = 0;
     
@@ -735,10 +755,10 @@ void INTT_zvtx(/*pair<double,double>beam_origin*/)
                 });            
         }
 
-        int inner_1_check = 0;
-        int inner_2_check = 0;
-        int inner_3_check = 0;
-        int inner_4_check = 0;
+        inner_1_check = 0;
+        inner_2_check = 0;
+        inner_3_check = 0;
+        inner_4_check = 0;
         for (int inner_i = 0; inner_i < temp_sPH_inner_nocolumn_vec.size(); inner_i++) {
             if (temp_sPH_inner_nocolumn_vec[inner_i].phi >= 0 && temp_sPH_inner_nocolumn_vec[inner_i].phi < 90)    inner_1_check = 1;
             if (temp_sPH_inner_nocolumn_vec[inner_i].phi >= 90 && temp_sPH_inner_nocolumn_vec[inner_i].phi < 180)  inner_2_check = 1;
@@ -748,10 +768,10 @@ void INTT_zvtx(/*pair<double,double>beam_origin*/)
             if ( (inner_1_check + inner_2_check + inner_3_check + inner_4_check) == 4 ) break;
         }
 
-        int outer_1_check = 0;
-        int outer_2_check = 0;
-        int outer_3_check = 0;
-        int outer_4_check = 0;
+        outer_1_check = 0;
+        outer_2_check = 0;
+        outer_3_check = 0;
+        outer_4_check = 0;
         for (int outer_i = 0; outer_i < temp_sPH_outer_nocolumn_vec.size(); outer_i++) {
             if (temp_sPH_outer_nocolumn_vec[outer_i].phi >= 0 && temp_sPH_outer_nocolumn_vec[outer_i].phi < 90)    outer_1_check = 1;
             if (temp_sPH_outer_nocolumn_vec[outer_i].phi >= 90 && temp_sPH_outer_nocolumn_vec[outer_i].phi < 180)  outer_2_check = 1;
@@ -800,13 +820,15 @@ void INTT_zvtx(/*pair<double,double>beam_origin*/)
             continue;
         }
         
-        vector<float> N_comb; N_comb.clear();
-        vector<float> N_comb_e; N_comb_e.clear();
-        vector<float> z_mid; z_mid.clear(); 
-        vector<float> z_range; z_range.clear();
+        N_comb.clear();
+        N_comb_e.clear();
+        z_mid.clear(); 
+        z_range.clear();
+        
 
         // note : try to make sure that the clusters not to be used twice or more 
-        vector<int> used_outer_check(temp_sPH_outer_nocolumn_vec.size(),0);
+        used_outer_check.clear();
+        used_outer_check = vector<int>(temp_sPH_outer_nocolumn_vec.size(),0);
 
         for ( int inner_i = 0; inner_i < temp_sPH_inner_nocolumn_vec.size(); inner_i++ )
         {
@@ -876,10 +898,10 @@ void INTT_zvtx(/*pair<double,double>beam_origin*/)
 
         // cout<<"test tag 0"<<endl;
         TGraphErrors * z_range_gr;
-        vector<double> effi_N_comb; effi_N_comb.clear();
-        vector<double> effi_z_mid; effi_z_mid.clear();
-        vector<double> effi_N_comb_e; effi_N_comb_e.clear();
-        vector<double> effi_z_range; effi_z_range.clear();
+        effi_N_comb.clear();
+        effi_z_mid.clear();
+        effi_N_comb_e.clear();
+        effi_z_range.clear();
         // cout<<"test tag 1"<<endl;
         if (N_comb.size() > zvtx_cal_require)
         {   
@@ -920,6 +942,8 @@ void INTT_zvtx(/*pair<double,double>beam_origin*/)
             out_N_good = effi_N_comb.size();
             out_width_density = effi_N_comb.size() / fabs(temp_event_zvtx_info[2] - temp_event_zvtx_info[1]);
             tree_out -> Fill();
+
+            z_range_gr -> Delete();
         } // note : if N good tracks in xy found > certain value
         // cout<<"test tag 2"<<endl;
         
@@ -997,6 +1021,10 @@ void INTT_zvtx(/*pair<double,double>beam_origin*/)
             pad_rz -> Clear();
             pad_z  -> Clear();
 
+            temp_event_xy -> Delete();
+            temp_event_rz -> Delete();
+            z_range_gr_draw -> Delete();
+
         }
         // cout<<"test tag 3"<<endl;
 
@@ -1036,17 +1064,31 @@ void INTT_zvtx(/*pair<double,double>beam_origin*/)
 
     tree_out->SetDirectory(out_file);
     tree_out -> Write("", TObject::kOverwrite);
-    
+
+    cout<<"test1, z size : "<<avg_event_zvtx_vec.size()<<endl;    
 
     c1 -> cd();
     vector<float> avg_event_zvtx_info = sigmaEff_avg(avg_event_zvtx_vec,Integrate_portion_final);
+
+    avg_event_zvtx -> SetMinimum( 0 );  avg_event_zvtx -> SetMaximum( avg_event_zvtx->GetBinContent(avg_event_zvtx->GetMaximumBin()) * 1.5 );
     avg_event_zvtx -> Draw("hist");
-    effi_sig_range_line -> DrawLine(avg_event_zvtx_info[1],0,avg_event_zvtx_info[1],avg_event_zvtx -> GetMaximum()*1.05);
-    effi_sig_range_line -> DrawLine(avg_event_zvtx_info[2],0,avg_event_zvtx_info[2],avg_event_zvtx -> GetMaximum()*1.05);    
-    draw_text -> DrawLatex(0.15, 0.84, Form("EffiSig min : %.2f mm, max : %.2f mm",avg_event_zvtx_info[1],avg_event_zvtx_info[2]));
-    draw_text -> DrawLatex(0.15, 0.81, Form("EffiSig avg : %.2f mm",avg_event_zvtx_info[0]));
+
+    TLatex *ltx = new TLatex();
+    ltx->SetNDC();
+    ltx->SetTextSize(0.045);
+    ltx->DrawLatex(gPad->GetLeftMargin(), 1 - gPad->GetTopMargin() + 0.01, "#it{#bf{sPHENIX INTT}} Work-in-progress");
+    ltx->DrawLatex(0.54, 0.86, Form("Run %s",run_ID.c_str()));
+    ltx->DrawLatex(0.54, 0.81, "Au+Au #sqrt{s_{NN}} = 200 GeV");
+
+    effi_sig_range_line -> DrawLine(avg_event_zvtx_info[1],0,avg_event_zvtx_info[1],avg_event_zvtx -> GetMaximum());
+    effi_sig_range_line -> DrawLine(avg_event_zvtx_info[2],0,avg_event_zvtx_info[2],avg_event_zvtx -> GetMaximum());    
+    draw_text -> DrawLatex(0.21, 0.87, Form("EffiSig min : %.2f mm",avg_event_zvtx_info[1]));
+    draw_text -> DrawLatex(0.21, 0.83, Form("EffiSig max : %.2f mm",avg_event_zvtx_info[2]));
+    draw_text -> DrawLatex(0.21, 0.79, Form("EffiSig avg : %.2f mm",avg_event_zvtx_info[0]));
     c1 -> Print(Form("%s/folder_%s_advanced/avg_event_zvtx.pdf",mother_folder_directory.c_str(),file_name.c_str()));
     c1 -> Clear();
+
+
 
     width_density -> Draw("hist"); 
     c1 -> Print(Form("%s/folder_%s_advanced/width_density.pdf",mother_folder_directory.c_str(),file_name.c_str()));
