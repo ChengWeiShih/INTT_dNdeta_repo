@@ -23,7 +23,7 @@ void sync_mbd_intt_Z() {
     if (!t_mbd) return;
     mbdtree mbdt(t_mbd);
 
-    string folder_direction = "/sphenix/user/ChengWei/INTT/INTT_commissioning/ZeroField/20869/folder_beam_inttall-00020869-0000_event_base_ana_cluster_full_survey_3.32_excludeR20000_200kEvent_3HotCut_advanced";
+    string folder_direction = "/sphenix/user/ChengWei/INTT/INTT_commissioning/ZeroField/20869/folder_beam_inttall-00020869-0000_event_base_ana_cluster_full_survey_3.32_excludeR40000_200kEvent_3HotCut_advanced";
     TFile * f_intt = TFile::Open(Form("%s/INTT_zvtx.root", folder_direction.c_str()));
     gDirectory = gDir;
     TTree * t_intt = (TTree * ) f_intt -> Get("tree_Z");

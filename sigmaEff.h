@@ -46,15 +46,7 @@ vector<float> sigmaEff(vector<float> v, float threshold)
 
 float  vector_average (vector <float> input_vector)
 {
-	double sum=0;
-	float result;
-	for (int i=0; i<input_vector.size(); i++)
-		{
-			sum+=input_vector[i];
-
-		}
-	result=sum/input_vector.size();	
-	return result;
+	return accumulate( input_vector.begin(), input_vector.end(), 0.0 ) / double(input_vector.size());
 }
 
 vector<float> sigmaEff_avg (vector<float> v, float threshold)
