@@ -364,8 +364,9 @@ void dNdeta_Z(/*pair<double,double>beam_origin*/)
     system(Form("mkdir %s/folder_%s_advanced",mother_folder_directory.c_str(),file_name.c_str()));
     system(Form("mkdir %s/folder_%s_advanced/good_track",mother_folder_directory.c_str(),file_name.c_str()));
     
+    // note : new updated centrality with the fNhits cut 40k.
     // note :                   0      5   10     15    20    25    30    35    40   45   50
-    int centrality_line[20] = {8000, 4813, 3882, 3092, 2450, 1944, 1551, 1234, 980, 768, 594, 454, 345, 262, 195, 139, 91, 47, 13, 3};
+    int centrality_line[20] = {8000, 4822, 3897, 3117, 2476, 1964, 1564, 1242, 985, 772, 598, 456, 347, 263, 195, 139, 91, 47, 13, 3};
     pair<int,int>centrality_interval = {10,15};
     pair<double,double> beam_origin = {-0,2};
     double temp_Y_align = 0.;

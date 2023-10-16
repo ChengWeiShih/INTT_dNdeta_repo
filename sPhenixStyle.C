@@ -39,7 +39,7 @@ TStyle* sPhenixStyle()
 
   // set margin sizes
   sphenixStyle->SetPadTopMargin(0.05);
-  sphenixStyle->SetPadRightMargin(0.05);
+  sphenixStyle->SetPadRightMargin(0.16);
   sphenixStyle->SetPadBottomMargin(0.16);
   sphenixStyle->SetPadLeftMargin(0.16);
 

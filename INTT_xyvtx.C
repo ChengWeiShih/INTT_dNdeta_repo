@@ -67,6 +67,16 @@ double get_radius_sign(double x, double y)
     return (phi > 180) ? sqrt(pow(x,2)+pow(y,2)) * -1 : sqrt(pow(x,2)+pow(y,2)); 
 }
 
+double sin_func(double *x, double *par)
+{
+    return par[0] * sin(par[1] * x[0] + par[2]) + par[3];
+}
+
+double cos_func(double *x, double *par)
+{
+    return -1 * par[0] * cos(par[1] * (x[0] + par[2])) + par[3];
+}
+
 void Characterize_Pad (TPad *pad, float left = 0.15, float right = 0.1, float top = 0.1, float bottom = 0.12, bool set_logY = false, int setgrid_bool = 0)
 {
 	if (setgrid_bool == true) {pad -> SetGrid (1, 1);}
@@ -346,15 +356,24 @@ pair<double,double> Get_possible_zvtx(double rvtx, vector<double> p0, vector<dou
 
 }
 
+void TH2F_threshold(TH2F * input_hist, double threshold)
+{
+    for (int xi = 0; xi < input_hist -> GetNbinsX(); xi++){
+        for(int yi = 0; yi < input_hist -> GetNbinsY(); yi++){
+            if (input_hist -> GetBinContent(xi + 1, yi +1) < threshold){ input_hist -> SetBinContent(xi + 1, yi +1, 0); }
+        }
+    }
+} 
+
 // note : use "ls *.root > file_list.txt" to create the list of the file in the folder, full directory in the file_list.txt
 // note : set_folder_name = "folder_xxxx"
 // note : server_name = "inttx"
-void INTT_zvtx(string run_ID, int geo_mode_id, string file_event, bool full_event, int run_Nevent)
+void INTT_xyvtx(string run_ID, int geo_mode_id, string file_event, bool full_event, int run_Nevent)
 {
     
     SetsPhenixStyle();
 
-    TCanvas * c4 = new TCanvas("","",850,800);    
+    TCanvas * c4 = new TCanvas("","",1200,800);    
     c4 -> cd();
     
     TCanvas * c2 = new TCanvas("","",2500,800);    
@@ -386,7 +405,7 @@ void INTT_zvtx(string run_ID, int geo_mode_id, string file_event, bool full_even
     // todo : change the file name.
     string mother_folder_directory = "/sphenix/user/ChengWei/INTT/INTT_commissioning/ZeroField/" + run_ID;
     // string file_name = "beam_inttall-000" +run_ID+ "-0000_event_base_ana_cluster_survey_1_XYAlpha_Peek_3.32mm_excludeR20000_"+ file_event +"kEvent_3HotCut";
-    string file_name = "beam_inttall-000" +run_ID+ "-0000_event_base_ana_cluster_"+ conversion_mode_BD[geo_mode_id] +"_excludeR40000_"+ file_event +"kEvent_3HotCut";
+    string file_name = "beam_inttall-000" +run_ID+ "-0000_event_base_ana_cluster_"+ conversion_mode_BD[geo_mode_id] +"_excludeR1500_"+ file_event +"kEvent_3HotCut";
 
     cout<<"the input file name : "<<file_name<<endl;
     sleep(5);
@@ -398,20 +417,22 @@ void INTT_zvtx(string run_ID, int geo_mode_id, string file_event, bool full_even
     system(Form("mkdir %s/folder_%s_advanced/good_track",mother_folder_directory.c_str(),file_name.c_str()));
 
     pair<double,double> beam_origin = {-0.457 + 0.0276, 2.657 - 0.2814}; // note : for run20869
-    pair<double,double> beam_origin_U = {0.0004, 0.0035}; // note : for run20869, the uncertainty of the VTXxy, calculated by the fit errors with the error propagation
+    // pair<double,double> beam_origin_U = {0.0004, 0.0035}; // note : for run20869, the uncertainty of the VTXxy, calculated by the fit errors with the error propagation
+    // pair<double,double> beam_origin = {-0.457, 2.657};
+    // pair<double,double> beam_origin = {0.0, -2.0};
     double temp_Y_align = 0.;
     double temp_X_align = -0.;
 
     double zvtx_hist_l = -500;
     double zvtx_hist_r = 500;
 
-    int Nhit_cut = 20000;           // note : if (> Nhit_cut)          -> continue
-    int Nhit_cutl = 400;          // note : if (< Nhit_cutl)         -> continue 
+    int Nhit_cut = 1500;           // note : if (> Nhit_cut)          -> continue
+    int Nhit_cutl = 100;          // note : if (< Nhit_cutl)         -> continue 
     int clu_size_cut = 4;           // note : if (> clu_size_cut)      -> continue
     double clu_sum_adc_cut = 31;    // note : if (< clu_sum_adc_cut)   -> continue
     int N_clu_cut = 15000;          // note : if (> N_clu_cut)         -> continue  unit number
     int N_clu_cutl = 0;           // note : if (< N_clu_cutl)        -> continue  unit number
-    double phi_diff_cut = 3.5;      // note : if (< phi_diff_cut)      -> pass      unit degree
+    double phi_diff_cut = 5.72;      // note : if (< phi_diff_cut)      -> pass      unit degree
     double DCA_cut = 4;             // note : if (< DCA_cut)           -> pass      unit mm
     int zvtx_cal_require = 15;      // note : if (> zvtx_cal_require)  -> pass
     int zvtx_draw_requireL = 15;       
@@ -461,7 +482,7 @@ void INTT_zvtx(string run_ID, int geo_mode_id, string file_event, bool full_even
     tree -> SetBranchStatus("nhits",1);
     tree -> SetBranchStatus("nclu_inner",1);
     tree -> SetBranchStatus("nclu_outer",1);
-    tree -> SetBranchStatus("bco_full",1);
+    // tree -> SetBranchStatus("bco_full",1);
     tree -> SetBranchStatus("column",1);
     tree -> SetBranchStatus("avg_chan",1);
     tree -> SetBranchStatus("sum_adc",1);
@@ -477,7 +498,7 @@ void INTT_zvtx(string run_ID, int geo_mode_id, string file_event, bool full_even
     tree -> SetBranchAddress("nhits",&N_hits);
     tree -> SetBranchAddress("nclu_inner",&N_cluster_inner);
     tree -> SetBranchAddress("nclu_outer",&N_cluster_outer);
-    tree -> SetBranchAddress("bco_full",&bco_full);
+    // tree -> SetBranchAddress("bco_full",&bco_full);
     tree -> SetBranchAddress("column", &column_vec);
     tree -> SetBranchAddress("avg_chan", &avg_chan_vec);
     tree -> SetBranchAddress("sum_adc", &sum_adc_vec);
@@ -488,24 +509,6 @@ void INTT_zvtx(string run_ID, int geo_mode_id, string file_event, bool full_even
     tree -> SetBranchAddress("z", &z_vec);
     tree -> SetBranchAddress("layer", &layer_vec);
     tree -> SetBranchAddress("phi", &phi_vec);
-
-    TFile * out_file = new TFile(Form("%s/folder_%s_advanced/INTT_zvtx.root",mother_folder_directory.c_str(),file_name.c_str()),"RECREATE");
-
-    int out_eID, N_cluster_outer_out, N_cluster_inner_out, out_N_good;
-    double out_zvtx, out_zvtxE, out_rangeL, out_rangeR, out_width_density;
-    Long64_t bco_full_out; 
-
-    TTree * tree_out =  new TTree ("tree_Z", "INTT Z info.");
-    tree_out -> Branch("eID",&out_eID);
-    tree_out -> Branch("bco_full",&bco_full_out);
-    tree_out -> Branch("nclu_inner",&N_cluster_inner_out);
-    tree_out -> Branch("nclu_outer",&N_cluster_outer_out);
-    tree_out -> Branch("zvtx",&out_zvtx);
-    tree_out -> Branch("zvtxE",&out_zvtxE);
-    tree_out -> Branch("rangeL",&out_rangeL);
-    tree_out -> Branch("rangeR",&out_rangeR);
-    tree_out -> Branch("N_good",&out_N_good);
-    tree_out -> Branch("Width_density",&out_width_density);
 
     TLatex *draw_text = new TLatex();
     draw_text -> SetNDC();
@@ -518,8 +521,23 @@ void INTT_zvtx(string run_ID, int geo_mode_id, string file_event, bool full_even
 
     TH2F * angle_correlation = new TH2F("","angle_correlation",361,0,361,361,0,361);
     angle_correlation -> SetStats(0);
-    angle_correlation -> GetXaxis() -> SetTitle("Inner Phi (degree)");
-    angle_correlation -> GetYaxis() -> SetTitle("Outer Phi (degree)");
+    angle_correlation -> GetXaxis() -> SetTitle("Inner Phi [degree]");
+    angle_correlation -> GetYaxis() -> SetTitle("Outer Phi [degree]");
+
+    TH2F * angle_diff_DCA_dist = new TH2F("","angle_diff_DCA_dist",100,-1.5,1.5,100,-3.5,3.5);
+    angle_diff_DCA_dist -> SetStats(0);
+    angle_diff_DCA_dist -> GetXaxis() -> SetTitle("Inner - Outer [degree]");
+    angle_diff_DCA_dist -> GetYaxis() -> SetTitle("DCA distance [mm]");
+
+    TH1F * angle_diff = new TH1F("","angle_diff",100,0,10);
+    angle_diff -> SetStats(0);
+    angle_diff -> GetXaxis() -> SetTitle("|Inner - Outer| [degree]");
+    angle_diff -> GetYaxis() -> SetTitle("Entry");
+
+    TH2F * angle_diff_inner_phi = new TH2F("","angle_diff_inner_phi",361,0,361,100,-1.5,1.5);
+    angle_diff_inner_phi -> SetStats(0);
+    angle_diff_inner_phi -> GetXaxis() -> SetTitle("Inner phi [degree]");
+    angle_diff_inner_phi -> GetYaxis() -> SetTitle("Inner - Outer [degree]");
 
     TH2F * inner_pos_xy = new TH2F("","inner_pos_xy",360,-100,100,360,-100,100);
     inner_pos_xy -> SetStats(0);
@@ -537,45 +555,45 @@ void INTT_zvtx(string run_ID, int geo_mode_id, string file_event, bool full_even
     inner_outer_pos_xy -> GetYaxis() -> SetTitle("Y axis");
 
     TH1F * z_pos_diff = new TH1F("","z_pos_diff",360,-150,150);
-    z_pos_diff -> GetXaxis() -> SetTitle("inner zpos - outer zpos");
+    z_pos_diff -> GetXaxis() -> SetTitle("Inner zpos - Outer zpos [mm]");
     z_pos_diff -> GetYaxis() -> SetTitle("Eentry");
 
     TH2F * z_pos_diff_angle_diff = new TH2F("","z_pos_diff_angle_diff",100,-25,25,200,-11,11);
     z_pos_diff_angle_diff -> SetStats(0);
-    z_pos_diff_angle_diff -> GetXaxis() -> SetTitle("inner zpos - outer zpos");
-    z_pos_diff_angle_diff -> GetYaxis() -> SetTitle("Inner phi - outer phi");
+    z_pos_diff_angle_diff -> GetXaxis() -> SetTitle("Inner zpos - Outer zpos [mm]");
+    z_pos_diff_angle_diff -> GetYaxis() -> SetTitle("Inner phi - Outer phi [degree]");
 
     TH1F * Nhits_good = new TH1F("","Nhits_good",360,0,1000);
     Nhits_good -> GetXaxis() -> SetTitle("N hits in one event");
     Nhits_good -> GetYaxis() -> SetTitle("Eentry");
 
     TH1F * z_pos_inner = new TH1F("","z_pos_inner",200,-150,150);
-    z_pos_inner -> GetXaxis() -> SetTitle("inner zpos");
+    z_pos_inner -> GetXaxis() -> SetTitle("Inner zpos [mm]");
     z_pos_inner -> GetYaxis() -> SetTitle("Eentry");
 
     TH1F * z_pos_outer = new TH1F("","z_pos_outer",200,-150,150);
-    z_pos_outer -> GetXaxis() -> SetTitle("outer zpos");
+    z_pos_outer -> GetXaxis() -> SetTitle("Outer zpos [mm]");
     z_pos_outer -> GetYaxis() -> SetTitle("Eentry");
 
     TH2F * z_pos_inner_outer = new TH2F("","z_pos_inner_outer",100,-150,150, 100,-150,150);
     z_pos_inner_outer -> SetStats(0);
-    z_pos_inner_outer -> GetXaxis() -> SetTitle("inner zpos");
-    z_pos_inner_outer -> GetYaxis() -> SetTitle("outer pos");
+    z_pos_inner_outer -> GetXaxis() -> SetTitle("Inner zpos [mm]");
+    z_pos_inner_outer -> GetYaxis() -> SetTitle("Outer pos [mm]");
 
     TH2F * DCA_point = new TH2F("","DCA_point",100,-10,10,100,-10,10);
     DCA_point -> SetStats(0);
-    DCA_point -> GetXaxis() -> SetTitle("X pos (mm)");
-    DCA_point -> GetYaxis() -> SetTitle("Y pos (mm)");
+    DCA_point -> GetXaxis() -> SetTitle("X pos [mm]");
+    DCA_point -> GetYaxis() -> SetTitle("Y pos [mm]");
 
     TH2F * DCA_distance_inner_phi = new TH2F("","DCA_distance_inner_phi",100,0,360,100,-10,10);
     DCA_distance_inner_phi -> SetStats(0);
-    DCA_distance_inner_phi -> GetXaxis() -> SetTitle("inner phi");
-    DCA_distance_inner_phi -> GetYaxis() -> SetTitle("DCA (mm)");
+    DCA_distance_inner_phi -> GetXaxis() -> SetTitle("Inner phi [degree]");
+    DCA_distance_inner_phi -> GetYaxis() -> SetTitle("DCA [mm]");
 
     TH2F * DCA_distance_outer_phi = new TH2F("","DCA_distance_outer_phi",100,0,360,100,-10,10);
     DCA_distance_outer_phi -> SetStats(0);
-    DCA_distance_outer_phi -> GetXaxis() -> SetTitle("outer phi");
-    DCA_distance_outer_phi -> GetYaxis() -> SetTitle("DCA (mm)");
+    DCA_distance_outer_phi -> GetXaxis() -> SetTitle("Outer phi [degree]");
+    DCA_distance_outer_phi -> GetYaxis() -> SetTitle("DCA [mm]");
 
     TH1F * N_cluster_outer_pass = new TH1F("","N_cluster_outer_pass",100,0,100);
     N_cluster_outer_pass -> GetXaxis() -> SetTitle("N_cluster");
@@ -591,7 +609,7 @@ void INTT_zvtx(string run_ID, int geo_mode_id, string file_event, bool full_even
     N_cluster_correlation -> GetYaxis() -> SetTitle("Outer N_cluster");
 
     TH1F * temp_event_zvtx = new TH1F("","Z vertex dist",125,zvtx_hist_l,zvtx_hist_r);
-    temp_event_zvtx -> GetXaxis() -> SetTitle("Z vertex position (mm)");
+    temp_event_zvtx -> GetXaxis() -> SetTitle("Z vertex position [mm]");
     temp_event_zvtx -> GetYaxis() -> SetTitle("Entry");
     vector<float> temp_event_zvtx_vec; temp_event_zvtx_vec.clear();
     vector<float> temp_event_zvtx_info; temp_event_zvtx_info.clear();
@@ -602,6 +620,34 @@ void INTT_zvtx(string run_ID, int geo_mode_id, string file_event, bool full_even
     TF1 * zvtx_fitting = new TF1("","gaus",-500,500);
 
     double N_good_event = 0;
+
+    TH2F * Good_inner_outer_pos_xy_nzB = new TH2F("","Good_inner_outer_pos_xy_nzB",360,-150,150,360,-150,150);
+    Good_inner_outer_pos_xy_nzB -> SetStats(0);
+    Good_inner_outer_pos_xy_nzB -> GetXaxis() -> SetTitle("X axis");
+    Good_inner_outer_pos_xy_nzB -> GetYaxis() -> SetTitle("Y axis");
+
+    TH2F * Good_inner_outer_pos_xy_nzA = new TH2F("","Good_inner_outer_pos_xy_nzA",360,-150,150,360,-150,150);
+    Good_inner_outer_pos_xy_nzA -> SetStats(0);
+    Good_inner_outer_pos_xy_nzA -> GetXaxis() -> SetTitle("X axis");
+    Good_inner_outer_pos_xy_nzA -> GetYaxis() -> SetTitle("Y axis");
+
+    TH2F * Good_inner_outer_pos_xy_pzA = new TH2F("","Good_inner_outer_pos_xy_pzA",360,-150,150,360,-150,150);
+    Good_inner_outer_pos_xy_pzA -> SetStats(0);
+    Good_inner_outer_pos_xy_pzA -> GetXaxis() -> SetTitle("X axis");
+    Good_inner_outer_pos_xy_pzA -> GetYaxis() -> SetTitle("Y axis");
+
+    TH2F * Good_inner_outer_pos_xy_pzB = new TH2F("","Good_inner_outer_pos_xy_pzB",360,-150,150,360,-150,150);
+    Good_inner_outer_pos_xy_pzB -> SetStats(0);
+    Good_inner_outer_pos_xy_pzB -> GetXaxis() -> SetTitle("X axis");
+    Good_inner_outer_pos_xy_pzB -> GetYaxis() -> SetTitle("Y axis");
+
+    TH2F * Good_track_space = new TH2F("","Good_track_space",200,-300,300,200,-300,300);
+    Good_track_space -> SetStats(0);
+    Good_track_space -> GetXaxis() -> SetTitle("X axis");
+    Good_track_space -> GetYaxis() -> SetTitle("Y axis");
+
+    // dNdeta_hist -> GetXaxis() -> SetLimits(-10,10);
+    // dNdeta_hist -> GetXaxis() -> SetNdivisions  (505);
 
     TF1 * zvtx_finder = new TF1("zvtx_finder","pol0",-1,3000); 
 
@@ -634,36 +680,32 @@ void INTT_zvtx(string run_ID, int geo_mode_id, string file_event, bool full_even
     avg_event_zvtx -> GetYaxis() -> SetRangeUser(0,50);
     avg_event_zvtx -> SetTitleSize(0.06, "X");
     avg_event_zvtx -> SetTitleSize(0.06, "Y");
-	avg_event_zvtx -> GetXaxis() -> SetTitleOffset(0.82);
-    avg_event_zvtx -> GetYaxis() -> SetTitleOffset(1.1);
+	avg_event_zvtx -> GetXaxis() -> SetTitleOffset (0.82);
+    avg_event_zvtx -> GetYaxis() -> SetTitleOffset (1.1);
 	avg_event_zvtx -> GetXaxis() -> CenterTitle(true);
     avg_event_zvtx -> GetYaxis() -> CenterTitle(true);
-    avg_event_zvtx -> GetXaxis() -> SetNdivisions(505);
+    avg_event_zvtx -> GetXaxis() -> SetNdivisions  (505);
 
     TH1F * zvtx_evt_width = new TH1F("","zvtx_evt_width",150,0,800);
     zvtx_evt_width -> GetXaxis() -> SetTitle(" mm ");
     zvtx_evt_width -> GetYaxis() -> SetTitle("entry");
-    zvtx_evt_width -> GetXaxis() -> SetNdivisions(505);
 
     TH2F * zvtx_evt_fitError_corre = new TH2F("","zvtx_evt_fitError_corre",200,0,10000,200,0,20);
     zvtx_evt_fitError_corre -> GetXaxis() -> SetTitle(" # of clusters ");
     zvtx_evt_fitError_corre -> GetYaxis() -> SetTitle(" #pm mm ");
-    zvtx_evt_fitError_corre -> GetXaxis() -> SetNdivisions(505);
 
     TH2F * zvtx_evt_width_corre = new TH2F("","zvtx_evt_width_corre",200,0,10000,200,0,300);
     zvtx_evt_width_corre -> GetXaxis() -> SetTitle(" # of clusters ");
     zvtx_evt_width_corre -> GetYaxis() -> SetTitle(" mm ");
-    zvtx_evt_width_corre -> GetXaxis() -> SetNdivisions(505);
 
     TH2F * zvtx_evt_nclu_corre = new TH2F("","zvtx_evt_nclu_corre",200,0,10000,200,-500,500);
     zvtx_evt_nclu_corre -> GetXaxis() -> SetTitle(" # of clusters ");
     zvtx_evt_nclu_corre -> GetYaxis() -> SetTitle(" zvtx [mm] ");
-    zvtx_evt_nclu_corre -> GetXaxis() -> SetNdivisions(505);
+    zvtx_evt_nclu_corre -> GetXaxis() -> SetNdivisions  (505);
 
     TH1F * width_density = new TH1F("","width_density",200,0,1); // note : N good hits / width
     width_density -> GetXaxis() -> SetTitle(" N good zvtx / width ");
     width_density -> GetYaxis() -> SetTitle(" Entry ");
-    width_density -> GetXaxis() -> SetNdivisions(505);
     
     int inner_1_check = 0; int inner_2_check = 0; int inner_3_check = 0; int inner_4_check = 0;
     int outer_1_check = 0; int outer_2_check = 0; int outer_3_check = 0; int outer_4_check = 0;
@@ -672,40 +714,33 @@ void INTT_zvtx(string run_ID, int geo_mode_id, string file_event, bool full_even
     vector<double> effi_N_comb; vector<double> effi_z_mid; vector<double> effi_N_comb_e; vector<double> effi_z_range;
 
     int N_event_pass_number = 0;
+    int greatest_N_clu = 0;
     
     if (draw_event_display) c2 -> Print(Form("%s/folder_%s_advanced/temp_event_display.pdf(",mother_folder_directory.c_str(),file_name.c_str()));
 
     for (int event_i = 0; event_i < N_event; event_i++)
     {
         if (event_i % 1000 == 0) cout<<"code running... "<<event_i<<endl;
+
+        // cout<<"========================= test : "<<event_i<<" ========================="<<endl;
+
         tree -> GetEntry(event_i);
         unsigned int length = column_vec -> size();
 
-        out_eID = event_i;
-        N_cluster_inner_out = -1;
-        N_cluster_outer_out = -1;
-        out_zvtx = -1;
-        out_zvtxE = -1;
-        out_rangeL = -1;
-        out_rangeR = -1;
-        out_N_good = -1;
-        bco_full_out = bco_full;
-        out_width_density = -1;
-
         if (event_i == 13) cout<<"test, eID : "<<event_i<<" Nhits "<<N_hits<<endl;
 
-        if (N_hits > Nhit_cut) {tree_out -> Fill(); continue;}
-        if (N_hits < Nhit_cutl) {tree_out -> Fill(); continue;}
+        if (N_hits > Nhit_cut) {continue;}
+        if (N_hits < Nhit_cutl) {continue;}
 
         N_event_pass_number += 1;
 
-        if (N_cluster_inner == 0 || N_cluster_outer == 0) {tree_out -> Fill(); continue;}
-        if (N_cluster_inner == -1 || N_cluster_outer == -1) {tree_out -> Fill(); continue;}
-        if ((N_cluster_inner + N_cluster_outer) < zvtx_cal_require) {tree_out -> Fill(); continue;}
-        if (N_cluster_inner < 30) {tree_out -> Fill(); continue;}
-        if (N_cluster_outer < 30) {tree_out -> Fill(); continue;}
+        if (N_cluster_inner == 0 || N_cluster_outer == 0) {continue;}
+        if (N_cluster_inner == -1 || N_cluster_outer == -1) {continue;}
+        if ((N_cluster_inner + N_cluster_outer) < zvtx_cal_require) {continue;}
+        if (N_cluster_inner < 10) {continue;}
+        if (N_cluster_outer < 10) {continue;}
         
-
+        // cout<<"test point 1"<<endl;
         // note : apply some selection to remove the hot channels
         // note : and make the inner_clu_vec and outer_clu_vec
         for (int clu_i = 0; clu_i < length; clu_i++)
@@ -773,6 +808,7 @@ void INTT_zvtx(string run_ID, int geo_mode_id, string file_event, bool full_even
                     phi_vec -> at(clu_i)
                 });            
         }
+        // cout<<"test point 2"<<endl;
 
         inner_1_check = 0;
         inner_2_check = 0;
@@ -800,9 +836,13 @@ void INTT_zvtx(string run_ID, int geo_mode_id, string file_event, bool full_even
             if ( (outer_1_check + outer_2_check + outer_3_check + outer_4_check) == 4 ) break;
         }
 
-        // N_cluster_outer_pass -> Fill(temp_sPH_outer_nocolumn_vec.size());
-        // N_cluster_inner_pass -> Fill(temp_sPH_inner_nocolumn_vec.size());
-        // N_cluster_correlation -> Fill( temp_sPH_inner_nocolumn_vec.size(), temp_sPH_outer_nocolumn_vec.size() );
+        // cout<<"test point 3"<<endl;
+
+        N_cluster_outer_pass -> Fill(temp_sPH_outer_nocolumn_vec.size());
+        N_cluster_inner_pass -> Fill(temp_sPH_inner_nocolumn_vec.size());
+        N_cluster_correlation -> Fill( temp_sPH_inner_nocolumn_vec.size(), temp_sPH_outer_nocolumn_vec.size() );
+
+        if ( (temp_sPH_inner_nocolumn_vec.size() + temp_sPH_outer_nocolumn_vec.size()) > greatest_N_clu) {greatest_N_clu = (temp_sPH_inner_nocolumn_vec.size() + temp_sPH_outer_nocolumn_vec.size());}
 
         if ((temp_sPH_inner_nocolumn_vec.size() + temp_sPH_outer_nocolumn_vec.size()) > N_clu_cut || (temp_sPH_inner_nocolumn_vec.size() + temp_sPH_outer_nocolumn_vec.size()) < N_clu_cutl)
         {
@@ -818,7 +858,6 @@ void INTT_zvtx(string run_ID, int geo_mode_id, string file_event, bool full_even
             temp_sPH_nocolumn_vec.clear(); temp_sPH_nocolumn_vec = vector<vector<double>>(2);
             temp_sPH_inner_nocolumn_vec.clear();
             temp_sPH_outer_nocolumn_vec.clear();
-            tree_out -> Fill();
             continue;
         }
 
@@ -837,27 +876,28 @@ void INTT_zvtx(string run_ID, int geo_mode_id, string file_event, bool full_even
             temp_sPH_nocolumn_vec.clear(); temp_sPH_nocolumn_vec = vector<vector<double>>(2);
             temp_sPH_inner_nocolumn_vec.clear();
             temp_sPH_outer_nocolumn_vec.clear();
-            tree_out -> Fill();
             continue;
         }
         
         N_comb.clear();
         N_comb_e.clear();
-        z_mid.clear(); 
-        z_range.clear();
+        // z_mid.clear(); 
+        // z_range.clear();
         
 
         // note : try to make sure that the clusters not to be used twice or more 
-        used_outer_check.clear();
-        used_outer_check = vector<int>(temp_sPH_outer_nocolumn_vec.size(),0);
+        // used_outer_check.clear();
+        // used_outer_check = vector<int>(temp_sPH_outer_nocolumn_vec.size(),0);
+
+        // cout<<"test point 4 di loop start"<<endl;
 
         for ( int inner_i = 0; inner_i < temp_sPH_inner_nocolumn_vec.size(); inner_i++ )
         {
             
             for ( int outer_i = 0; outer_i < temp_sPH_outer_nocolumn_vec.size(); outer_i++ )
             {
-                bool DCA_tag = false;
-                if (used_outer_check[outer_i] == 1) continue; // note : this outer cluster was already used, skip the trial of this combination
+                // bool DCA_tag = false;
+                // if (used_outer_check[outer_i] == 1) continue; // note : this outer cluster was already used, skip the trial of this combination
                 
                 vector<double> DCA_info_vec = calculateDistanceAndClosestPoint(
                     temp_sPH_inner_nocolumn_vec[inner_i].x, temp_sPH_inner_nocolumn_vec[inner_i].y,
@@ -871,44 +911,51 @@ void INTT_zvtx(string run_ID, int geo_mode_id, string file_event, bool full_even
                     beam_origin.first, beam_origin.second
                 );
 
+                angle_correlation -> Fill(temp_sPH_inner_nocolumn_vec[inner_i].phi,temp_sPH_outer_nocolumn_vec[outer_i].phi);
+                angle_diff -> Fill(fabs(temp_sPH_inner_nocolumn_vec[inner_i].phi - temp_sPH_outer_nocolumn_vec[outer_i].phi));
+
                 if (DCA_info_vec[0] != fabs(DCA_sign) && fabs( DCA_info_vec[0] - fabs(DCA_sign) ) > 0.1 ){
                     cout<<"different DCA : "<<DCA_info_vec[0]<<" "<<DCA_sign<<" diff : "<<DCA_info_vec[0] - fabs(DCA_sign)<<endl;}
 
                 if (fabs(temp_sPH_inner_nocolumn_vec[inner_i].phi - temp_sPH_outer_nocolumn_vec[outer_i].phi) < phi_diff_cut)
                 {
-                    if (DCA_info_vec[0] < DCA_cut){
+                    // if (DCA_info_vec[0] < DCA_cut){
 
-                        used_outer_check[outer_i] = 1; //note : this outer cluster was already used!
+                    //     used_outer_check[outer_i] = 1; //note : this outer cluster was already used!
 
-                        pair<double,double> z_range_info = Get_possible_zvtx( 
-                            get_radius(beam_origin.first,beam_origin.second), 
-                            {get_radius(temp_sPH_inner_nocolumn_vec[inner_i].x, temp_sPH_inner_nocolumn_vec[inner_i].y), temp_sPH_inner_nocolumn_vec[inner_i].z}, // note : unsign radius
-                            {get_radius(temp_sPH_outer_nocolumn_vec[outer_i].x, temp_sPH_outer_nocolumn_vec[outer_i].y), temp_sPH_outer_nocolumn_vec[outer_i].z}  // note : unsign radius
-                        );
+                    //     pair<double,double> z_range_info = Get_possible_zvtx( 
+                    //         get_radius(beam_origin.first,beam_origin.second), 
+                    //         {get_radius(temp_sPH_inner_nocolumn_vec[inner_i].x, temp_sPH_inner_nocolumn_vec[inner_i].y), temp_sPH_inner_nocolumn_vec[inner_i].z}, // note : unsign radius
+                    //         {get_radius(temp_sPH_outer_nocolumn_vec[outer_i].x, temp_sPH_outer_nocolumn_vec[outer_i].y), temp_sPH_outer_nocolumn_vec[outer_i].z}  // note : unsign radius
+                    //     );
                         
-                        N_comb.push_back(inner_i);
-                        N_comb_e.push_back(0);
-                        z_mid.push_back(z_range_info.first);
-                        z_range.push_back(z_range_info.second);
+                    //     N_comb.push_back(inner_i);
+                    //     N_comb_e.push_back(0);
+                    //     z_mid.push_back(z_range_info.first);
+                    //     z_range.push_back(z_range_info.second);
 
-                        DCA_tag = true;
-                    }
-                    
+                    //     // DCA_tag = true;
+                    // }
 
-                    // DCA_point -> Fill( DCA_info_vec[1], DCA_info_vec[2] );
+                    angle_diff_inner_phi -> Fill(temp_sPH_inner_nocolumn_vec[inner_i].phi, temp_sPH_inner_nocolumn_vec[inner_i].phi - temp_sPH_outer_nocolumn_vec[outer_i].phi);
+
+                    if (temp_sPH_inner_nocolumn_vec[inner_i].phi > 270)
+                        angle_diff_DCA_dist -> Fill(temp_sPH_inner_nocolumn_vec[inner_i].phi - temp_sPH_outer_nocolumn_vec[outer_i].phi, DCA_sign);
+
+                    DCA_point -> Fill( DCA_info_vec[1], DCA_info_vec[2] );
                     // angle_correlation -> Fill(temp_sPH_inner_nocolumn_vec[inner_i].phi,temp_sPH_outer_nocolumn_vec[outer_i].phi);
-                    // z_pos_diff -> Fill( temp_sPH_inner_nocolumn_vec[inner_i].z - temp_sPH_outer_nocolumn_vec[outer_i].z );
-                    // z_pos_diff_angle_diff -> Fill( temp_sPH_inner_nocolumn_vec[inner_i].z - temp_sPH_outer_nocolumn_vec[outer_i].z, temp_sPH_inner_nocolumn_vec[inner_i].phi - temp_sPH_outer_nocolumn_vec[outer_i].phi );
-                    // Nhits_good -> Fill(N_hits);
-                    // z_pos_inner -> Fill(temp_sPH_inner_nocolumn_vec[inner_i].z);
-                    // z_pos_outer -> Fill(temp_sPH_outer_nocolumn_vec[outer_i].z);
-                    // z_pos_inner_outer -> Fill(temp_sPH_inner_nocolumn_vec[inner_i].z, temp_sPH_outer_nocolumn_vec[outer_i].z);
+                    z_pos_diff -> Fill( temp_sPH_inner_nocolumn_vec[inner_i].z - temp_sPH_outer_nocolumn_vec[outer_i].z );
+                    z_pos_diff_angle_diff -> Fill( temp_sPH_inner_nocolumn_vec[inner_i].z - temp_sPH_outer_nocolumn_vec[outer_i].z, temp_sPH_inner_nocolumn_vec[inner_i].phi - temp_sPH_outer_nocolumn_vec[outer_i].phi );
+                    Nhits_good -> Fill(N_hits);
+                    z_pos_inner -> Fill(temp_sPH_inner_nocolumn_vec[inner_i].z);
+                    z_pos_outer -> Fill(temp_sPH_outer_nocolumn_vec[outer_i].z);
+                    z_pos_inner_outer -> Fill(temp_sPH_inner_nocolumn_vec[inner_i].z, temp_sPH_outer_nocolumn_vec[outer_i].z);
                     // DCA_distance_inner_phi -> Fill(temp_sPH_inner_nocolumn_vec[inner_i].phi, (temp_sPH_inner_nocolumn_vec[inner_i].phi > 90 && temp_sPH_inner_nocolumn_vec[inner_i].phi < 270) ? DCA_sign * -1 : DCA_sign );
                     // DCA_distance_outer_phi -> Fill(temp_sPH_outer_nocolumn_vec[outer_i].phi, (temp_sPH_outer_nocolumn_vec[outer_i].phi > 90 && temp_sPH_outer_nocolumn_vec[outer_i].phi < 270) ? DCA_sign * -1 : DCA_sign );
-                    // DCA_distance_inner_phi -> Fill(temp_sPH_inner_nocolumn_vec[inner_i].phi, DCA_sign );
-                    // DCA_distance_outer_phi -> Fill(temp_sPH_outer_nocolumn_vec[outer_i].phi, DCA_sign );
+                    DCA_distance_inner_phi -> Fill(temp_sPH_inner_nocolumn_vec[inner_i].phi, DCA_sign );
+                    DCA_distance_outer_phi -> Fill(temp_sPH_outer_nocolumn_vec[outer_i].phi, DCA_sign );
 
-                    if(DCA_tag == true) break; // note : since this combination (one inner cluster, one outer cluster) satisfied the reuqiremet, no reason to ask this inner cluster try with other outer clusters
+                    // if(DCA_tag == true) break; // note : since this combination (one inner cluster, one outer cluster) satisfied the reuqiremet, no reason to ask this inner cluster try with other outer clusters
 
                     // cout<<"good comb : "<<fabs(temp_sPH_inner_nocolumn_vec[inner_i].phi - temp_sPH_outer_nocolumn_vec[outer_i].phi)<<" radius in : "<<get_radius(temp_sPH_inner_nocolumn_vec[inner_i].x, temp_sPH_inner_nocolumn_vec[inner_i].y)<<" radius out : "<<get_radius(temp_sPH_outer_nocolumn_vec[outer_i].x, temp_sPH_outer_nocolumn_vec[outer_i].y)<<endl;
                 } // note : end of if 
@@ -917,61 +964,63 @@ void INTT_zvtx(string run_ID, int geo_mode_id, string file_event, bool full_even
             } // note : end of outer loop
         } // note : end of inner loop
 
+        // cout<<"test point 5 di loop end"<<endl;
+
         // cout<<"test tag 0"<<endl;
-        TGraphErrors * z_range_gr;
-        effi_N_comb.clear();
-        effi_z_mid.clear();
-        effi_N_comb_e.clear();
-        effi_z_range.clear();
-        // cout<<"test tag 1"<<endl;
-        if (N_comb.size() > zvtx_cal_require)
-        {   
-            temp_event_zvtx_info = sigmaEff_avg(z_mid,Integrate_portion);
+        // TGraphErrors * z_range_gr;
+        // effi_N_comb.clear();
+        // effi_z_mid.clear();
+        // effi_N_comb_e.clear();
+        // effi_z_range.clear();
+        // // cout<<"test tag 1"<<endl;
+        // // cout<<"test, N_comb size : "<<N_comb.size()<<endl;
+        // if (N_comb.size() > zvtx_cal_require)
+        // {   
+        //     temp_event_zvtx_info = sigmaEff_avg(z_mid,Integrate_portion);
             
-            for (int track_i = 0; track_i < N_comb.size(); track_i++) {
-                if (temp_event_zvtx_info[1] <= z_mid[track_i] && z_mid[track_i] <= temp_event_zvtx_info[2]) {
-                    effi_N_comb.push_back(N_comb[track_i]);
-                    effi_z_mid.push_back(z_mid[track_i]);
-                    effi_N_comb_e.push_back(N_comb_e[track_i]);
-                    effi_z_range.push_back(z_range[track_i]);
-                }
-            }
+        //     for (int track_i = 0; track_i < N_comb.size(); track_i++) {
+        //         if (temp_event_zvtx_info[1] <= z_mid[track_i] && z_mid[track_i] <= temp_event_zvtx_info[2]) {
+        //             effi_N_comb.push_back(N_comb[track_i]);
+        //             effi_z_mid.push_back(z_mid[track_i]);
+        //             effi_N_comb_e.push_back(N_comb_e[track_i]);
+        //             effi_z_range.push_back(z_range[track_i]);
+        //         }
+        //     }
 
-            z_range_gr = new TGraphErrors(effi_N_comb.size(),&effi_N_comb[0],&effi_z_mid[0],&effi_N_comb_e[0],&effi_z_range[0]);
-            // z_range_gr = new TGraph(effi_N_comb.size(),&effi_N_comb[0],&effi_z_mid[0]);
-            z_range_gr -> Fit(zvtx_finder,"NQ","",0,N_comb[N_comb.size() - 1] * 0.7); // note : not fit all the combination
+        //     z_range_gr = new TGraphErrors(effi_N_comb.size(),&effi_N_comb[0],&effi_z_mid[0],&effi_N_comb_e[0],&effi_z_range[0]);
+        //     // z_range_gr = new TGraph(effi_N_comb.size(),&effi_N_comb[0],&effi_z_mid[0]);
+        //     z_range_gr -> Fit(zvtx_finder,"NQ","",0,N_comb[N_comb.size() - 1] * 0.7); // note : not fit all the combination
             
             
-            // avg_event_zvtx -> Fill(zvtx_finder -> GetParameter(0));
-            zvtx_evt_width -> Fill(fabs( zvtx_finder -> GetParError(0)));
-            zvtx_evt_fitError_corre -> Fill(temp_sPH_inner_nocolumn_vec.size() + temp_sPH_outer_nocolumn_vec.size(), fabs( zvtx_finder -> GetParError(0)));
-            zvtx_evt_width_corre -> Fill(temp_sPH_inner_nocolumn_vec.size() + temp_sPH_outer_nocolumn_vec.size(), fabs(temp_event_zvtx_info[2] - temp_event_zvtx_info[1]));
-            width_density -> Fill( effi_N_comb.size() / fabs(temp_event_zvtx_info[2] - temp_event_zvtx_info[1]) );
-            if ( ( effi_N_comb.size() / fabs(temp_event_zvtx_info[2] - temp_event_zvtx_info[1]) ) > 0.3 ){ // Todo : change the width density here
-                zvtx_evt_nclu_corre -> Fill(temp_sPH_inner_nocolumn_vec.size() + temp_sPH_outer_nocolumn_vec.size(), zvtx_finder -> GetParameter(0));
-                avg_event_zvtx -> Fill(zvtx_finder -> GetParameter(0));
-                avg_event_zvtx_vec.push_back(zvtx_finder -> GetParameter(0));
-            }
+        //     // avg_event_zvtx -> Fill(zvtx_finder -> GetParameter(0));
+        //     zvtx_evt_width -> Fill(fabs( zvtx_finder -> GetParError(0)));
+        //     zvtx_evt_fitError_corre -> Fill(temp_sPH_inner_nocolumn_vec.size() + temp_sPH_outer_nocolumn_vec.size(), fabs( zvtx_finder -> GetParError(0)));
+        //     zvtx_evt_width_corre -> Fill(temp_sPH_inner_nocolumn_vec.size() + temp_sPH_outer_nocolumn_vec.size(), fabs(temp_event_zvtx_info[2] - temp_event_zvtx_info[1]));
+        //     width_density -> Fill( effi_N_comb.size() / fabs(temp_event_zvtx_info[2] - temp_event_zvtx_info[1]) );
+        //     // cout<<"test, width density : "<<( effi_N_comb.size() / fabs(temp_event_zvtx_info[2] - temp_event_zvtx_info[1]) )<<endl;
+        //     if ( ( effi_N_comb.size() / fabs(temp_event_zvtx_info[2] - temp_event_zvtx_info[1]) ) > 0.0 ){ // todo : the density may have to be fine tuned
+        //         zvtx_evt_nclu_corre -> Fill(temp_sPH_inner_nocolumn_vec.size() + temp_sPH_outer_nocolumn_vec.size(), zvtx_finder -> GetParameter(0));
+        //         avg_event_zvtx -> Fill(zvtx_finder -> GetParameter(0));
+        //         avg_event_zvtx_vec.push_back(zvtx_finder -> GetParameter(0));
+        //     }
             
-            out_eID = event_i;
-            N_cluster_inner_out = temp_sPH_inner_nocolumn_vec.size();
-            N_cluster_outer_out = temp_sPH_outer_nocolumn_vec.size();
-            out_zvtx = zvtx_finder -> GetParameter(0);
-            out_zvtxE = zvtx_finder -> GetParError(0);
-            out_rangeL = temp_event_zvtx_info[1];
-            out_rangeR = temp_event_zvtx_info[2];
-            out_N_good = effi_N_comb.size();
-            bco_full_out = bco_full;
-            out_width_density = effi_N_comb.size() / fabs(temp_event_zvtx_info[2] - temp_event_zvtx_info[1]);
-            tree_out -> Fill();
+        //     out_eID = event_i;
+        //     N_cluster_inner_out = temp_sPH_inner_nocolumn_vec.size();
+        //     N_cluster_outer_out = temp_sPH_outer_nocolumn_vec.size();
+        //     out_zvtx = zvtx_finder -> GetParameter(0);
+        //     out_zvtxE = zvtx_finder -> GetParError(0);
+        //     out_rangeL = temp_event_zvtx_info[1];
+        //     out_rangeR = temp_event_zvtx_info[2];
+        //     out_N_good = effi_N_comb.size();
+        //     out_width_density = effi_N_comb.size() / fabs(temp_event_zvtx_info[2] - temp_event_zvtx_info[1]);
 
-            z_range_gr -> Delete();
-        } // note : if N good tracks in xy found > certain value
+        //     z_range_gr -> Delete();
+        // } // note : if N good tracks in xy found > certain value
         // cout<<"test tag 2"<<endl;
-        else {tree_out -> Fill();}
-            
+        
+        // cout<<"test point 6"<<endl;
 
-        if ( zvtx_draw_requireL < N_comb.size() && draw_event_display == true && N_comb.size() > zvtx_cal_require)
+        if ( draw_event_display == true && N_comb.size() > zvtx_cal_require)
         {   
             TGraph * temp_event_xy = new TGraph(temp_sPH_nocolumn_vec[0].size(),&temp_sPH_nocolumn_vec[0][0],&temp_sPH_nocolumn_vec[1][0]);
             temp_event_xy -> SetTitle("INTT event display X-Y plane");
@@ -1014,19 +1063,19 @@ void INTT_zvtx(string run_ID, int geo_mode_id, string file_event, bool full_even
 
             // cout<<"test tag 2-5"<<endl;    
             pad_z -> cd();
-            TGraphErrors * z_range_gr_draw = new TGraphErrors(N_comb.size(),&N_comb[0],&z_mid[0],&N_comb_e[0],&z_range[0]);
-            z_range_gr_draw -> GetYaxis() -> SetRangeUser(-650,650);
-            z_range_gr_draw -> SetMarkerStyle(20);
-            z_range_gr_draw -> Draw("ap");
-            zvtx_finder -> Draw("lsame");
-            draw_text -> DrawLatex(0.2, 0.82, Form("Event Zvtx %.2f mm, error : #pm%.2f", zvtx_finder -> GetParameter(0), zvtx_finder -> GetParError(0)));
-            draw_text -> DrawLatex(0.2, 0.78, Form("Width density : %.2f", ( effi_N_comb.size() / fabs(temp_event_zvtx_info[2] - temp_event_zvtx_info[1]) )));
-            draw_text -> DrawLatex(0.2, 0.74, Form("Width : %.2f to %.2f mm", temp_event_zvtx_info[2] , temp_event_zvtx_info[1]));
+            // TGraphErrors * z_range_gr_draw = new TGraphErrors(N_comb.size(),&N_comb[0],&z_mid[0],&N_comb_e[0],&z_range[0]);
+            // z_range_gr_draw -> GetYaxis() -> SetRangeUser(-650,650);
+            // z_range_gr_draw -> SetMarkerStyle(20);
+            // z_range_gr_draw -> Draw("ap");
+            // zvtx_finder -> Draw("lsame");
+            // draw_text -> DrawLatex(0.2, 0.82, Form("Event Zvtx %.2f mm, error : #pm%.2f", zvtx_finder -> GetParameter(0), zvtx_finder -> GetParError(0)));
+            // draw_text -> DrawLatex(0.2, 0.78, Form("Width density : %.2f", ( effi_N_comb.size() / fabs(temp_event_zvtx_info[2] - temp_event_zvtx_info[1]) )));
+            // draw_text -> DrawLatex(0.2, 0.74, Form("Width : %.2f to %.2f mm", temp_event_zvtx_info[2] , temp_event_zvtx_info[1]));
 
             
 
-            effi_sig_range_line -> DrawLine(z_range_gr_draw->GetXaxis()->GetXmin(),temp_event_zvtx_info[1],z_range_gr_draw->GetXaxis()->GetXmax(),temp_event_zvtx_info[1]);
-            effi_sig_range_line -> DrawLine(z_range_gr_draw->GetXaxis()->GetXmin(),temp_event_zvtx_info[2],z_range_gr_draw->GetXaxis()->GetXmax(),temp_event_zvtx_info[2]);
+            // effi_sig_range_line -> DrawLine(z_range_gr_draw->GetXaxis()->GetXmin(),temp_event_zvtx_info[1],z_range_gr_draw->GetXaxis()->GetXmax(),temp_event_zvtx_info[1]);
+            // effi_sig_range_line -> DrawLine(z_range_gr_draw->GetXaxis()->GetXmin(),temp_event_zvtx_info[2],z_range_gr_draw->GetXaxis()->GetXmax(),temp_event_zvtx_info[2]);
 
 
             // temp_event_zvtx -> Draw("hist");
@@ -1045,22 +1094,24 @@ void INTT_zvtx(string run_ID, int geo_mode_id, string file_event, bool full_even
 
             temp_event_xy -> Delete();
             temp_event_rz -> Delete();
-            z_range_gr_draw -> Delete();
+            // z_range_gr_draw -> Delete();
 
         }
         // cout<<"test tag 3"<<endl;
 
-        // for ( int inner_i = 0; inner_i < temp_sPH_inner_nocolumn_vec.size(); inner_i++ )
-        // {
-        //     inner_pos_xy -> Fill(temp_sPH_inner_nocolumn_vec[inner_i].x,temp_sPH_inner_nocolumn_vec[inner_i].y);
-        //     inner_outer_pos_xy -> Fill(temp_sPH_inner_nocolumn_vec[inner_i].x,temp_sPH_inner_nocolumn_vec[inner_i].y);
-        // }
+        for ( int inner_i = 0; inner_i < temp_sPH_inner_nocolumn_vec.size(); inner_i++ )
+        {
+            inner_pos_xy -> Fill(temp_sPH_inner_nocolumn_vec[inner_i].x,temp_sPH_inner_nocolumn_vec[inner_i].y);
+            inner_outer_pos_xy -> Fill(temp_sPH_inner_nocolumn_vec[inner_i].x,temp_sPH_inner_nocolumn_vec[inner_i].y);
+        }
 
-        // for ( int outer_i = 0; outer_i < temp_sPH_outer_nocolumn_vec.size(); outer_i++ )
-        // {
-        //     outer_pos_xy -> Fill(temp_sPH_outer_nocolumn_vec[outer_i].x,temp_sPH_outer_nocolumn_vec[outer_i].y);
-        //     inner_outer_pos_xy -> Fill(temp_sPH_outer_nocolumn_vec[outer_i].x,temp_sPH_outer_nocolumn_vec[outer_i].y);
-        // }
+        for ( int outer_i = 0; outer_i < temp_sPH_outer_nocolumn_vec.size(); outer_i++ )
+        {
+            outer_pos_xy -> Fill(temp_sPH_outer_nocolumn_vec[outer_i].x,temp_sPH_outer_nocolumn_vec[outer_i].y);
+            inner_outer_pos_xy -> Fill(temp_sPH_outer_nocolumn_vec[outer_i].x,temp_sPH_outer_nocolumn_vec[outer_i].y);
+        }
+
+        // cout<<"test point 7"<<endl;
 
         temp_event_zvtx_info = {-1000,-1000,-1000};
         temp_event_zvtx_vec.clear();
@@ -1083,121 +1134,169 @@ void INTT_zvtx(string run_ID, int geo_mode_id, string file_event, bool full_even
     if (draw_event_display) {c2 -> Print(Form("%s/folder_%s_advanced/temp_event_display.pdf)",mother_folder_directory.c_str(),file_name.c_str()));}
     c2 -> Clear();
     c1 -> Clear();
-
-    tree_out->SetDirectory(out_file);
-    tree_out -> Write("", TObject::kOverwrite);
-
-    cout<<"test1, z size : "<<avg_event_zvtx_vec.size()<<endl;    
+   
 
     c1 -> cd();
-    vector<float> avg_event_zvtx_info = sigmaEff_avg(avg_event_zvtx_vec,Integrate_portion_final);
+    // vector<float> avg_event_zvtx_info = sigmaEff_avg(avg_event_zvtx_vec,Integrate_portion_final);
 
-    avg_event_zvtx -> SetMinimum( 0 );  avg_event_zvtx -> SetMaximum( avg_event_zvtx->GetBinContent(avg_event_zvtx->GetMaximumBin()) * 1.5 );
-    avg_event_zvtx -> Draw("hist");
+    // avg_event_zvtx -> SetMinimum( 0 );  avg_event_zvtx -> SetMaximum( avg_event_zvtx->GetBinContent(avg_event_zvtx->GetMaximumBin()) * 1.5 );
+    // avg_event_zvtx -> Draw("hist");
+
+    // TLatex *ltx = new TLatex();
+    // ltx->SetNDC();
+    // ltx->SetTextSize(0.045);
+    // ltx->DrawLatex(gPad->GetLeftMargin(), 1 - gPad->GetTopMargin() + 0.01, "#it{#bf{sPHENIX INTT}} Work-in-progress");
+    // ltx->DrawLatex(0.54, 0.86, Form("Run %s",run_ID.c_str()));
+    // ltx->DrawLatex(0.54, 0.81, "Au+Au #sqrt{s_{NN}} = 200 GeV");
+
+    // effi_sig_range_line -> DrawLine(avg_event_zvtx_info[1],0,avg_event_zvtx_info[1],avg_event_zvtx -> GetMaximum());
+    // effi_sig_range_line -> DrawLine(avg_event_zvtx_info[2],0,avg_event_zvtx_info[2],avg_event_zvtx -> GetMaximum());    
+    // draw_text -> DrawLatex(0.21, 0.87, Form("EffiSig min : %.2f mm",avg_event_zvtx_info[1]));
+    // draw_text -> DrawLatex(0.21, 0.83, Form("EffiSig max : %.2f mm",avg_event_zvtx_info[2]));
+    // draw_text -> DrawLatex(0.21, 0.79, Form("EffiSig avg : %.2f mm",avg_event_zvtx_info[0]));
+    // c1 -> Print(Form("%s/folder_%s_advanced/avg_event_zvtx.pdf",mother_folder_directory.c_str(),file_name.c_str()));
+    // c1 -> Clear();
+
+
+
+    // width_density -> Draw("hist"); 
+    // c1 -> Print(Form("%s/folder_%s_advanced/width_density.pdf",mother_folder_directory.c_str(),file_name.c_str()));
+    // c1 -> Clear();
+
+    // zvtx_evt_width -> Draw("hist"); 
+    // c1 -> Print(Form("%s/folder_%s_advanced/zvtx_evt_width.pdf",mother_folder_directory.c_str(),file_name.c_str()));
+    // c1 -> Clear();
+
+    // zvtx_evt_fitError_corre -> Draw("colz0"); 
+    // c1 -> Print(Form("%s/folder_%s_advanced/zvtx_evt_fitError_corre.pdf",mother_folder_directory.c_str(),file_name.c_str()));
+    // c1 -> Clear();
+
+    // zvtx_evt_nclu_corre -> Draw("colz0"); 
+    // c1 -> Print(Form("%s/folder_%s_advanced/zvtx_evt_nclu_corre.pdf",mother_folder_directory.c_str(),file_name.c_str()));
+    // c1 -> Clear();
+
+    // zvtx_evt_width_corre -> Draw("colz0"); 
+    // c1 -> Print(Form("%s/folder_%s_advanced/zvtx_evt_width_corre.pdf",mother_folder_directory.c_str(),file_name.c_str()));
+    // c1 -> Clear();
 
     TLatex *ltx = new TLatex();
     ltx->SetNDC();
     ltx->SetTextSize(0.045);
-    ltx->DrawLatex(gPad->GetLeftMargin(), 1 - gPad->GetTopMargin() + 0.01, "#it{#bf{sPHENIX INTT}} Work-in-progress");
-    ltx->DrawLatex(0.54, 0.86, Form("Run %s",run_ID.c_str()));
-    ltx->DrawLatex(0.54, 0.81, "Au+Au #sqrt{s_{NN}} = 200 GeV");
 
-    effi_sig_range_line -> DrawLine(avg_event_zvtx_info[1],0,avg_event_zvtx_info[1],avg_event_zvtx -> GetMaximum());
-    effi_sig_range_line -> DrawLine(avg_event_zvtx_info[2],0,avg_event_zvtx_info[2],avg_event_zvtx -> GetMaximum());    
-    draw_text -> DrawLatex(0.21, 0.87, Form("EffiSig min : %.2f mm",avg_event_zvtx_info[1]));
-    draw_text -> DrawLatex(0.21, 0.83, Form("EffiSig max : %.2f mm",avg_event_zvtx_info[2]));
-    draw_text -> DrawLatex(0.21, 0.79, Form("EffiSig avg : %.2f mm",avg_event_zvtx_info[0]));
-    c1 -> Print(Form("%s/folder_%s_advanced/avg_event_zvtx.pdf",mother_folder_directory.c_str(),file_name.c_str()));
+    N_cluster_inner_pass -> Draw("hist"); 
+    ltx->DrawLatex(gPad->GetLeftMargin(), 1 - gPad->GetTopMargin() + 0.01, "#it{#bf{sPHENIX INTT}} Work-in-progress");
+    c1 -> Print(Form("%s/folder_%s_advanced/N_cluster_inner_pass.pdf",mother_folder_directory.c_str(),file_name.c_str()));
+    c1 -> Clear();
+
+    N_cluster_outer_pass -> Draw("hist");
+    ltx->DrawLatex(gPad->GetLeftMargin(), 1 - gPad->GetTopMargin() + 0.01, "#it{#bf{sPHENIX INTT}} Work-in-progress");
+    c1 -> Print(Form("%s/folder_%s_advanced/N_cluster_outer_pass.pdf",mother_folder_directory.c_str(),file_name.c_str()));
+    c1 -> Clear();
+
+    N_cluster_correlation -> Draw("colz0");
+    ltx->DrawLatex(gPad->GetLeftMargin(), 1 - gPad->GetTopMargin() + 0.01, "#it{#bf{sPHENIX INTT}} Work-in-progress");
+    c1 -> Print(Form("%s/folder_%s_advanced/N_cluster_correlation.pdf",mother_folder_directory.c_str(),file_name.c_str()));
+    c1 -> Clear();
+
+    DCA_point -> Draw("colz0");
+    ltx->DrawLatex(gPad->GetLeftMargin(), 1 - gPad->GetTopMargin() + 0.01, "#it{#bf{sPHENIX INTT}} Work-in-progress");
+    c1 -> Print(Form("%s/folder_%s_advanced/DCA_point_X%.3fY%.3f_.pdf",mother_folder_directory.c_str(),file_name.c_str(),beam_origin.first,beam_origin.second));
+    c1 -> Clear();
+
+    DCA_distance_inner_phi -> Draw("colz0");
+    ltx->DrawLatex(gPad->GetLeftMargin(), 1 - gPad->GetTopMargin() + 0.01, "#it{#bf{sPHENIX INTT}} Work-in-progress");
+    c1 -> Print(Form("%s/folder_%s_advanced/DCA_distance_inner_phi_X%.3fY%.3f_.pdf",mother_folder_directory.c_str(),file_name.c_str(),beam_origin.first,beam_origin.second));
     c1 -> Clear();
 
 
+    TH2F * DCA_distance_inner_phi_peak = (TH2F*)DCA_distance_inner_phi -> Clone();
+    TF1 * cos_fit = new TF1("cos_fit",cos_func,0,360,4);
+    cos_fit -> SetParNames("[A]", "[B]", "[C]", "[D]");
+	cos_fit -> SetParameters(6.5, 0.015,  -185, 0.3);
+    cos_fit -> SetLineColor(2);
+    TH2F_threshold(DCA_distance_inner_phi_peak,60);
+    TProfile * DCA_distance_inner_phi_peak_profile =  DCA_distance_inner_phi_peak->ProfileX();
+    DCA_distance_inner_phi_peak_profile -> Fit(cos_fit,"N","",50,250);
 
-    width_density -> Draw("hist"); 
+
+    DCA_distance_inner_phi_peak -> Draw("colz0");
+    DCA_distance_inner_phi_peak_profile -> Draw("same");
+    cos_fit -> Draw("l same");
     ltx->DrawLatex(gPad->GetLeftMargin(), 1 - gPad->GetTopMargin() + 0.01, "#it{#bf{sPHENIX INTT}} Work-in-progress");
-    c1 -> Print(Form("%s/folder_%s_advanced/width_density.pdf",mother_folder_directory.c_str(),file_name.c_str()));
+    c1 -> Print(Form("%s/folder_%s_advanced/DCA_distance_inner_phi_peak_X%.3fY%.3f_.pdf",mother_folder_directory.c_str(),file_name.c_str(),beam_origin.first,beam_origin.second));
     c1 -> Clear();
 
-    zvtx_evt_width -> Draw("hist"); 
+
+    DCA_distance_outer_phi -> Draw("colz0");
     ltx->DrawLatex(gPad->GetLeftMargin(), 1 - gPad->GetTopMargin() + 0.01, "#it{#bf{sPHENIX INTT}} Work-in-progress");
-    c1 -> Print(Form("%s/folder_%s_advanced/zvtx_evt_width.pdf",mother_folder_directory.c_str(),file_name.c_str()));
+    c1 -> Print(Form("%s/folder_%s_advanced/DCA_distance_outer_phi_X%.3fY%.3f_.pdf",mother_folder_directory.c_str(),file_name.c_str(),beam_origin.first,beam_origin.second));
     c1 -> Clear();
 
-    zvtx_evt_fitError_corre -> Draw("colz0"); 
+    z_pos_inner_outer -> Draw("colz0");
     ltx->DrawLatex(gPad->GetLeftMargin(), 1 - gPad->GetTopMargin() + 0.01, "#it{#bf{sPHENIX INTT}} Work-in-progress");
-    c1 -> Print(Form("%s/folder_%s_advanced/zvtx_evt_fitError_corre.pdf",mother_folder_directory.c_str(),file_name.c_str()));
+    c1 -> Print(Form("%s/folder_%s_advanced/z_pos_inner_outer.pdf",mother_folder_directory.c_str(),file_name.c_str()));
     c1 -> Clear();
 
-    zvtx_evt_nclu_corre -> Draw("colz0"); 
+    z_pos_inner -> Draw("hist");
     ltx->DrawLatex(gPad->GetLeftMargin(), 1 - gPad->GetTopMargin() + 0.01, "#it{#bf{sPHENIX INTT}} Work-in-progress");
-    c1 -> Print(Form("%s/folder_%s_advanced/zvtx_evt_nclu_corre.pdf",mother_folder_directory.c_str(),file_name.c_str()));
+    c1 -> Print(Form("%s/folder_%s_advanced/z_pos_inner.pdf",mother_folder_directory.c_str(),file_name.c_str()));
     c1 -> Clear();
 
-    zvtx_evt_width_corre -> Draw("colz0"); 
+    z_pos_outer -> Draw("hist");
     ltx->DrawLatex(gPad->GetLeftMargin(), 1 - gPad->GetTopMargin() + 0.01, "#it{#bf{sPHENIX INTT}} Work-in-progress");
-    c1 -> Print(Form("%s/folder_%s_advanced/zvtx_evt_width_corre.pdf",mother_folder_directory.c_str(),file_name.c_str()));
+    c1 -> Print(Form("%s/folder_%s_advanced/z_pos_outer.pdf",mother_folder_directory.c_str(),file_name.c_str()));
     c1 -> Clear();
 
-    // N_cluster_inner_pass -> Draw("hist"); 
-    // c1 -> Print(Form("%s/folder_%s_advanced/N_cluster_inner_pass.pdf",mother_folder_directory.c_str(),file_name.c_str()));
-    // c1 -> Clear();
+    Nhits_good -> Draw("hist");
+    ltx->DrawLatex(gPad->GetLeftMargin(), 1 - gPad->GetTopMargin() + 0.01, "#it{#bf{sPHENIX INTT}} Work-in-progress");
+    c1 -> Print(Form("%s/folder_%s_advanced/Nhits_good.pdf",mother_folder_directory.c_str(),file_name.c_str()));
+    c1 -> Clear();
 
-    // N_cluster_outer_pass -> Draw("hist");
-    // c1 -> Print(Form("%s/folder_%s_advanced/N_cluster_outer_pass.pdf",mother_folder_directory.c_str(),file_name.c_str()));
-    // c1 -> Clear();
+    angle_correlation -> Draw("colz0");
+    ltx->DrawLatex(gPad->GetLeftMargin(), 1 - gPad->GetTopMargin() + 0.01, "#it{#bf{sPHENIX INTT}} Work-in-progress");
+    c1 -> Print(Form("%s/folder_%s_advanced/angle_correlation.pdf",mother_folder_directory.c_str(),file_name.c_str()));
+    c1 -> Clear();
 
-    // N_cluster_correlation -> Draw("colz0");
-    // c1 -> Print(Form("%s/folder_%s_advanced/N_cluster_correlation.pdf",mother_folder_directory.c_str(),file_name.c_str()));
-    // c1 -> Clear();
+    z_pos_diff -> Draw("hist");
+    ltx->DrawLatex(gPad->GetLeftMargin(), 1 - gPad->GetTopMargin() + 0.01, "#it{#bf{sPHENIX INTT}} Work-in-progress");
+    c1 -> Print(Form("%s/folder_%s_advanced/z_pos_diff.pdf",mother_folder_directory.c_str(),file_name.c_str()));
+    c1 -> Clear();
 
-    // DCA_point -> Draw("colz0");
-    // c1 -> Print(Form("%s/folder_%s_advanced/DCA_point_X%.1fY%.1f_.pdf",mother_folder_directory.c_str(),file_name.c_str(),beam_origin.first,beam_origin.second));
-    // c1 -> Clear();
+    z_pos_diff_angle_diff -> Draw("colz0");
+    ltx->DrawLatex(gPad->GetLeftMargin(), 1 - gPad->GetTopMargin() + 0.01, "#it{#bf{sPHENIX INTT}} Work-in-progress");
+    c1 -> Print(Form("%s/folder_%s_advanced/z_pos_diff_angle_diff.pdf",mother_folder_directory.c_str(),file_name.c_str()));
+    c1 -> Clear();
 
-    // DCA_distance_inner_phi -> Draw("colz0");
-    // c1 -> Print(Form("%s/folder_%s_advanced/DCA_distance_inner_phi_X%.1fY%.1f_.pdf",mother_folder_directory.c_str(),file_name.c_str(),beam_origin.first,beam_origin.second));
-    // c1 -> Clear();
+    angle_diff -> Draw("hist");
+    ltx->DrawLatex(gPad->GetLeftMargin(), 1 - gPad->GetTopMargin() + 0.01, "#it{#bf{sPHENIX INTT}} Work-in-progress");
+    c1 -> Print(Form("%s/folder_%s_advanced/angle_diff.pdf",mother_folder_directory.c_str(),file_name.c_str()));
+    c1 -> Clear();
 
-    // DCA_distance_outer_phi -> Draw("colz0");
-    // c1 -> Print(Form("%s/folder_%s_advanced/DCA_distance_outer_phi_X%.1fY%.1f_.pdf",mother_folder_directory.c_str(),file_name.c_str(),beam_origin.first,beam_origin.second));
-    // c1 -> Clear();
+    
+    angle_diff_DCA_dist -> Draw("colz0");
+    ltx->DrawLatex(gPad->GetLeftMargin(), 1 - gPad->GetTopMargin() + 0.01, "#it{#bf{sPHENIX INTT}} Work-in-progress");
+    c1 -> Print(Form("%s/folder_%s_advanced/angle_diff_DCA_dist.pdf",mother_folder_directory.c_str(),file_name.c_str()));
+    c1 -> Clear();
 
-    // z_pos_inner_outer -> Draw("colz0");
-    // c1 -> Print(Form("%s/folder_%s_advanced/z_pos_inner_outer.pdf",mother_folder_directory.c_str(),file_name.c_str()));
-    // c1 -> Clear();
+    angle_diff_inner_phi -> Draw("colz0");
+    ltx->DrawLatex(gPad->GetLeftMargin(), 1 - gPad->GetTopMargin() + 0.01, "#it{#bf{sPHENIX INTT}} Work-in-progress");
+    c1 -> Print(Form("%s/folder_%s_advanced/angle_diff_inner_phi.pdf",mother_folder_directory.c_str(),file_name.c_str()));
+    c1 -> Clear();
 
-    // z_pos_inner -> Draw("hist");
-    // c1 -> Print(Form("%s/folder_%s_advanced/z_pos_inner.pdf",mother_folder_directory.c_str(),file_name.c_str()));
-    // c1 -> Clear();
+    inner_pos_xy -> Draw("colz0");
+    ltx->DrawLatex(gPad->GetLeftMargin(), 1 - gPad->GetTopMargin() + 0.01, "#it{#bf{sPHENIX INTT}} Work-in-progress");
+    c1 -> Print(Form("%s/folder_%s_advanced/inner_pos_xy.pdf",mother_folder_directory.c_str(),file_name.c_str()));
+    c1 -> Clear();
 
-    // z_pos_outer -> Draw("hist");
-    // c1 -> Print(Form("%s/folder_%s_advanced/z_pos_outer.pdf",mother_folder_directory.c_str(),file_name.c_str()));
-    // c1 -> Clear();
+    outer_pos_xy -> Draw("colz0");
+    ltx->DrawLatex(gPad->GetLeftMargin(), 1 - gPad->GetTopMargin() + 0.01, "#it{#bf{sPHENIX INTT}} Work-in-progress");
+    c1 -> Print(Form("%s/folder_%s_advanced/outer_pos_xy.pdf",mother_folder_directory.c_str(),file_name.c_str()));
+    c1 -> Clear();
 
-    // Nhits_good -> Draw("hist");
-    // c1 -> Print(Form("%s/folder_%s_advanced/Nhits_good.pdf",mother_folder_directory.c_str(),file_name.c_str()));
-    // c1 -> Clear();
+    inner_outer_pos_xy -> Draw("colz0");
+    ltx->DrawLatex(gPad->GetLeftMargin(), 1 - gPad->GetTopMargin() + 0.01, "#it{#bf{sPHENIX INTT}} Work-in-progress");
+    c1 -> Print(Form("%s/folder_%s_advanced/inner_outer_pos_xy.pdf",mother_folder_directory.c_str(),file_name.c_str()));
+    c1 -> Clear();
 
-    // angle_correlation -> Draw("colz0");
-    // c1 -> Print(Form("%s/folder_%s_advanced/angle_correlation.pdf",mother_folder_directory.c_str(),file_name.c_str()));
-    // c1 -> Clear();
-
-    // z_pos_diff -> Draw("hist");
-    // c1 -> Print(Form("%s/folder_%s_advanced/z_pos_diff.pdf",mother_folder_directory.c_str(),file_name.c_str()));
-    // c1 -> Clear();
-
-    // z_pos_diff_angle_diff -> Draw("colz0");
-    // c1 -> Print(Form("%s/folder_%s_advanced/z_pos_diff_angle_diff.pdf",mother_folder_directory.c_str(),file_name.c_str()));
-    // c1 -> Clear();
-
-    // inner_pos_xy -> Draw("colz0");
-    // c1 -> Print(Form("%s/folder_%s_advanced/inner_pos_xy.pdf",mother_folder_directory.c_str(),file_name.c_str()));
-    // c1 -> Clear();
-
-    // outer_pos_xy -> Draw("colz0");
-    // c1 -> Print(Form("%s/folder_%s_advanced/outer_pos_xy.pdf",mother_folder_directory.c_str(),file_name.c_str()));
-    // c1 -> Clear();
-
-    // inner_outer_pos_xy -> Draw("colz0");
-    // c1 -> Print(Form("%s/folder_%s_advanced/inner_outer_pos_xy.pdf",mother_folder_directory.c_str(),file_name.c_str()));
-    // c1 -> Clear();
+    cout<<"the geatest N clu event under the fNhits cut : "<<greatest_N_clu<<endl;
 }

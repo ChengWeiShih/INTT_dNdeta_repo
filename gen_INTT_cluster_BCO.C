@@ -1,4 +1,5 @@
 #include "/sphenix/user/ChengWei/INTT/INTT_commissioning/INTT_CW/INTT_commissioning/DAC_Scan/DAC_Scan_ladder.h"
+#include "/sphenix/user/ChengWei/INTT/INTT_commissioning/INTT_CW/INTT_commissioning/DAC_Scan/InttConversion_new.h"
 #include "/sphenix/user/ChengWei/INTT/INTT_commissioning/INTT_CW/INTT_commissioning/DAC_Scan/InttClustering.h"
 
 // todo : the number of number is given by the adc_setting_run !!!
@@ -61,6 +62,8 @@ void gen_INTT_cluster_BCO(string sub_folder_string, string file_name, int DAC_ru
     // string mother_folder_directory = "/home/phnxrc/INTT/cwshih/DACscan_data/zero_magnet_Takashi_used";
     // string file_name = "beam_inttall-00020869-0000_event_base_ana";
 
+    
+
     string mother_folder_directory = "/sphenix/user/ChengWei/INTT/INTT_commissioning/" + sub_folder_string;
     // int DAC_run_ID = 0;
     // int Nhit_cut = 1500;
@@ -84,7 +87,11 @@ void gen_INTT_cluster_BCO(string sub_folder_string, string file_name, int DAC_ru
 
     int N_total_ladder = 14;
     int N_server       = 8;
-    string conversion_mode = (geo_mode_id == 0) ? "ideal" : "survey_1_XYAlpha_Peek";
+    vector<string> conversion_mode_BD = {"ideal", "survey_1_XYAlpha_Peek", "full_survey_3.32"};
+    string conversion_mode = conversion_mode_BD[geo_mode_id];
+
+    // note : the initiator for the channel position
+    InttConversion * ch_pos_DB = new InttConversion(conversion_mode, peek);
     
 
     vector<int> adc_convert(8,0);
@@ -266,24 +273,24 @@ void gen_INTT_cluster_BCO(string sub_folder_string, string file_name, int DAC_ru
                 int bco_diff = ( ((bco_full[i1]&0x7F) - bco[i1]) < 0 ) ? ((bco_full[i1]&0x7F) - bco[i1]) + 128 : ((bco_full[i1]&0x7F) - bco[i1]);
 
                 // todo : bco_diff cut for the run 20869
-                // bool bco_tag_3001 = (bco_diff == 21 || bco_diff == 22)                   ? true : false;
-                // bool bco_tag_3002 = (bco_diff == 21 || bco_diff == 22 || bco_diff == 23) ? true : false;
-                // bool bco_tag_3003 = (bco_diff == 81)                                     ? true : false;
-                // bool bco_tag_3004 = (bco_diff == 113)                                    ? true : false;
-                // bool bco_tag_3005 = (bco_diff == 63 || bco_diff == 64)                   ? true : false;
-                // bool bco_tag_3006 = (bco_diff == 39 || bco_diff == 40)                   ? true : false;
-                // bool bco_tag_3007 = (bco_diff == 82)                                     ? true : false;
-                // bool bco_tag_3008 = (bco_diff == 20)                                     ? true : false;
+                bool bco_tag_3001 = (bco_diff == 21 || bco_diff == 22)                   ? true : false;
+                bool bco_tag_3002 = (bco_diff == 21 || bco_diff == 22 || bco_diff == 23) ? true : false;
+                bool bco_tag_3003 = (bco_diff == 81)                                     ? true : false;
+                bool bco_tag_3004 = (bco_diff == 113)                                    ? true : false;
+                bool bco_tag_3005 = (bco_diff == 63 || bco_diff == 64)                   ? true : false;
+                bool bco_tag_3006 = (bco_diff == 39 || bco_diff == 40)                   ? true : false;
+                bool bco_tag_3007 = (bco_diff == 82)                                     ? true : false;
+                bool bco_tag_3008 = (bco_diff == 20)                                     ? true : false;
 
-                // note : the bco_diff cut
-                // if (pid[i1] == 3001 && bco_tag_3001 == false) continue;
-                // if (pid[i1] == 3002 && bco_tag_3002 == false) continue;
-                // if (pid[i1] == 3003 && bco_tag_3003 == false) continue;
-                // if (pid[i1] == 3004 && bco_tag_3004 == false) continue;
-                // if (pid[i1] == 3005 && bco_tag_3005 == false) continue;
-                // if (pid[i1] == 3006 && bco_tag_3006 == false) continue;
-                // if (pid[i1] == 3007 && bco_tag_3007 == false) continue;
-                // if (pid[i1] == 3008 && bco_tag_3008 == false) continue;
+                // todo : the bco_diff cut, remember to activate these lines
+                if (pid[i1] == 3001 && bco_tag_3001 == false) continue;
+                if (pid[i1] == 3002 && bco_tag_3002 == false) continue;
+                if (pid[i1] == 3003 && bco_tag_3003 == false) continue;
+                if (pid[i1] == 3004 && bco_tag_3004 == false) continue;
+                if (pid[i1] == 3005 && bco_tag_3005 == false) continue;
+                if (pid[i1] == 3006 && bco_tag_3006 == false) continue;
+                if (pid[i1] == 3007 && bco_tag_3007 == false) continue;
+                if (pid[i1] == 3008 && bco_tag_3008 == false) continue;
 
 
                 if (hot_ch_cut != 0){
@@ -318,7 +325,7 @@ void gen_INTT_cluster_BCO(string sub_folder_string, string file_name, int DAC_ru
                 
                 if ( single_event_hit_vec[i1][i2].size() > 0 )
                 {
-                    clu_vec = InttClustering::clustering(Form("intt%i",i1), i2, single_event_hit_vec[i1][i2],conversion_mode,peek);
+                    clu_vec = InttClustering::clustering(Form("intt%i",i1), i2, single_event_hit_vec[i1][i2], ch_pos_DB);
                     // cout<<"-------> eID : "<<i<<" Nhit : "<<fNhits<<" serverID : "<<i1<<" ladderID : "<<i2<<" clu_vec size : "<<clu_vec.size()<<" inner_nclu : "<<N_cluster_inner<<" outer_nclu : "<<N_cluster_outer<<endl;
 
                     for (int clu_i = 0; clu_i < clu_vec.size(); clu_i++)

@@ -3,7 +3,8 @@
 void INTT_centrality()
 {
     string mother_folder_directory = "/sphenix/user/ChengWei/INTT/INTT_commissioning/ZeroField/20869";
-    string file_name = "beam_inttall-00020869-0000_event_base_ana_cluster_survey_1_XYAlpha_Peek_3.32mm_excludeR20000_150kEvent_3HotCut";
+    string file_name = "beam_inttall-00020869-0000_event_base_ana_cluster_full_survey_3.32_excludeR40000_200kEvent_3HotCut";
+    SetsPhenixStyle();
 
     TFile * file_in = new TFile(Form("%s/%s.root",mother_folder_directory.c_str(),file_name.c_str()),"read");
     TTree * tree = (TTree *)file_in->Get("tree_clu");
@@ -42,7 +43,7 @@ void INTT_centrality()
 
     TLine * coord_line = new TLine();
     coord_line -> SetLineWidth(1);
-    coord_line -> SetLineColor(1);
+    coord_line -> SetLineColor(2);
     // coord_line -> SetLineStyle(2);
 
     TH1F * INTT_N_clu = new TH1F("","",100,0,8000);
@@ -67,7 +68,7 @@ void INTT_centrality()
     cout<<N_clu_vec.size()<<endl;
     TMath::Sort(int(N_clu_vec.size()), &N_clu_vec[0], sort_clu_index);
 
-    SetsPhenixStyle();
+    
     TCanvas * c1 = new TCanvas("","",1200,800);
     INTT_N_clu -> Draw("hist");
     c1 -> SetLogy(1);

@@ -21,7 +21,7 @@ void sync_mbd_intt()
   ///////////
   //
 
-  TFile *f_mbd  = TFile::Open("/sphenix/user/chiu/sphenix_bbc/run2023/beam_seb18-00020869-0000_mbd.root");
+  TFile *f_mbd  = TFile::Open("/sphenix/tg/tg01/commissioning/INTT/subsystems/MBD/auau2023_v0/beam_seb18-00020869-0000_mbd.root");
   gDirectory=gDir;
 
   TTree *t_mbd = (TTree*)f_mbd->Get("t");
@@ -58,8 +58,8 @@ void sync_mbd_intt()
 
   gDirectory = gDir;
 
-  TH2F *h_qmbd_nintt = new TH2F("h_qmbd_nintt", "BbcQ vs Intt N", 100, 0, 10000, 100, 0, 2000);
-  TH2F *intt_mbd_bco = new TH2F("intt_mbd_bco", "INTT - MBD", 100, 0, 200000, 100, -10, 100000);
+  TH2F *h_qmbd_nintt = new TH2F("h_qmbd_nintt", "BbcQ vs Intt N", 200, 0, 20000, 200, 0, 4000);
+  TH2F *intt_mbd_bco = new TH2F("intt_mbd_bco", "INTT - MBD", 100, 0, 600000, 100, -10, 100000);
 
   int        prev_mbdclk = 0;
   ULong64_t  prev_bco = 0;
@@ -126,7 +126,7 @@ void sync_mbd_intt()
 
     // if (i == 7012) intt_evt_offset += 1;
 
-    if(i>200000) break;
+    // if(i>200000) break;
   }
   
   
