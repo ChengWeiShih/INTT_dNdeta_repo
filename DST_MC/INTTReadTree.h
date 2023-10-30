@@ -2,6 +2,7 @@
 #define INTTReadTree_h
 
 #include "../INTTDSTchain.C"
+#include "PrivateCluReader.C"
 #include "/sphenix/user/ChengWei/INTT/INTT_commissioning/INTT_CW/INTT_commissioning/DAC_Scan/InttConversion_new.h"
 #include "/sphenix/user/ChengWei/INTT/INTT_commissioning/INTT_CW/INTT_commissioning/DAC_Scan/InttClustering.h"
 
@@ -22,6 +23,8 @@ class INTTReadTree
         double GetTrigZvtxMC();
         bool GetPhiCheckTag();
         int GetNvtxMC();
+        string GetRunType();
+        Long64_t GetBCOFull();
         void EvtClear();
 
     private : 
@@ -36,13 +39,18 @@ class INTTReadTree
         int data_type;   
         int NvtxMC; 
         double TrigZvtxMC;
+        Long64_t bco_full;
 
         TChain * chain_in;
-        INTTDSTchain * inttDSTMC;
+        PrivateCluReader * inttCluData; // note : the class to read the private gen cluster file
+        INTTDSTchain * inttDSTMC; // note : the class to read the MC sample with TChain
+        TFile * file_in;
+        TTree * tree;
 
         unsigned long evt_length;
 
         void TChainInit_MC();
+        void TTreeInit_private();
         double get_radius(double x, double y);
         
 
@@ -66,6 +74,12 @@ INTTReadTree::INTTReadTree(int data_type, string input_directory, string MC_list
         TChainInit_MC();
         std::cout<<"--- INTTReadTree -> Initialization done ---"<<std::endl;
     }
+    else if (data_type_list[data_type] == "data_private")
+    {
+        std::cout<<"--- INTTReadTree -> input data tupe : private gen cluster ---"<<std::endl;
+        TTreeInit_private();
+        std::cout<<"--- INTTReadTree -> Initialization done ---"<<std::endl;
+    }
 }
 
 void INTTReadTree::TChainInit_MC()
@@ -76,20 +90,46 @@ void INTTReadTree::TChainInit_MC()
     std::printf("inttDSTMC N event : %lli \n", N_event);
 }
 
+void INTTReadTree::TTreeInit_private()
+{
+    file_in = new TFile(Form("%s/%s.root", input_directory.c_str(), MC_list_name.c_str()),"read");
+    tree = (TTree *)file_in->Get(tree_name.c_str());
+    inttCluData = new PrivateCluReader(tree);
+    N_event = tree -> GetEntries();
+    std::printf("private gen tree, N event : %lli \n", N_event);
+
+}
+
 void INTTReadTree::EvtInit(long long event_i)
 {
-    inttDSTMC->LoadTree(event_i);
-    inttDSTMC->GetEntry(event_i);
+    if (data_type_list[data_type] == "MC")
+    {
+        inttDSTMC->LoadTree(event_i);
+        inttDSTMC->GetEntry(event_i);
 
-    evt_length = inttDSTMC->NClus;
-    NvtxMC     = inttDSTMC->NTruthVtx;
-    TrigZvtxMC = inttDSTMC->TruthPV_trig_z;
+        evt_length = inttDSTMC->NClus;
+        bco_full   = -1;
+        NvtxMC     = inttDSTMC->NTruthVtx;
+        TrigZvtxMC = inttDSTMC->TruthPV_trig_z;
+    }
+    else if (data_type_list[data_type] == "data_private")
+    {
+        inttCluData->LoadTree(event_i);
+        inttCluData->GetEntry(event_i);
+
+        evt_length = inttCluData->x->size();
+        bco_full   = inttCluData->bco_full;
+        NvtxMC     = -1;
+        TrigZvtxMC = -1000.;
+    }
 }
 
 long long INTTReadTree::GetNEvt() { return N_event; }
 unsigned long INTTReadTree::GetEvtNClus() { return evt_length; }
 double INTTReadTree::GetTrigZvtxMC() {return TrigZvtxMC;}
 int INTTReadTree::GetNvtxMC() {return NvtxMC;}
+string INTTReadTree::GetRunType() { return data_type_list[data_type]; }
+Long64_t INTTReadTree::GetBCOFull() {return bco_full;}
 
 unsigned long INTTReadTree::GetEvtNClusPost() 
 { 
@@ -140,6 +180,58 @@ void INTTReadTree::EvtSetCluGroup()
                     int(inttDSTMC -> ClusAdc -> at(clu_i)), 
                     int(inttDSTMC -> ClusAdc -> at(clu_i)), 
                     int(inttDSTMC -> ClusPhiSize -> at(clu_i)), 
+                    clu_x, 
+                    clu_y, 
+                    clu_z, 
+                    clu_layer, 
+                    clu_phi
+                });            
+            }        
+        }
+    }
+
+    else if (data_type_list[data_type] == "data_private"){
+        for (int clu_i = 0; clu_i < evt_length; clu_i++)
+        {
+            if (int(inttCluData -> size -> at(clu_i)) > clu_size_cut) continue; 
+            if (int(inttCluData -> sum_adc_conv -> at(clu_i)) < clu_sum_adc_cut) continue;
+
+            double clu_x = inttCluData -> x -> at(clu_i);
+            double clu_y = inttCluData -> y -> at(clu_i);
+            double clu_z = inttCluData -> z -> at(clu_i);
+            double clu_phi = (clu_y < 0) ? atan2(clu_y,clu_x) * (180./TMath::Pi()) + 360 : atan2(clu_y,clu_x) * (180./TMath::Pi());
+            int    clu_layer = inttCluData -> layer -> at(clu_i); // note : should be 0 or 1
+            double clu_radius = get_radius(clu_x, clu_y);
+
+            temp_sPH_nocolumn_vec[0].push_back( clu_x );
+            temp_sPH_nocolumn_vec[1].push_back( clu_y );
+            
+            temp_sPH_nocolumn_rz_vec[0].push_back( clu_z );
+            temp_sPH_nocolumn_rz_vec[1].push_back( ( clu_phi > 180 ) ? clu_radius * -1 : clu_radius );
+            
+
+            if (clu_layer == 0) {// note : inner
+                temp_sPH_inner_nocolumn_vec.push_back({
+                    -1, 
+                    -1, 
+                    int(inttCluData -> sum_adc_conv -> at(clu_i)), 
+                    int(inttCluData -> sum_adc_conv -> at(clu_i)), 
+                    int(inttCluData -> size -> at(clu_i)), 
+                    clu_x, 
+                    clu_y, 
+                    clu_z, 
+                    clu_layer, 
+                    clu_phi
+                });
+            }
+            
+            if (clu_layer == 1) {// note : outer
+                temp_sPH_outer_nocolumn_vec.push_back({
+                    -1, 
+                    -1, 
+                    int(inttCluData -> sum_adc_conv -> at(clu_i)), 
+                    int(inttCluData -> sum_adc_conv -> at(clu_i)), 
+                    int(inttCluData -> size -> at(clu_i)), 
                     clu_x, 
                     clu_y, 
                     clu_z, 

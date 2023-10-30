@@ -55,6 +55,32 @@ struct ladder_info {
     int Direction; // note : 0 : south, 1 : north 
 };
 
+double gaus_func(double *x, double *par)
+{
+    // note : par[0] : size
+    // note : par[1] : mean
+    // note : par[2] : width
+    // note : par[3] : offset 
+    return par[0] * TMath::Gaus(x[0],par[1],par[2]) + par[3];
+}
+
+double double_gaus_func(double *x, double *par)
+{
+    // note : par[0] : size of gaus1
+    // note : par[1] : mean of gaus1
+    // note : par[2] : width of gaus1
+    // note : par[3] : offset of gaus1 
+
+    // note : par[4] : size of gaus2
+    // note : par[5] : mean of gaus2
+    // note : par[6] : width of gaus2
+
+    double gaus1 = par[0] * TMath::Gaus(x[0],par[1],par[2]) + par[3]; 
+    double gaus2 = par[4] * TMath::Gaus(x[0],par[5],par[6]); 
+
+    return gaus1 + gaus2;
+}
+
 double get_radius(double x, double y)
 {
     return sqrt(pow(x,2)+pow(y,2));
@@ -529,10 +555,15 @@ void INTT_xyvtx(string run_ID, int geo_mode_id, string file_event, bool full_eve
     angle_diff_DCA_dist -> GetXaxis() -> SetTitle("Inner - Outer [degree]");
     angle_diff_DCA_dist -> GetYaxis() -> SetTitle("DCA distance [mm]");
 
-    TH1F * angle_diff = new TH1F("","angle_diff",100,0,10);
+    TH1F * angle_diff = new TH1F("","angle_diff",100,0,3);
     angle_diff -> SetStats(0);
     angle_diff -> GetXaxis() -> SetTitle("|Inner - Outer| [degree]");
     angle_diff -> GetYaxis() -> SetTitle("Entry");
+
+    TH1F * DCA_distance_1D = new TH1F("","DCA_distance_1D",100,-6,6);
+    DCA_distance_1D -> SetStats(0);
+    DCA_distance_1D -> GetXaxis() -> SetTitle("DCA distance");
+    DCA_distance_1D -> GetYaxis() -> SetTitle("Entry");
 
     TH2F * angle_diff_inner_phi = new TH2F("","angle_diff_inner_phi",361,0,361,100,-1.5,1.5);
     angle_diff_inner_phi -> SetStats(0);
@@ -617,7 +648,28 @@ void INTT_xyvtx(string run_ID, int geo_mode_id, string file_event, bool full_eve
     effi_sig_range_line -> SetLineWidth(3);
     effi_sig_range_line -> SetLineColor(TColor::GetColor("#A08144"));
     effi_sig_range_line -> SetLineStyle(2);
-    TF1 * zvtx_fitting = new TF1("","gaus",-500,500);
+    TF1 * gaus_fit = new TF1("",gaus_func,-10,10,4);
+    gaus_fit -> SetLineColor(2);
+
+
+        // note : par[0] : size of gaus1
+    // note : par[1] : mean of gaus1
+    // note : par[2] : width of gaus1
+    // note : par[3] : offset of gaus1 
+
+    // note : par[4] : size of gaus2
+    // note : par[5] : mean of gaus2
+    // note : par[6] : width of gaus2
+
+    TF1 * double_gaus_fit = new TF1("",double_gaus_func,-10,10,7);
+    double_gaus_fit -> SetLineColor(3);
+    double_gaus_fit -> SetParNames("G1 size", "G1 mean", "G1 width", "Offset", "G2 size", "G2 mean", "G2 width");
+    TF1 * gaus_1 = new TF1("",gaus_func,-10,10,4);
+    gaus_1 -> SetLineColor(6);
+    gaus_1 -> SetLineStyle(7);
+    TF1 * gaus_2 = new TF1("",gaus_func,-10,10,4);
+    gaus_2 -> SetLineColor(6);
+    gaus_2 -> SetLineStyle(7);
 
     double N_good_event = 0;
 
@@ -913,6 +965,7 @@ void INTT_xyvtx(string run_ID, int geo_mode_id, string file_event, bool full_eve
 
                 angle_correlation -> Fill(temp_sPH_inner_nocolumn_vec[inner_i].phi,temp_sPH_outer_nocolumn_vec[outer_i].phi);
                 angle_diff -> Fill(fabs(temp_sPH_inner_nocolumn_vec[inner_i].phi - temp_sPH_outer_nocolumn_vec[outer_i].phi));
+                // angle_diff -> Fill( temp_sPH_inner_nocolumn_vec[inner_i].phi - temp_sPH_outer_nocolumn_vec[outer_i].phi );
 
                 if (DCA_info_vec[0] != fabs(DCA_sign) && fabs( DCA_info_vec[0] - fabs(DCA_sign) ) > 0.1 ){
                     cout<<"different DCA : "<<DCA_info_vec[0]<<" "<<DCA_sign<<" diff : "<<DCA_info_vec[0] - fabs(DCA_sign)<<endl;}
@@ -954,6 +1007,7 @@ void INTT_xyvtx(string run_ID, int geo_mode_id, string file_event, bool full_eve
                     // DCA_distance_outer_phi -> Fill(temp_sPH_outer_nocolumn_vec[outer_i].phi, (temp_sPH_outer_nocolumn_vec[outer_i].phi > 90 && temp_sPH_outer_nocolumn_vec[outer_i].phi < 270) ? DCA_sign * -1 : DCA_sign );
                     DCA_distance_inner_phi -> Fill(temp_sPH_inner_nocolumn_vec[inner_i].phi, DCA_sign );
                     DCA_distance_outer_phi -> Fill(temp_sPH_outer_nocolumn_vec[outer_i].phi, DCA_sign );
+                    DCA_distance_1D -> Fill(DCA_sign);
 
                     // if(DCA_tag == true) break; // note : since this combination (one inner cluster, one outer cluster) satisfied the reuqiremet, no reason to ask this inner cluster try with other outer clusters
 
@@ -1267,9 +1321,36 @@ void INTT_xyvtx(string run_ID, int geo_mode_id, string file_event, bool full_eve
     c1 -> Print(Form("%s/folder_%s_advanced/z_pos_diff_angle_diff.pdf",mother_folder_directory.c_str(),file_name.c_str()));
     c1 -> Clear();
 
+    // gaus_fit -> SetParameters(angle_diff -> GetBinContent(angle_diff -> GetMaximumBin()), angle_diff -> GetBinCenter(angle_diff -> GetMaximumBin()), 1, 0);
+    double_gaus_fit -> SetParameters(angle_diff -> GetBinContent(angle_diff -> GetMaximumBin()), angle_diff -> GetBinCenter(angle_diff -> GetMaximumBin()), 1, 0, angle_diff -> GetBinContent(angle_diff -> GetMaximumBin())/2., angle_diff -> GetBinCenter(angle_diff -> GetMaximumBin()), 3);
+    // angle_diff -> Fit(gaus_fit,"NQ");
+    angle_diff -> Fit(double_gaus_fit,"N");
+    gaus_1->SetParameters(double_gaus_fit -> GetParameter(0),double_gaus_fit -> GetParameter(1), double_gaus_fit -> GetParameter(2), 0);
     angle_diff -> Draw("hist");
+    angle_diff -> SetMinimum(0);
+    gaus_1 -> Draw("lsame");
+    // gaus_fit -> Draw("lsame");
+    double_gaus_fit -> Draw("lsame");
+    draw_text -> DrawLatex(0.4, 0.87, Form("Sig. gaus mean  : %.3f mm", double_gaus_fit -> GetParameter(1)));
+    draw_text -> DrawLatex(0.4, 0.83, Form("Sig. gaus width : %.3f mm", double_gaus_fit -> GetParameter(2)));
     ltx->DrawLatex(gPad->GetLeftMargin(), 1 - gPad->GetTopMargin() + 0.01, "#it{#bf{sPHENIX INTT}} Work-in-progress");
     c1 -> Print(Form("%s/folder_%s_advanced/angle_diff.pdf",mother_folder_directory.c_str(),file_name.c_str()));
+    c1 -> Clear();
+
+    // gaus_fit -> SetParameters(DCA_distance_1D -> GetBinContent(DCA_distance_1D -> GetMaximumBin()), DCA_distance_1D -> GetBinCenter(DCA_distance_1D -> GetMaximumBin()), 1, 0);
+    double_gaus_fit -> SetParameters(DCA_distance_1D -> GetBinContent(DCA_distance_1D -> GetMaximumBin()), DCA_distance_1D -> GetBinCenter(DCA_distance_1D -> GetMaximumBin()), 1, 0, DCA_distance_1D -> GetBinContent(DCA_distance_1D -> GetMaximumBin())/2., DCA_distance_1D -> GetBinCenter(DCA_distance_1D -> GetMaximumBin()), 3);
+    // DCA_distance_1D -> Fit(gaus_fit,"NQ");
+    DCA_distance_1D -> Fit(double_gaus_fit,"N");
+    gaus_1->SetParameters(double_gaus_fit -> GetParameter(0),double_gaus_fit -> GetParameter(1), double_gaus_fit -> GetParameter(2), 0);
+    DCA_distance_1D -> SetMinimum(0);
+    DCA_distance_1D -> Draw("hist");
+    // gaus_fit -> Draw("lsame");
+    double_gaus_fit -> Draw("lsame");
+    gaus_1 -> Draw("lsame");
+    draw_text -> DrawLatex(0.2, 0.87, Form("Sig. gaus mean  : %.3f mm", double_gaus_fit -> GetParameter(1)));
+    draw_text -> DrawLatex(0.2, 0.83, Form("Sig. gaus width : %.3f mm", double_gaus_fit -> GetParameter(2)));
+    ltx->DrawLatex(gPad->GetLeftMargin(), 1 - gPad->GetTopMargin() + 0.01, "#it{#bf{sPHENIX INTT}} Work-in-progress");
+    c1 -> Print(Form("%s/folder_%s_advanced/DCA_distance_1D_X%.3fY%.3f_.pdf",mother_folder_directory.c_str(),file_name.c_str(),beam_origin.first,beam_origin.second));
     c1 -> Clear();
 
     

@@ -15,10 +15,27 @@ double gaus_func(double *x, double *par)
     return par[0] * TMath::Gaus(x[0],par[1],par[2]) + par[3];
 }
 
+double double_gaus_func(double *x, double *par)
+{
+    // note : par[0] : size of gaus1
+    // note : par[1] : mean of gaus1
+    // note : par[2] : width of gaus1
+
+    // note : par[3] : size of gaus2
+    // note : par[4] : mean of gaus2
+    // note : par[5] : width of gaus2
+
+    // note : par[6] : systematic ffset
+    double gaus1 = par[0] * TMath::Gaus(x[0],par[1],par[2]); 
+    double gaus2 = par[3] * TMath::Gaus(x[0],par[4],par[5]); 
+
+    return gaus1 + gaus2 + par[6];
+}
+
 class INTTZvtx
 {
     public : 
-        INTTZvtx(string out_folder_directory, pair<double,double> beam_origin, int geo_mode_id, double phi_diff_cut = 0.11, double DCA_cut = 0.5, int N_clu_cutl = 20, int N_clu_cut = 10000, int zvtx_cal_require = 15, bool draw_event_display = true, double peek = 3.32405);
+        INTTZvtx(string run_type, string out_folder_directory, pair<double,double> beam_origin, int geo_mode_id, double phi_diff_cut = 0.11, pair<double, double> DCA_cut = {-1,1}, int N_clu_cutl = 20, int N_clu_cut = 10000, int zvtx_cal_require = 15, bool draw_event_display = true, double peek = 3.32405);
         void ProcessEvt(int event_i, vector<clu_info> temp_sPH_inner_nocolumn_vec, vector<clu_info> temp_sPH_outer_nocolumn_vec, vector<vector<double>> temp_sPH_nocolumn_vec, vector<vector<double>> temp_sPH_nocolumn_rz_vec, int NvtxMC, double TrigZvtxMC, bool PhiCheckTag, Long64_t bco_full);
         void ClearEvt();
         void PrintPlots();
@@ -46,6 +63,8 @@ class INTTZvtx
         TH1F * evt_possible_z;
         TH2F * gaus_width_Nclu;
         TH2F * gaus_rchi2_Nclu;
+        TH2F * final_fit_width;
+        TH2F * N_track_candidate_Nclu; // note : Number of tracklet candidate vs number of clusters
         TH1F * temp_event_zvtx;
 
         InttConversion * ch_pos_DB;
@@ -53,25 +72,29 @@ class INTTZvtx
         TLatex * draw_text;
         TLine  * ladder_line;
         TLine  * eff_sig_range_line;
+        TLine  * final_fit_range_line;
         TLine  * track_line;
         TLine  * coord_line;
         TFile  * out_file;
         TTree  * tree_out;
         TF1    * gaus_fit;
+        TF1    * double_gaus_fit;
         TF1    * zvtx_finder;
 
-        vector<string> conversion_mode_BD = {"ideal", "survey_1_XYAlpha_Peek_3.32mm", "full_survey_3.32"};
-        double Integrate_portion_final = 0.68;
-        double Integrate_portion = 0.68; // todo : Width selection per event (the range finder for fitting)
+        vector<string> conversion_mode_BD = {"ideal", "survey_1_XYAlpha_Peek", "full_survey_3.32"};
+        double Integrate_portion_final = 0.68; 
+        double Integrate_portion = 0.4; // todo : Width selection per event (the range finder for fitting)
         double zvtx_hist_l = -500;
         double zvtx_hist_r = 500;
         int print_rate = 40; // todo : the print rate is here
+        double high_multi_line = 1000; // todo : the cut to classify the high-low multiplicity, which are fit with different method
 
         pair<double,double> beam_origin;
+        pair<double, double> DCA_cut;  // note : if (< DCA_cut)          -> pass      unit mm
         string out_folder_directory;
+        string run_type;
         double peek;
         double phi_diff_cut;          // note : if (< phi_diff_cut)      -> pass      unit degree
-        double DCA_cut;               // note : if (< DCA_cut)           -> pass      unit mm
         bool draw_event_display;
         int zvtx_cal_require;         // note : if (> zvtx_cal_require)  -> pass
         int geo_mode_id;
@@ -99,7 +122,12 @@ class INTTZvtx
         vector<float> temp_event_zvtx_info;
         vector<float> avg_event_zvtx_vec;
         vector<float> Z_resolution_vec;
+        string plot_text;
+        double final_selection_widthD;
+        double final_selection_widthU; 
         int good_comb_id = 0;
+        int fit_winner_id;
+
 
         TGraphErrors * z_range_gr;
         TGraphErrors * z_range_gr_draw;
@@ -119,16 +147,18 @@ class INTTZvtx
         double Get_extrapolation(double given_y, double p0x, double p0y, double p1x, double p1y);
         void temp_bkg(TPad * c1, double peek, pair<double,double> beam_origin, InttConversion * ch_pos_DB);
         void Characterize_Pad(TPad *pad, float left = 0.15, float right = 0.1, float top = 0.1, float bottom = 0.12, bool set_logY = false, int setgrid_bool = 0);
+        int min_width_ID(vector<double> input_width_vec);
         
 };
 
 
 
-INTTZvtx::INTTZvtx(string out_folder_directory, pair<double,double> beam_origin, int geo_mode_id, double phi_diff_cut, double DCA_cut, int N_clu_cutl, int N_clu_cut, int zvtx_cal_require, bool draw_event_display, double peek)
-:out_folder_directory(out_folder_directory), beam_origin(beam_origin), geo_mode_id(geo_mode_id), peek(peek), N_clu_cut(N_clu_cut), N_clu_cutl(N_clu_cutl), phi_diff_cut(phi_diff_cut), DCA_cut(DCA_cut), zvtx_cal_require(zvtx_cal_require), draw_event_display(draw_event_display)
+INTTZvtx::INTTZvtx(string run_type, string out_folder_directory, pair<double,double> beam_origin, int geo_mode_id, double phi_diff_cut, pair<double,double> DCA_cut, int N_clu_cutl, int N_clu_cut, int zvtx_cal_require, bool draw_event_display, double peek)
+:run_type(run_type), out_folder_directory(out_folder_directory), beam_origin(beam_origin), geo_mode_id(geo_mode_id), peek(peek), N_clu_cut(N_clu_cut), N_clu_cutl(N_clu_cutl), phi_diff_cut(phi_diff_cut), DCA_cut(DCA_cut), zvtx_cal_require(zvtx_cal_require), draw_event_display(draw_event_display)
 {
     SetsPhenixStyle();
     system(Form("mkdir %s",out_folder_directory.c_str()));
+    gErrorIgnoreLevel = kWarning; // note : To not print the "print plot info."
 
     temp_event_zvtx_vec.clear();
     temp_event_zvtx_info.clear();
@@ -143,6 +173,8 @@ INTTZvtx::INTTZvtx(string out_folder_directory, pair<double,double> beam_origin,
     good_comb_id = 0;
 
     Init();
+
+    plot_text = (run_type == "MC") ? "Simulation" : "Work-in-progress";
     
     if (draw_event_display) {c2 -> Print(Form("%s/temp_event_display.pdf(",out_folder_directory.c_str()));}
 }
@@ -249,6 +281,16 @@ void INTTZvtx::InitHist()
     gaus_rchi2_Nclu -> GetYaxis() -> SetTitle("Gaus fit #chi2^{2}/NDF");
     gaus_rchi2_Nclu -> GetXaxis() -> SetNdivisions(505);
 
+    final_fit_width = new TH2F("","final_fit_width",200,0,10000,200,0,100);
+    final_fit_width -> GetXaxis() -> SetTitle(" # of clusters ");
+    final_fit_width -> GetYaxis() -> SetTitle("Fit width [mm]");
+    final_fit_width -> GetXaxis() -> SetNdivisions(505);
+
+    N_track_candidate_Nclu = new TH2F("","N_track_candidate_Nclu",200,0,10000,200,0,13000);
+    N_track_candidate_Nclu -> GetXaxis() -> SetTitle(" # of clusters ");
+    N_track_candidate_Nclu -> GetYaxis() -> SetTitle("N tracklet candidates");
+    N_track_candidate_Nclu -> GetXaxis() -> SetNdivisions(505);
+
     temp_event_zvtx = new TH1F("","Z vertex dist",125,zvtx_hist_l,zvtx_hist_r);
     temp_event_zvtx -> GetXaxis() -> SetTitle("Z vertex position (mm)");
     temp_event_zvtx -> GetYaxis() -> SetTitle("Entry");
@@ -303,12 +345,22 @@ void INTTZvtx::InitRest()
     gaus_fit -> SetLineWidth(1);
     gaus_fit -> SetNpx(1000);
 
+    double_gaus_fit = new TF1("double_gaus_fit",double_gaus_func,-600,600,7);
+    double_gaus_fit -> SetLineColor(3);
+    double_gaus_fit -> SetLineWidth(1);
+    double_gaus_fit -> SetNpx(1000);
+
     eff_sig_range_line = new TLine();
     eff_sig_range_line -> SetLineWidth(3);
     eff_sig_range_line -> SetLineColor(TColor::GetColor("#A08144"));
     eff_sig_range_line -> SetLineStyle(2);
 
-    zvtx_finder = new TF1("zvtx_finder","pol0",-1,6000); 
+    final_fit_range_line = new TLine();
+    final_fit_range_line -> SetLineWidth(1);
+    final_fit_range_line -> SetLineColor(TColor::GetColor("#44a04d"));
+    // final_fit_range_line -> SetLineStyle(2);
+
+    zvtx_finder = new TF1("zvtx_finder","pol0",-1,20000); 
     zvtx_finder -> SetLineColor(2);
     zvtx_finder -> SetLineWidth(1);
 
@@ -362,7 +414,7 @@ void INTTZvtx::ProcessEvt(
 
     if (( temp_sPH_inner_nocolumn_vec.size() + temp_sPH_outer_nocolumn_vec.size() ) < zvtx_cal_require) { tree_out -> Fill(); return; }   
     
-    if (NvtxMC != 1) {cout<<"Nvtx more than one, event : "<<event_i<<" Nvtx : "<<NvtxMC<<endl; tree_out -> Fill(); return;}
+    if (run_type == "MC" && NvtxMC != 1) {cout<<"Nvtx more than one, event : "<<event_i<<" Nvtx : "<<NvtxMC<<endl; tree_out -> Fill(); return;}
     if (PhiCheckTag == false) {cout<<"Not full phi has hits, event : "<<event_i<<" Nvtx : "<<NvtxMC<<endl; tree_out -> Fill(); return;}
     
     if (temp_sPH_inner_nocolumn_vec.size() < 10 || temp_sPH_outer_nocolumn_vec.size() < 10 || (temp_sPH_inner_nocolumn_vec.size() + temp_sPH_outer_nocolumn_vec.size()) > N_clu_cut || (temp_sPH_inner_nocolumn_vec.size() + temp_sPH_outer_nocolumn_vec.size()) < N_clu_cutl)
@@ -400,7 +452,16 @@ void INTTZvtx::ProcessEvt(
                     beam_origin.first, beam_origin.second
                 );
 
-                if (DCA_info_vec[0] < DCA_cut){
+                double DCA_sign = calculateAngleBetweenVectors(
+                    temp_sPH_outer_nocolumn_vec[outer_i].x, temp_sPH_outer_nocolumn_vec[outer_i].y,
+                    temp_sPH_inner_nocolumn_vec[inner_i].x, temp_sPH_inner_nocolumn_vec[inner_i].y,
+                    beam_origin.first, beam_origin.second
+                );
+
+                if (DCA_info_vec[0] != fabs(DCA_sign) && fabs( DCA_info_vec[0] - fabs(DCA_sign) ) > 0.1 ){
+                    cout<<"different DCA : "<<DCA_info_vec[0]<<" "<<DCA_sign<<" diff : "<<DCA_info_vec[0] - fabs(DCA_sign)<<endl;}
+
+                if (DCA_cut.first < DCA_sign && DCA_sign < DCA_cut.second){
 
                     // used_outer_check[outer_i] = 1; //note : this outer cluster was already used!
 
@@ -431,23 +492,49 @@ void INTTZvtx::ProcessEvt(
         } // note : end of outer loop
     } // note : end of inner loop
     
+    N_track_candidate_Nclu -> Fill(temp_sPH_inner_nocolumn_vec.size() + temp_sPH_outer_nocolumn_vec.size(), N_comb.size());
+
     if (N_comb.size() > zvtx_cal_require)
     {   
-        double final_selection_widthU, final_selection_widthD;
-
         gaus_fit -> SetParameters(evt_possible_z -> GetBinContent( evt_possible_z -> GetMaximumBin() ), evt_possible_z -> GetBinCenter( evt_possible_z -> GetMaximumBin() ), 40, 0);
-        gaus_fit -> SetParLimits(3,0,10000);
-        evt_possible_z -> Fit(gaus_fit, "NQ");
+        gaus_fit -> SetParLimits(0,0,100000);  // note : size 
+        gaus_fit -> SetParLimits(2,5,10000);   // note : Width
+        gaus_fit -> SetParLimits(3,0,10000);   // note : offset
+        // todo : try to use single gaus to fit the distribution, and try to only fit the peak region (peak - 100 mm + peak + 100 mm)
+        evt_possible_z -> Fit(gaus_fit, "NQ", "", evt_possible_z -> GetBinCenter( evt_possible_z -> GetMaximumBin() ) - 100, evt_possible_z -> GetBinCenter( evt_possible_z -> GetMaximumBin() ) + 100);
 
-        if (temp_sPH_inner_nocolumn_vec.size() + temp_sPH_outer_nocolumn_vec.size() < 1000) {
+        if (temp_sPH_inner_nocolumn_vec.size() + temp_sPH_outer_nocolumn_vec.size() < high_multi_line) {
             temp_event_zvtx_info = sigmaEff_avg(z_mid,Integrate_portion);
             final_selection_widthU = ( fabs(temp_event_zvtx_info[2] - temp_event_zvtx_info[1]) / 2. < fabs(gaus_fit -> GetParameter(2)) ) ? temp_event_zvtx_info[2] : (gaus_fit -> GetParameter(1) + fabs(gaus_fit -> GetParameter(2)));
             final_selection_widthD = ( fabs(temp_event_zvtx_info[2] - temp_event_zvtx_info[1]) / 2. < fabs(gaus_fit -> GetParameter(2)) ) ? temp_event_zvtx_info[1] : (gaus_fit -> GetParameter(1) - fabs(gaus_fit -> GetParameter(2)));
         }
-        else {
+        else { // note : N clusters >= 1000
+
+            double_gaus_fit -> SetParameters(evt_possible_z -> GetBinContent( evt_possible_z -> GetMaximumBin() ), evt_possible_z -> GetBinCenter( evt_possible_z -> GetMaximumBin() ), 40, evt_possible_z -> GetBinContent( evt_possible_z -> GetMaximumBin() ) * 0.5, evt_possible_z -> GetBinCenter( evt_possible_z -> GetMaximumBin() ), 100, 0);
+            double_gaus_fit -> SetParLimits(0,0,100000); // note : G1 size
+            double_gaus_fit -> SetParLimits(2,5,100000); // note : G1 width
+            double_gaus_fit -> SetParLimits(3,0,100000); // note : G2 size
+            double_gaus_fit -> SetParLimits(5,5,100000); // note : G2 width
+            evt_possible_z -> Fit(double_gaus_fit, "NQ");
+
             temp_event_zvtx_info = {0,-1000,-999.99};
-            final_selection_widthU = (gaus_fit -> GetParameter(1) + fabs(gaus_fit -> GetParameter(2)));
-            final_selection_widthD = (gaus_fit -> GetParameter(1) - fabs(gaus_fit -> GetParameter(2)));
+
+            // note : single gaus fit (only peak region), Di_gaus first gau, Di_gaus second gau
+            fit_winner_id = min_width_ID({fabs(gaus_fit -> GetParameter(2)), fabs(double_gaus_fit -> GetParameter(2)), fabs(double_gaus_fit -> GetParameter(5))});
+            
+            if (fit_winner_id == 0){
+                final_selection_widthU = (gaus_fit -> GetParameter(1) + fabs(gaus_fit -> GetParameter(2)));
+                final_selection_widthD = (gaus_fit -> GetParameter(1) - fabs(gaus_fit -> GetParameter(2)));
+            }
+            else if (fit_winner_id == 1){
+                final_selection_widthU = (double_gaus_fit -> GetParameter(1) + fabs(double_gaus_fit -> GetParameter(2)));
+                final_selection_widthD = (double_gaus_fit -> GetParameter(1) - fabs(double_gaus_fit -> GetParameter(2)));
+            }
+            else if (fit_winner_id == 2){
+                final_selection_widthU = (double_gaus_fit -> GetParameter(4) + fabs(double_gaus_fit -> GetParameter(5)));
+                final_selection_widthD = (double_gaus_fit -> GetParameter(4) - fabs(double_gaus_fit -> GetParameter(5)));
+            }
+            
         }
 
 
@@ -463,6 +550,8 @@ void INTTZvtx::ProcessEvt(
         z_range_gr = new TGraphErrors(eff_N_comb.size(),&eff_N_comb[0],&eff_z_mid[0],&eff_N_comb_e[0],&eff_z_range[0]);
         z_range_gr -> Fit(zvtx_finder,"NQ","",0,N_comb[N_comb.size() - 1]); // note : not fit all the combination
 
+        final_fit_width -> Fill(temp_sPH_inner_nocolumn_vec.size() + temp_sPH_outer_nocolumn_vec.size(), fabs(final_selection_widthU - final_selection_widthD));
+
         gaus_width_Nclu -> Fill(temp_sPH_inner_nocolumn_vec.size() + temp_sPH_outer_nocolumn_vec.size(), fabs(gaus_fit -> GetParameter(2)));
         gaus_rchi2_Nclu -> Fill(temp_sPH_inner_nocolumn_vec.size() + temp_sPH_outer_nocolumn_vec.size(), gaus_fit -> GetChisquare() / double(gaus_fit -> GetNDF()));
         
@@ -477,11 +566,15 @@ void INTTZvtx::ProcessEvt(
             zvtx_evt_nclu_corre -> Fill(temp_sPH_inner_nocolumn_vec.size() + temp_sPH_outer_nocolumn_vec.size(), zvtx_finder -> GetParameter(0));
             avg_event_zvtx -> Fill(zvtx_finder -> GetParameter(0));
             avg_event_zvtx_vec.push_back(zvtx_finder -> GetParameter(0));
-            Z_resolution -> Fill( zvtx_finder -> GetParameter(0) - (TrigZvtxMC * 10.) );
-            Z_resolution_vec.push_back( zvtx_finder -> GetParameter(0) - (TrigZvtxMC * 10.) );
-            Z_resolution_Nclu -> Fill( temp_sPH_inner_nocolumn_vec.size() + temp_sPH_outer_nocolumn_vec.size() , zvtx_finder -> GetParameter(0) - (TrigZvtxMC * 10.) );
-            Z_resolution_pos -> Fill(TrigZvtxMC * 10., zvtx_finder -> GetParameter(0) - (TrigZvtxMC * 10.));
-            if (temp_sPH_inner_nocolumn_vec.size() + temp_sPH_outer_nocolumn_vec.size() > 1000) {Z_resolution_pos_cut -> Fill(TrigZvtxMC * 10., zvtx_finder -> GetParameter(0) - (TrigZvtxMC * 10.));}
+            if (run_type == "MC")
+            {
+                Z_resolution -> Fill( zvtx_finder -> GetParameter(0) - (TrigZvtxMC * 10.) );
+                Z_resolution_vec.push_back( zvtx_finder -> GetParameter(0) - (TrigZvtxMC * 10.) );
+                Z_resolution_Nclu -> Fill( temp_sPH_inner_nocolumn_vec.size() + temp_sPH_outer_nocolumn_vec.size() , zvtx_finder -> GetParameter(0) - (TrigZvtxMC * 10.) );
+                Z_resolution_pos -> Fill(TrigZvtxMC * 10., zvtx_finder -> GetParameter(0) - (TrigZvtxMC * 10.));
+                if (temp_sPH_inner_nocolumn_vec.size() + temp_sPH_outer_nocolumn_vec.size() > high_multi_line) {Z_resolution_pos_cut -> Fill(TrigZvtxMC * 10., zvtx_finder -> GetParameter(0) - (TrigZvtxMC * 10.));}
+            }
+
         }
         
         out_eID = event_i;
@@ -492,7 +585,7 @@ void INTTZvtx::ProcessEvt(
         out_rangeL = temp_event_zvtx_info[1];
         out_rangeR = temp_event_zvtx_info[2];
         out_N_good = eff_N_comb.size();
-        bco_full_out = -1;
+        bco_full_out = bco_full;
         MC_true_zvtx = TrigZvtxMC * 10.;
         out_width_density = eff_N_comb.size() / fabs(temp_event_zvtx_info[2] - temp_event_zvtx_info[1]);
         tree_out -> Fill();
@@ -522,6 +615,8 @@ void INTTZvtx::ProcessEvt(
         temp_event_rz -> SetMarkerColor(2);
         temp_event_rz -> SetMarkerSize(1);
 
+        // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
         pad_xy -> cd();
         temp_bkg(pad_xy, peek, beam_origin, ch_pos_DB);
         temp_event_xy -> Draw("p same");
@@ -530,7 +625,9 @@ void INTTZvtx::ProcessEvt(
         }
         track_line -> Draw("l same");
         draw_text -> DrawLatex(0.2, 0.85, Form("eID : %i, inner Ncluster : %zu, outer Ncluster : %zu",event_i,temp_sPH_inner_nocolumn_vec.size(),temp_sPH_outer_nocolumn_vec.size()));
-    
+
+        // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
         pad_rz -> cd();
         temp_event_rz -> Draw("ap");    
         // eff_sig_range_line -> DrawLine(temp_event_zvtx_info[0],-150,temp_event_zvtx_info[0],150);
@@ -542,6 +639,7 @@ void INTTZvtx::ProcessEvt(
         draw_text -> DrawLatex(0.2, 0.85, Form("Negative radius : Clu_{outer} > 180^{0}"));
         // draw_text -> DrawLatex(0.2, 0.81, Form("EffSig avg : %.2f mm",temp_event_zvtx_info[0]));
 
+        // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
         // cout<<"test tag 2-5"<<endl;    
         pad_z -> cd();
         z_range_gr_draw = new TGraphErrors(N_comb.size(),&N_comb[0],&z_mid[0],&N_comb_e[0],&z_range[0]);
@@ -549,22 +647,52 @@ void INTTZvtx::ProcessEvt(
         z_range_gr_draw -> SetMarkerStyle(20);
         z_range_gr_draw -> Draw("ap");
         
-        draw_text -> DrawLatex(0.2, 0.82, Form("Event Zvtx %.2f mm, error : #pm%.2f", zvtx_finder -> GetParameter(0), zvtx_finder -> GetParError(0)));
-        draw_text -> DrawLatex(0.2, 0.78, Form("Width density : %.2f", ( eff_N_comb.size() / fabs(temp_event_zvtx_info[2] - temp_event_zvtx_info[1]) )));
-        draw_text -> DrawLatex(0.2, 0.74, Form("Width : %.2f to %.2f mm", temp_event_zvtx_info[2] , temp_event_zvtx_info[1]));
+        draw_text -> DrawLatex(0.2, 0.82, Form("#color[2]{Event Zvtx %.2f mm, error : #pm%.2f}", zvtx_finder -> GetParameter(0), zvtx_finder -> GetParError(0)));
+        
+        if (temp_sPH_inner_nocolumn_vec.size() + temp_sPH_outer_nocolumn_vec.size() < high_multi_line) {
+            eff_sig_range_line -> DrawLine(z_range_gr_draw->GetXaxis()->GetXmin(),temp_event_zvtx_info[1],z_range_gr_draw->GetXaxis()->GetXmax(),temp_event_zvtx_info[1]);
+            eff_sig_range_line -> DrawLine(z_range_gr_draw->GetXaxis()->GetXmin(),temp_event_zvtx_info[2],z_range_gr_draw->GetXaxis()->GetXmax(),temp_event_zvtx_info[2]);
+            draw_text -> DrawLatex(0.2, 0.78, Form("#color[2]{Width density : %.2f}", ( eff_N_comb.size() / fabs(temp_event_zvtx_info[2] - temp_event_zvtx_info[1]) )));
+            draw_text -> DrawLatex(0.2, 0.74, Form("#color[2]{Width (40%%) : %.2f to %.2f mm #rightarrow %.2f mm}", temp_event_zvtx_info[2] , temp_event_zvtx_info[1], fabs(temp_event_zvtx_info[2] - temp_event_zvtx_info[1])/2.));
+        }
 
-        eff_sig_range_line -> DrawLine(z_range_gr_draw->GetXaxis()->GetXmin(),temp_event_zvtx_info[1],z_range_gr_draw->GetXaxis()->GetXmax(),temp_event_zvtx_info[1]);
-        eff_sig_range_line -> DrawLine(z_range_gr_draw->GetXaxis()->GetXmin(),temp_event_zvtx_info[2],z_range_gr_draw->GetXaxis()->GetXmax(),temp_event_zvtx_info[2]);
-        z_range_gr_draw -> Draw("p same");
+        final_fit_range_line -> DrawLine(z_range_gr_draw->GetXaxis()->GetXmin(),final_selection_widthU,z_range_gr_draw->GetXaxis()->GetXmax(),final_selection_widthU);
+        final_fit_range_line -> DrawLine(z_range_gr_draw->GetXaxis()->GetXmin(),final_selection_widthD,z_range_gr_draw->GetXaxis()->GetXmax(),final_selection_widthD);
+        
+        // z_range_gr_draw -> Draw("p same");
         zvtx_finder -> Draw("lsame");
 
-
+        // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
         pad_z_hist -> cd();
         evt_possible_z -> Draw("hist");
-        gaus_fit -> Draw("lsame");
-        draw_text -> DrawLatex(0.2, 0.82, Form("Gaus mean %.2f mm", gaus_fit -> GetParameter(1)));
-        draw_text -> DrawLatex(0.2, 0.78, Form("Width : %.2f mm", fabs(gaus_fit -> GetParameter(2))));
-        draw_text -> DrawLatex(0.2, 0.74, Form("Reduced #chi2 : %.3f", gaus_fit -> GetChisquare() / double(gaus_fit -> GetNDF())));
+        if (temp_sPH_inner_nocolumn_vec.size() + temp_sPH_outer_nocolumn_vec.size() < high_multi_line) {
+            gaus_fit -> Draw("lsame");
+            
+            draw_text -> DrawLatex(0.2, 0.82, Form("Gaus mean %.2f mm", gaus_fit -> GetParameter(1)));
+            draw_text -> DrawLatex(0.2, 0.78, Form("Width : %.2f mm", fabs(gaus_fit -> GetParameter(2))));
+            draw_text -> DrawLatex(0.2, 0.74, Form("Reduced #chi2 : %.3f", gaus_fit -> GetChisquare() / double(gaus_fit -> GetNDF())));
+        }
+        else {
+            double_gaus_fit -> Draw("lsame");
+            
+            if (fit_winner_id == 0){
+                gaus_fit -> Draw("lsame");
+                draw_text -> DrawLatex(0.2, 0.82, Form("Gaus mean %.2f mm", gaus_fit -> GetParameter(1)));
+                draw_text -> DrawLatex(0.2, 0.78, Form("Width : %.2f mm", fabs(gaus_fit -> GetParameter(2))));
+                draw_text -> DrawLatex(0.2, 0.74, Form("Reduced #chi2 : %.3f", gaus_fit -> GetChisquare() / double(gaus_fit -> GetNDF())));
+            }
+            else if (fit_winner_id == 1){
+                draw_text -> DrawLatex(0.2, 0.82, Form("Gaus mean %.2f mm", double_gaus_fit -> GetParameter(1)));
+                draw_text -> DrawLatex(0.2, 0.78, Form("Width : %.2f mm", fabs(double_gaus_fit -> GetParameter(2))));
+                // draw_text -> DrawLatex(0.2, 0.74, Form("Reduced #chi2 : %.3f", gaus_fit -> GetChisquare() / double(gaus_fit -> GetNDF())));
+            }
+            else if (fit_winner_id == 2){
+                draw_text -> DrawLatex(0.2, 0.82, Form("Gaus mean %.2f mm", double_gaus_fit -> GetParameter(4)));
+                draw_text -> DrawLatex(0.2, 0.78, Form("Width : %.2f mm", fabs(double_gaus_fit -> GetParameter(5))));
+            }
+        }
+        
+        // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
         // temp_event_zvtx -> Draw("hist");
         // // zvtx_fitting -> Draw("lsame");
@@ -637,7 +765,7 @@ void INTTZvtx::PrintPlots()
     avg_event_zvtx -> SetMinimum( 0 );  avg_event_zvtx -> SetMaximum( avg_event_zvtx->GetBinContent(avg_event_zvtx->GetMaximumBin()) * 1.5 );
     avg_event_zvtx -> Draw("hist");
 
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, "#it{#bf{sPHENIX INTT}} Simulation");
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
     // ltx->DrawLatex(0.54, 0.86, Form("Run %s",run_ID.c_str()));
     // ltx->DrawLatex(0.54, 0.86, "Au+Au #sqrt{s_{NN}} = 200 GeV");
 
@@ -652,92 +780,115 @@ void INTTZvtx::PrintPlots()
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     width_density -> Draw("hist"); 
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, "#it{#bf{sPHENIX INTT}} Simulation");
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/width_density.pdf",out_folder_directory.c_str()));
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     zvtx_evt_width -> Draw("hist"); 
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, "#it{#bf{sPHENIX INTT}} Simulation");
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/zvtx_evt_width.pdf",out_folder_directory.c_str()));
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+    if (run_type == "MC")
+    {
+        vector<float> Z_resolution_vec_info = sigmaEff_avg(Z_resolution_vec,Integrate_portion_final);
 
-    vector<float> Z_resolution_vec_info = sigmaEff_avg(Z_resolution_vec,Integrate_portion_final);
+        gaus_fit -> SetParameters(Z_resolution -> GetBinContent( Z_resolution -> GetMaximumBin() ), Z_resolution -> GetBinCenter( Z_resolution -> GetMaximumBin() ), 3, 0);
+        gaus_fit -> SetParLimits(3,0,10);
+        Z_resolution -> Fit(gaus_fit, "NQ");
 
-    gaus_fit -> SetParameters(Z_resolution -> GetBinContent( Z_resolution -> GetMaximumBin() ), Z_resolution -> GetBinCenter( Z_resolution -> GetMaximumBin() ), 3, 0);
-    gaus_fit -> SetParLimits(3,0,10);
-    Z_resolution -> Fit(gaus_fit, "NQ");
+        Z_resolution -> Draw("hist"); 
+        gaus_fit     -> Draw("lsame");
+        eff_sig_range_line -> DrawLine(Z_resolution_vec_info[1],0,Z_resolution_vec_info[1],Z_resolution -> GetMaximum());
+        eff_sig_range_line -> DrawLine(Z_resolution_vec_info[2],0,Z_resolution_vec_info[2],Z_resolution -> GetMaximum());    
+        draw_text -> DrawLatex(0.21, 0.87, Form("EffSig min : %.2f mm",Z_resolution_vec_info[1]));
+        draw_text -> DrawLatex(0.21, 0.83, Form("EffSig max : %.2f mm",Z_resolution_vec_info[2]));
+        draw_text -> DrawLatex(0.21, 0.79, Form("EffSig avg : %.2f mm",Z_resolution_vec_info[0]));
+        draw_text -> DrawLatex(0.21, 0.71, Form("Gaus mean  : %.2f mm",gaus_fit -> GetParameter(1)));
+        draw_text -> DrawLatex(0.21, 0.67, Form("Gaus width : %.2f mm",fabs(gaus_fit -> GetParameter(2))));
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+        c1 -> Print(Form("%s/Z_resolution.pdf",out_folder_directory.c_str()));
+        c1 -> Clear();
+    }
 
-    Z_resolution -> Draw("hist"); 
-    gaus_fit     -> Draw("lsame");
-    eff_sig_range_line -> DrawLine(Z_resolution_vec_info[1],0,Z_resolution_vec_info[1],Z_resolution -> GetMaximum());
-    eff_sig_range_line -> DrawLine(Z_resolution_vec_info[2],0,Z_resolution_vec_info[2],Z_resolution -> GetMaximum());    
-    draw_text -> DrawLatex(0.21, 0.87, Form("EffSig min : %.2f mm",Z_resolution_vec_info[1]));
-    draw_text -> DrawLatex(0.21, 0.83, Form("EffSig max : %.2f mm",Z_resolution_vec_info[2]));
-    draw_text -> DrawLatex(0.21, 0.79, Form("EffSig avg : %.2f mm",Z_resolution_vec_info[0]));
-    draw_text -> DrawLatex(0.21, 0.71, Form("Gaus mean  : %.2f mm",gaus_fit -> GetParameter(1)));
-    draw_text -> DrawLatex(0.21, 0.67, Form("Gaus width : %.2f mm",fabs(gaus_fit -> GetParameter(2))));
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, "#it{#bf{sPHENIX INTT}} Simulation");
-    c1 -> Print(Form("%s/Z_resolution.pdf",out_folder_directory.c_str()));
-    c1 -> Clear();
-
-    // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-    Z_resolution_Nclu -> Draw("colz0"); 
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, "#it{#bf{sPHENIX INTT}} Simulation");
-    c1 -> Print(Form("%s/Z_resolution_Nclu.pdf",out_folder_directory.c_str()));
-    c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-    Z_resolution_pos -> Draw("colz0"); 
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, "#it{#bf{sPHENIX INTT}} Simulation");
-    c1 -> Print(Form("%s/Z_resolution_pos.pdf",out_folder_directory.c_str()));
-    c1 -> Clear();
-
+    if (run_type == "MC")
+    {    
+        Z_resolution_Nclu -> Draw("colz0"); 
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+        c1 -> Print(Form("%s/Z_resolution_Nclu.pdf",out_folder_directory.c_str()));
+        c1 -> Clear();
+    }
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-    Z_resolution_pos_cut -> Draw("colz0"); 
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, "#it{#bf{sPHENIX INTT}} Simulation");
-    c1 -> Print(Form("%s/Z_resolution_pos_cut.pdf",out_folder_directory.c_str()));
-    c1 -> Clear();
+    if (run_type == "MC")
+    {
+        Z_resolution_pos -> Draw("colz0"); 
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+        c1 -> Print(Form("%s/Z_resolution_pos.pdf",out_folder_directory.c_str()));
+        c1 -> Clear();
+    }
+    // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+    if (run_type == "MC")
+    {
+        Z_resolution_pos_cut -> Draw("colz0"); 
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+        c1 -> Print(Form("%s/Z_resolution_pos_cut.pdf",out_folder_directory.c_str()));
+        c1 -> Clear();
+    }
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     zvtx_evt_fitError_corre -> Draw("colz0"); 
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, "#it{#bf{sPHENIX INTT}} Simulation");
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/zvtx_evt_fitError_corre.pdf",out_folder_directory.c_str()));
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     zvtx_evt_nclu_corre -> Draw("colz0"); 
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, "#it{#bf{sPHENIX INTT}} Simulation");
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/zvtx_evt_nclu_corre.pdf",out_folder_directory.c_str()));
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     zvtx_evt_width_corre -> Draw("colz0"); 
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, "#it{#bf{sPHENIX INTT}} Simulation");
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/zvtx_evt_width_corre.pdf",out_folder_directory.c_str()));
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     gaus_width_Nclu -> Draw("colz0"); 
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, "#it{#bf{sPHENIX INTT}} Simulation");
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/gaus_width_Nclu.pdf",out_folder_directory.c_str()));
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     gaus_rchi2_Nclu -> Draw("colz0"); 
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, "#it{#bf{sPHENIX INTT}} Simulation");
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/gaus_rchi2_Nclu.pdf",out_folder_directory.c_str()));
+    c1 -> Clear();
+
+    // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+    final_fit_width -> Draw("colz0"); 
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    c1 -> Print(Form("%s/final_fit_width.pdf",out_folder_directory.c_str()));
+    c1 -> Clear();
+
+    // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+    N_track_candidate_Nclu -> Draw("colz0"); 
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    c1 -> Print(Form("%s/N_track_candidate_Nclu.pdf",out_folder_directory.c_str()));
     c1 -> Clear();
 }
 
@@ -787,6 +938,41 @@ std::vector<double> INTTZvtx::calculateDistanceAndClosestPoint(double x1, double
     
 }
 
+// note : Function to calculate the angle between two vectors in degrees using the cross product
+double INTTZvtx::calculateAngleBetweenVectors(double x1, double y1, double x2, double y2, double targetX, double targetY) {
+    // Calculate the vectors vector_1 (point_1 to point_2) and vector_2 (point_1 to target)
+    double vector1X = x2 - x1;
+    double vector1Y = y2 - y1;
+
+    double vector2X = targetX - x1;
+    double vector2Y = targetY - y1;
+
+    // Calculate the cross product of vector_1 and vector_2 (z-component)
+    double crossProduct = vector1X * vector2Y - vector1Y * vector2X;
+    
+    // cout<<" crossProduct : "<<crossProduct<<endl;
+
+    // Calculate the magnitudes of vector_1 and vector_2
+    double magnitude1 = std::sqrt(vector1X * vector1X + vector1Y * vector1Y);
+    double magnitude2 = std::sqrt(vector2X * vector2X + vector2Y * vector2Y);
+
+    // Calculate the angle in radians using the inverse tangent of the cross product and dot product
+    double dotProduct = vector1X * vector2X + vector1Y * vector2Y;
+
+    double angleInRadians = std::atan2(std::abs(crossProduct), dotProduct);
+    // Convert the angle from radians to degrees and return it
+    double angleInDegrees = angleInRadians * 180.0 / M_PI;
+    
+    double angleInRadians_new = std::asin( crossProduct/(magnitude1*magnitude2) );
+    double angleInDegrees_new = angleInRadians_new * 180.0 / M_PI;
+    
+    // cout<<"angle : "<<angleInDegrees_new<<endl;
+
+    double DCA_distance = sin(angleInRadians_new) * magnitude2;
+
+    return DCA_distance;
+}
+
 void INTTZvtx::temp_bkg(TPad * c1, double peek, pair<double,double> beam_origin, InttConversion * ch_pos_DB)
 {
     c1 -> cd();
@@ -830,42 +1016,6 @@ void INTTZvtx::temp_bkg(TPad * c1, double peek, pair<double,double> beam_origin,
 
 }
 
-// note : Function to calculate the angle between two vectors in degrees using the cross product
-double INTTZvtx::calculateAngleBetweenVectors(double x1, double y1, double x2, double y2, double targetX, double targetY) 
-{
-    // Calculate the vectors vector_1 (point_1 to point_2) and vector_2 (point_1 to target)
-    double vector1X = x2 - x1;
-    double vector1Y = y2 - y1;
-
-    double vector2X = targetX - x1;
-    double vector2Y = targetY - y1;
-
-    // Calculate the cross product of vector_1 and vector_2 (z-component)
-    double crossProduct = vector1X * vector2Y - vector1Y * vector2X;
-    
-    // cout<<" crossProduct : "<<crossProduct<<endl;
-
-    // Calculate the magnitudes of vector_1 and vector_2
-    double magnitude1 = std::sqrt(vector1X * vector1X + vector1Y * vector1Y);
-    double magnitude2 = std::sqrt(vector2X * vector2X + vector2Y * vector2Y);
-
-    // Calculate the angle in radians using the inverse tangent of the cross product and dot product
-    double dotProduct = vector1X * vector2X + vector1Y * vector2Y;
-
-    double angleInRadians = std::atan2(std::abs(crossProduct), dotProduct);
-    // Convert the angle from radians to degrees and return it
-    double angleInDegrees = angleInRadians * 180.0 / M_PI;
-    
-    double angleInRadians_new = std::asin( crossProduct/(magnitude1*magnitude2) );
-    double angleInDegrees_new = angleInRadians_new * 180.0 / M_PI;
-    
-    // cout<<"angle : "<<angleInDegrees_new<<endl;
-
-    double DCA_distance = sin(angleInRadians_new) * magnitude2;
-
-    return DCA_distance;
-}
-
 double INTTZvtx::Get_extrapolation(double given_y, double p0x, double p0y, double p1x, double p1y) // note : x : z, y : r
 {
     if ( fabs(p0x - p1x) < 0.00001 ){ // note : the line is vertical (if z is along the x axis)
@@ -892,6 +1042,26 @@ pair<double,double> INTTZvtx::Get_possible_zvtx(double rvtx, vector<double> p0, 
 
     return {mid_point, possible_width}; // note : first : mid point, second : width
 
+}
+
+int INTTZvtx::min_width_ID(vector<double> input_width_vec)
+{
+    double big_num;
+    int big_num_id;
+    for (int i = 0; i < input_width_vec.size(); i++)
+    {
+        if (i == 0) {
+            big_num = input_width_vec[i];
+            big_num_id = i;
+        }
+        else if ( input_width_vec[i] < big_num )
+        {
+            big_num = input_width_vec[i];
+            big_num_id = i;
+        }
+    }
+
+    return big_num_id;
 }
 
 #endif
