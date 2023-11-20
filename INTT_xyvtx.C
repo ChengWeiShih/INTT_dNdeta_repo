@@ -1331,8 +1331,8 @@ void INTT_xyvtx(string run_ID, int geo_mode_id, string file_event, bool full_eve
     gaus_1 -> Draw("lsame");
     // gaus_fit -> Draw("lsame");
     double_gaus_fit -> Draw("lsame");
-    draw_text -> DrawLatex(0.4, 0.87, Form("Sig. gaus mean  : %.3f mm", double_gaus_fit -> GetParameter(1)));
-    draw_text -> DrawLatex(0.4, 0.83, Form("Sig. gaus width : %.3f mm", double_gaus_fit -> GetParameter(2)));
+    draw_text -> DrawLatex(0.4, 0.87, Form("Sig. gaus mean  : %.3f degree", double_gaus_fit -> GetParameter(1)));
+    draw_text -> DrawLatex(0.4, 0.83, Form("Sig. gaus width : %.3f degree", double_gaus_fit -> GetParameter(2)));
     ltx->DrawLatex(gPad->GetLeftMargin(), 1 - gPad->GetTopMargin() + 0.01, "#it{#bf{sPHENIX INTT}} Work-in-progress");
     c1 -> Print(Form("%s/folder_%s_advanced/angle_diff.pdf",mother_folder_directory.c_str(),file_name.c_str()));
     c1 -> Clear();

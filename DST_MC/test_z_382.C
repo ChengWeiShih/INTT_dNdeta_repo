@@ -1,15 +1,16 @@
 #include "INTTReadTree.h"
 #include "INTTZvtx.h"
 
-void test_z()
+void test_z_382()
 {
-    string input_directory = "/sphenix/user/ChengWei/sPH_dNdeta/dNdEta_INTT_MC";
+    string input_directory = "/sphenix/user/ChengWei/sPH_dNdeta/dNdEta_INTT_MC_382";
     string file_name = "MC_ZF_1_30400";
-    string out_folder_directory = input_directory + "/codetest2_" + file_name;
-    string MC_list_name = "dst_INTTdNdEta.list";
+    string out_folder_directory = input_directory + "/codetest1_" + file_name;
+    string MC_list_name = "dst_INTTdNdEta_382.list";
     string tree_name = "EventTree";
     
-    pair<double, double> beam_origin = {-0.015, 0.012};
+    // pair<double, double> beam_origin = {-0.015, 0.012};
+    pair<double, double> beam_origin = {-0.0, 0.0};
     pair<double, double> DCA_cut ={-0.5, 0.5};
     pair<double, double> zvtx_QA_width = {42.32, 68.12}; 
     double zvtx_QA_ratio = 0.00005;

@@ -3,7 +3,7 @@ vector<string> read_list (string MC_directory, string MC_list_name)
 {
     string list_buffer;
     ifstream data_list;
-	data_list.open((MC_directory + MC_list_name).c_str());
+	data_list.open((MC_directory + "/" + MC_list_name).c_str());
 
     vector<string> output_vec; output_vec.clear();
 
@@ -23,8 +23,8 @@ vector<string> read_list (string MC_directory, string MC_list_name)
 
 void sanity_check()
 {
-    string folder_direction = "/sphenix/user/ChengWei/sPH_dNdeta/dNdEta_INTT_MC/";
-    string MC_list_name = "dst_INTTdNdEta.list";
+    string folder_direction = "/sphenix/user/ChengWei/sPH_dNdeta/dNdEta_INTT_MC_382";
+    string MC_list_name = "dst_INTTdNdEta_382.list";
     vector <string> file_list = read_list(folder_direction,MC_list_name);
 
     TChain * chain_in = new TChain("EventTree");
@@ -70,17 +70,25 @@ void sanity_check()
     TH2F * MC_Ntrack_NClu = new TH2F("MC_Ntrack_NClu","",200,0,9000, 200, 0, 4000);
     MC_Ntrack_NClu -> GetXaxis() -> SetTitle("NClus");
     MC_Ntrack_NClu -> GetYaxis() -> SetTitle("Ntrack");
+
+    TH1F * MC_Ntrack_1D = new TH1F("MC_Ntrack_1D","",200,0,4000);
+    MC_Ntrack_1D -> GetXaxis() -> SetTitle("Ntrack");
+    MC_Ntrack_1D -> GetYaxis() -> SetTitle("Entry");
     
     TH1F * MC_true_track_eta = new TH1F("MC_true_track_eta","",29,-2.9,2.9);
     MC_true_track_eta -> GetXaxis() -> SetTitle("#eta");
     MC_true_track_eta -> GetYaxis() -> SetTitle("dN/d#eta");
+
+    TH2F * MC_NClu_Zvtx = new TH2F("MC_NClu_Zvtx","",200,0,9000, 200, -500, 500);
+    MC_NClu_Zvtx -> GetXaxis() -> SetTitle("NClus");
+    MC_NClu_Zvtx -> GetYaxis() -> SetTitle("Z vertex [mm]");
 
     int good_evt_counter = 0;
     int eta_one_track_counter = 0;
     int eta_one_track_counter_evt = 0;
     int eta_two_track_counter_evt = 0;
 
-    for (int i = 0; i < 20000; i++) {
+    for (int i = 0; i < chain_in->GetEntries(); i++) {
         inttDSTMC.LoadTree(i);
         inttDSTMC.GetEntry(i);
 
@@ -91,6 +99,8 @@ void sanity_check()
             printf(" size of ClusX : %zu \n", inttDSTMC.ClusX -> size());
             printf("triggered VTX ? : %.2f, %.2f, %.2f \n", inttDSTMC.TruthPV_trig_x, inttDSTMC.TruthPV_trig_y, inttDSTMC.TruthPV_trig_z);
         }
+
+        // MC_Ntrack_1D   -> Fill(inttDSTMC.UniqueAncG4P_TrackID -> size());
 
         if (inttDSTMC.NTruthVtx == 1){
 
@@ -104,6 +114,8 @@ void sanity_check()
                 }
 
             }
+            MC_NClu_Zvtx -> Fill(inttDSTMC.NClus, (inttDSTMC.TruthPV_trig_z) * 10.);
+            MC_Ntrack_1D   -> Fill(inttDSTMC.UniqueAncG4P_TrackID -> size());
             MC_Ntrack_NClu -> Fill(inttDSTMC.NClus, eta_two_track_counter_evt);
             eta_one_track_counter_evt = 0;
             eta_two_track_counter_evt = 0;
@@ -111,7 +123,7 @@ void sanity_check()
             if (0/*good_evt_counter*/ == 0) {
                 if (inttDSTMC.NClus > 4813){
                     good_evt_counter += 1;
-                    cout<<"test : "<<inttDSTMC.UniqueAncG4P_TrackID -> size()<<" "<<inttDSTMC.NClus<<endl;
+                    // cout<<"test : "<<inttDSTMC.UniqueAncG4P_TrackID -> size()<<" "<<inttDSTMC.NClus<<endl;
                     for (int track_i = 0; track_i < inttDSTMC.UniqueAncG4P_TrackID -> size(); track_i++){
                         MC_true_track_eta -> Fill(inttDSTMC.UniqueAncG4P_Eta -> at(track_i));
                         if (fabs(inttDSTMC.UniqueAncG4P_Eta -> at(track_i)) <= 1.){
@@ -122,7 +134,7 @@ void sanity_check()
             }
             
             
-
+            // cout<<i<<" z vertex : "<<inttDSTMC.TruthPV_trig_z<<endl;
             MC_vtx_xy -> Fill(inttDSTMC.TruthPV_trig_x, inttDSTMC.TruthPV_trig_y);
             MC_vtx_z  -> Fill( inttDSTMC.TruthPV_trig_z );
             MC_vtx_Npart -> Fill( inttDSTMC.TruthPV_trig_Npart );
@@ -159,6 +171,7 @@ void sanity_check()
     TFile * INTT_MC_sanity_out = new TFile(Form("%s/MC_sanity_intt.root",folder_direction.c_str()), "recreate");
     MC_vtx_xy -> Write();
     MC_vtx_z -> Write();
+    MC_NClu_Zvtx -> Write();
     MC_vtx_Npart -> Write();
     MC_Npart_Ntrack -> Write();
     MC_INTT_multiplicity -> Write();
@@ -167,6 +180,7 @@ void sanity_check()
     MC_INTT_CluADC -> Write();
     MC_INTT_clu_nhit_corr -> Write();
     MC_Ntrack_NClu -> Write();
+    MC_Ntrack_1D -> Write();
     MC_true_track_eta -> Write();
     INTT_MC_sanity_out -> Close();
 

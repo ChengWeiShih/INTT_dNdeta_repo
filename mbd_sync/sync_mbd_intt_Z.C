@@ -23,51 +23,79 @@ void sync_mbd_intt_Z() {
     if (!t_mbd) return;
     mbdtree mbdt(t_mbd);
 
-    string folder_direction = "/sphenix/user/ChengWei/INTT/INTT_commissioning/ZeroField/20869/folder_beam_inttall-00020869-0000_event_base_ana_cluster_full_survey_3.32_excludeR40000_200kEvent_3HotCut_advanced";
+    string folder_direction = "/sphenix/user/ChengWei/INTT/INTT_commissioning/ZeroField/20869/folder_beam_inttall-00020869-0000_event_base_ana_cluster_full_survey_3.32_excludeR40000_200kEvent_3HotCut_advanced_test";
     TFile * f_intt = TFile::Open(Form("%s/INTT_zvtx.root", folder_direction.c_str()));
     gDirectory = gDir;
     TTree * t_intt = (TTree * ) f_intt -> Get("tree_Z");
     if (!t_intt) return;
 
-    int intt_eID, intt_N_cluster_outer, intt_N_cluster_inner, intt_N_good;
-    double intt_zvtx, intt_zvtxE, intt_rangeL, intt_rangeR, intt_width_density;
+    int intt_eID, intt_N_cluster_outer, intt_N_cluster_inner, intt_N_good, intt_ES_N_good, intt_N_group;
+    double intt_ES_zvtx, intt_ES_zvtxE, intt_ES_rangeL, intt_ES_rangeR, intt_ES_width_density;
+    double intt_LB_Gaus_mean, intt_LB_Gaus_meanE, intt_LB_Gaus_width, intt_LB_Gaus_offset, intt_LB_Gaus_chi2, intt_LB_Gaus_size_width, intt_LB_geo_mean;
+    double MC_true_zvtx;
+    bool intt_good_zvtx_tag;
     Long64_t intt_bco_full; 
 
-    t_intt -> SetBranchAddress("eID", & intt_eID);
-    t_intt -> SetBranchAddress("bco_full", & intt_bco_full);
-    t_intt -> SetBranchAddress("nclu_inner", & intt_N_cluster_inner);
-    t_intt -> SetBranchAddress("nclu_outer", & intt_N_cluster_outer);
-    t_intt -> SetBranchAddress("zvtx", & intt_zvtx);
-    t_intt -> SetBranchAddress("zvtxE", & intt_zvtxE);
-    t_intt -> SetBranchAddress("rangeL", & intt_rangeL);
-    t_intt -> SetBranchAddress("rangeR", & intt_rangeR);
-    t_intt -> SetBranchAddress("N_good", & intt_N_good);
-    t_intt -> SetBranchAddress("Width_density", & intt_width_density);
+    t_intt -> SetBranchAddress("eID",&intt_eID);
+    t_intt -> SetBranchAddress("bco_full",&intt_bco_full);
+    t_intt -> SetBranchAddress("nclu_inner",&intt_N_cluster_inner);
+    t_intt -> SetBranchAddress("nclu_outer",&intt_N_cluster_outer);
+    t_intt -> SetBranchAddress("ES_zvtx",&intt_ES_zvtx);
+    t_intt -> SetBranchAddress("ES_zvtxE",&intt_ES_zvtxE);
+    t_intt -> SetBranchAddress("ES_rangeL",&intt_ES_rangeL);
+    t_intt -> SetBranchAddress("ES_rangeR",&intt_ES_rangeR);
+    t_intt -> SetBranchAddress("ES_N_good",&intt_ES_N_good);
+    t_intt -> SetBranchAddress("ES_Width_density",&intt_ES_width_density);
+    t_intt -> SetBranchAddress("LB_Gaus_mean",&intt_LB_Gaus_mean);
+    t_intt -> SetBranchAddress("LB_Gaus_meanE",&intt_LB_Gaus_meanE);
+    t_intt -> SetBranchAddress("LB_Gaus_width",&intt_LB_Gaus_width);
+    t_intt -> SetBranchAddress("LB_Gaus_offset", &intt_LB_Gaus_offset);
+    t_intt -> SetBranchAddress("LB_Gaus_chi2", &intt_LB_Gaus_chi2);
+    t_intt -> SetBranchAddress("LB_Gaus_size_width", &intt_LB_Gaus_size_width);
+    t_intt -> SetBranchAddress("LB_geo_mean", &intt_LB_geo_mean);
+    t_intt -> SetBranchAddress("good_zvtx_tag", &intt_good_zvtx_tag);
+    t_intt -> SetBranchAddress("N_group", &intt_N_group);
+    t_intt -> SetBranchAddress("MC_true_zvtx",&MC_true_zvtx);
 
     cout << t_mbd -> GetEntries() << " " << t_intt -> GetEntries() << endl;
 
     TFile * out_file = new TFile(Form("%s/INTT_MBD_zvtx.root",folder_direction.c_str()),"RECREATE");
 
-    int out_eID, out_N_cluster_outer, out_N_cluster_inner, out_N_good;
-    double out_zvtx, out_zvtxE, out_rangeL, out_rangeR, out_width_density;
-    Long64_t out_bco_full; 
+    int out_eID, out_N_cluster_outer, out_N_cluster_inner, out_N_good, out_ES_N_good, out_N_group;
+    double out_ES_zvtx, out_ES_zvtxE, out_ES_rangeL, out_ES_rangeR, out_ES_width_density;
+    double out_LB_Gaus_mean, out_LB_Gaus_meanE, out_LB_Gaus_width, out_LB_Gaus_offset, out_LB_Gaus_chi2, out_LB_Gaus_size_width, out_LB_geo_mean;
+    double out_MC_true_zvtx;
+    bool out_good_zvtx_tag;
+    Long64_t out_bco_full;  
+
     double out_mbd_bz, out_mbd_bqs, out_mbd_bqn;
 
     TTree * tree_out =  new TTree ("tree_Z", "INTT Z info.");
+
     tree_out -> Branch("eID",&out_eID);
     tree_out -> Branch("bco_full",&out_bco_full);
     tree_out -> Branch("nclu_inner",&out_N_cluster_inner);
     tree_out -> Branch("nclu_outer",&out_N_cluster_outer);
-    tree_out -> Branch("zvtx",&out_zvtx);
-    tree_out -> Branch("zvtxE",&out_zvtxE);
-    tree_out -> Branch("rangeL",&out_rangeL);
-    tree_out -> Branch("rangeR",&out_rangeR);
-    tree_out -> Branch("N_good",&out_N_good);
-    tree_out -> Branch("Width_density",&out_width_density);
+    tree_out -> Branch("ES_zvtx",&out_ES_zvtx);
+    tree_out -> Branch("ES_zvtxE",&out_ES_zvtxE);
+    tree_out -> Branch("ES_rangeL",&out_ES_rangeL);
+    tree_out -> Branch("ES_rangeR",&out_ES_rangeR);
+    tree_out -> Branch("ES_N_good",&out_ES_N_good);
+    tree_out -> Branch("ES_Width_density",&out_ES_width_density);
+    tree_out -> Branch("LB_Gaus_mean",&out_LB_Gaus_mean);
+    tree_out -> Branch("LB_Gaus_meanE",&out_LB_Gaus_meanE);
+    tree_out -> Branch("LB_Gaus_width",&out_LB_Gaus_width);
+    tree_out -> Branch("LB_Gaus_offset", &out_LB_Gaus_offset);
+    tree_out -> Branch("LB_Gaus_chi2", &out_LB_Gaus_chi2);
+    tree_out -> Branch("LB_Gaus_size_width", &out_LB_Gaus_size_width);
+    tree_out -> Branch("LB_geo_mean", &out_LB_geo_mean);
+    tree_out -> Branch("good_zvtx_tag", &out_good_zvtx_tag);
+    tree_out -> Branch("N_group", &out_N_group);
+    tree_out -> Branch("MC_true_zvtx",&out_MC_true_zvtx);
+
     tree_out -> Branch("mbd_bz",&out_mbd_bz); // note : mbd branch
     tree_out -> Branch("mbd_bqs",&out_mbd_bqs);
     tree_out -> Branch("mbd_bqn",&out_mbd_bqn);
-
 
     gDirectory = gDir;
 
@@ -105,12 +133,22 @@ void sync_mbd_intt_Z() {
         out_bco_full = intt_bco_full;
         out_N_cluster_inner = intt_N_cluster_inner;
         out_N_cluster_outer = intt_N_cluster_outer;
-        out_zvtx = intt_zvtx;
-        out_zvtxE = intt_zvtxE;
-        out_rangeL = intt_rangeL;
-        out_rangeR = intt_rangeR;
-        out_N_good = intt_N_good;
-        out_width_density = intt_width_density;
+        out_ES_zvtx = intt_ES_zvtx;
+        out_ES_zvtxE = intt_ES_zvtxE;
+        out_ES_rangeL = intt_ES_rangeL;
+        out_ES_rangeR = intt_ES_rangeR;
+        out_ES_N_good = intt_ES_N_good;
+        out_ES_width_density = intt_ES_width_density;
+        out_LB_Gaus_mean = intt_LB_Gaus_mean;
+        out_LB_Gaus_meanE = intt_LB_Gaus_meanE;
+        out_LB_Gaus_width = intt_LB_Gaus_width;
+        out_LB_Gaus_offset = intt_LB_Gaus_offset;
+        out_LB_Gaus_chi2 = intt_LB_Gaus_chi2;
+        out_LB_Gaus_size_width = intt_LB_Gaus_size_width;
+        out_LB_geo_mean = intt_LB_geo_mean;
+        out_good_zvtx_tag = intt_good_zvtx_tag;
+        out_MC_true_zvtx = MC_true_zvtx;
+        out_N_group = intt_N_group;
 
         if (intt_N_cluster_inner != -1 && intt_N_cluster_outer != -1){
             if (mbdt.bqs > 100 && mbdt.bqn > 100){
@@ -121,15 +159,12 @@ void sync_mbd_intt_Z() {
 
             tree_out -> Fill();
         }
-
-
         
 
         if ((i % 1000) == 0) {
             cout << i << " " << hex << setw(6) << mbdclk << " " << setw(6) << bco16 << " (mbd-intt)" << setw(6) << ((mbdclk - bco16) & 0xFFFF) <<
                 "      (femclk-prev)" << setw(6) << mbd_prvdif << " (bco-prev)" << setw(6) << intt_prvdif << dec << endl;
         }
-
 
         t_intt -> GetEntry(i + 1 + intt_evt_offset);
         ULong64_t next_bco16 = (intt_bco_full) & 0xFFFF;
