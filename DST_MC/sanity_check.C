@@ -23,15 +23,15 @@ vector<string> read_list (string MC_directory, string MC_list_name)
 
 void sanity_check()
 {
-    string folder_direction = "/sphenix/user/ChengWei/sPH_dNdeta/dNdEta_INTT_MC_382";
-    string MC_list_name = "dst_INTTdNdEta_382.list";
+    string folder_direction = "/sphenix/user/ChengWei/sPH_dNdeta/dNdEta_INTT_MC_388_000";
+    string MC_list_name = "dst_INTT_dNdEta_388_000.list";
     vector <string> file_list = read_list(folder_direction,MC_list_name);
 
     TChain * chain_in = new TChain("EventTree");
     INTTDSTchain inttDSTMC(chain_in,folder_direction,file_list);
     std::printf("inttDSTMC N event : %lli \n", chain_in->GetEntries());
 
-    TH2F * MC_vtx_xy = new TH2F("MC_vtx_xy","",100,-0.2,0.2,100,-0.2,0.2);
+    TH2F * MC_vtx_xy = new TH2F("MC_vtx_xy","",100,-0.2,0.2,100,-0.,0.4);
     MC_vtx_xy -> GetXaxis() -> SetTitle("X axis [cm]");
     MC_vtx_xy -> GetYaxis() -> SetTitle("Y axis [cm]");
 
@@ -82,6 +82,22 @@ void sanity_check()
     TH2F * MC_NClu_Zvtx = new TH2F("MC_NClu_Zvtx","",200,0,9000, 200, -500, 500);
     MC_NClu_Zvtx -> GetXaxis() -> SetTitle("NClus");
     MC_NClu_Zvtx -> GetYaxis() -> SetTitle("Z vertex [mm]");
+
+    TH1F * MC_inner_phi_3 = new TH1F("MC_inner_phi_3","",100,0,360);
+    MC_inner_phi_3 -> GetXaxis() -> SetTitle("Inner phi");
+    MC_inner_phi_3 -> GetYaxis() -> SetTitle("Entry");
+
+    TH1F * MC_inner_phi_4 = new TH1F("MC_inner_phi_4","",100,0,360);
+    MC_inner_phi_4 -> GetXaxis() -> SetTitle("Inner phi");
+    MC_inner_phi_4 -> GetYaxis() -> SetTitle("Entry");
+
+    TH1F * MC_outer_phi_5 = new TH1F("MC_outer_phi_5","",100,0,360);
+    MC_outer_phi_5 -> GetXaxis() -> SetTitle("Outer phi");
+    MC_outer_phi_5 -> GetYaxis() -> SetTitle("Entry");
+
+    TH1F * MC_outer_phi_6 = new TH1F("MC_outer_phi_6","",100,0,360);
+    MC_outer_phi_6 -> GetXaxis() -> SetTitle("Outer phi");
+    MC_outer_phi_6 -> GetYaxis() -> SetTitle("Entry");
 
     int good_evt_counter = 0;
     int eta_one_track_counter = 0;
@@ -149,6 +165,21 @@ void sanity_check()
                 MC_INTT_CluPhiSize -> Fill( inttDSTMC.ClusPhiSize -> at(clu_i) );
                 MC_INTT_CluZSize -> Fill( inttDSTMC.ClusZSize -> at(clu_i) );
                 MC_INTT_CluADC -> Fill( inttDSTMC.ClusAdc -> at(clu_i) );
+                
+                if (inttDSTMC.ClusLayer -> at(clu_i) == 3){
+                    MC_inner_phi_3 -> Fill( (inttDSTMC.ClusY -> at(clu_i) < 0) ? atan2(inttDSTMC.ClusY -> at(clu_i), inttDSTMC.ClusX -> at(clu_i) ) * (180./TMath::Pi()) + 360 : atan2(inttDSTMC.ClusY -> at(clu_i), inttDSTMC.ClusX -> at(clu_i) ) * (180./TMath::Pi()) );
+                }
+                else if (inttDSTMC.ClusLayer -> at(clu_i) == 4){
+                    MC_inner_phi_4 -> Fill( (inttDSTMC.ClusY -> at(clu_i) < 0) ? atan2(inttDSTMC.ClusY -> at(clu_i), inttDSTMC.ClusX -> at(clu_i) ) * (180./TMath::Pi()) + 360 : atan2(inttDSTMC.ClusY -> at(clu_i), inttDSTMC.ClusX -> at(clu_i) ) * (180./TMath::Pi()) );
+                }
+                else if (inttDSTMC.ClusLayer -> at(clu_i) == 5){
+                    MC_outer_phi_5 -> Fill( (inttDSTMC.ClusY -> at(clu_i) < 0) ? atan2(inttDSTMC.ClusY -> at(clu_i), inttDSTMC.ClusX -> at(clu_i) ) * (180./TMath::Pi()) + 360 : atan2(inttDSTMC.ClusY -> at(clu_i), inttDSTMC.ClusX -> at(clu_i) ) * (180./TMath::Pi()) );
+                }
+                else if (inttDSTMC.ClusLayer -> at(clu_i) == 6){
+                    MC_outer_phi_6 -> Fill( (inttDSTMC.ClusY -> at(clu_i) < 0) ? atan2(inttDSTMC.ClusY -> at(clu_i), inttDSTMC.ClusX -> at(clu_i) ) * (180./TMath::Pi()) + 360 : atan2(inttDSTMC.ClusY -> at(clu_i), inttDSTMC.ClusX -> at(clu_i) ) * (180./TMath::Pi()) );
+                }
+                
+               
             }
 
 
@@ -182,6 +213,10 @@ void sanity_check()
     MC_Ntrack_NClu -> Write();
     MC_Ntrack_1D -> Write();
     MC_true_track_eta -> Write();
+    MC_inner_phi_3 -> Write();
+    MC_inner_phi_4 -> Write();
+    MC_outer_phi_5 -> Write();
+    MC_outer_phi_6 -> Write();
     INTT_MC_sanity_out -> Close();
 
 }

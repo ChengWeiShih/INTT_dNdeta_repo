@@ -18,7 +18,6 @@ void data20869_z()
     int N_clu_cut = 10000;
     int N_clu_cutl = 20;
     
-    
     bool draw_event_display = true;
     double peek = 3.324;
     int data_type = 2; // note : private gen data cluster
@@ -30,7 +29,7 @@ void data20869_z()
 
     cout<<"Total event : "<<INTTClu -> GetNEvt()<<endl;
 
-    for (int event_i = 0; event_i < 20000; event_i ++)
+    for (int event_i = 0; event_i < 20000/*INTTClu -> GetNEvt()*/; event_i ++)
     {
         INTTClu -> EvtInit(event_i);
         INTTClu -> EvtSetCluGroup();
@@ -40,9 +39,7 @@ void data20869_z()
             INTTClu -> temp_sPH_inner_nocolumn_vec, INTTClu -> temp_sPH_outer_nocolumn_vec, 
             INTTClu -> temp_sPH_nocolumn_vec, INTTClu -> temp_sPH_nocolumn_rz_vec, 
             INTTClu -> GetNvtxMC(), INTTClu -> GetTrigZvtxMC(), INTTClu -> GetPhiCheckTag(), INTTClu -> GetBCOFull()  // note : no bco_full for MC
-        );
-
-        // cout<<"test, INTTClu -> GetBCOFull()"<<INTTClu -> GetBCOFull()<<endl;
+        );        
 
         MCz -> ClearEvt();
         INTTClu -> EvtClear();
@@ -52,6 +49,7 @@ void data20869_z()
     MCz -> EndRun();
 }
 
+        // cout<<"test, INTTClu -> GetBCOFull()"<<INTTClu -> GetBCOFull()<<endl;
 
         // cout<< INTTClu -> temp_sPH_inner_nocolumn_vec.size()<<" "
         //     << INTTClu -> temp_sPH_outer_nocolumn_vec.size()<<" "

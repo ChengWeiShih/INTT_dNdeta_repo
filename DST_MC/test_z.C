@@ -5,7 +5,7 @@ void test_z()
 {
     string input_directory = "/sphenix/user/ChengWei/sPH_dNdeta/dNdEta_INTT_MC";
     string file_name = "MC_ZF_1_30400";
-    string out_folder_directory = input_directory + "/codetest2_" + file_name;
+    string out_folder_directory = input_directory + "/codetest3_" + file_name;
     string MC_list_name = "dst_INTTdNdEta.list";
     string tree_name = "EventTree";
     
@@ -30,7 +30,7 @@ void test_z()
 
     cout<<"Total event : "<<INTTClu -> GetNEvt()<<endl;
 
-    for (int event_i = 0; event_i < 10000; event_i ++)
+    for (int event_i = 0; event_i < 1000; event_i ++)
     {
         INTTClu -> EvtInit(event_i);
         INTTClu -> EvtSetCluGroup();

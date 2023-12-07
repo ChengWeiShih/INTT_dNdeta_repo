@@ -41,6 +41,9 @@ class INTTZvtx
         void PrintPlots();
         void EndRun();
 
+        double GetZdiffPeak();
+        double GetZdiffWidth();
+
     private : 
         TCanvas * c2;
         TCanvas * c1;
@@ -49,7 +52,10 @@ class INTTZvtx
         TPad *pad_z;
         TPad *pad_z_hist;
         TPad *pad_z_line;
-        
+        TPad *pad_phi_diff;
+        TPad *pad_track_phi;
+        TPad *pad_inner_outer_phi;
+        TPad *pad_phi_diff_1D;
         
         TH1F * avg_event_zvtx;
         TH1F * zvtx_evt_fitError;
@@ -78,6 +84,11 @@ class INTTZvtx
         TH1F * peak_group_detail_width_hist;
         TH1F * peak_group_detail_ratio_hist;
         TH1F * N_group_detail_hist;
+        TH1F * evt_select_track_phi;
+        TH1F * evt_phi_diff_1D;
+        TH2F * evt_phi_diff_inner_phi;
+        TH2F * evt_inner_outer_phi;
+        
 
 
         InttConversion * ch_pos_DB;
@@ -103,7 +114,7 @@ class INTTZvtx
         double high_multi_line = 1000; // todo : the cut to classify the high-low multiplicity, which are fit with different method
         double zvtx_hist_l = -500;
         double zvtx_hist_r = 500;
-        int print_rate = 40; // todo : the print rate is here
+        int print_rate = 50; // todo : the print rate is here
 
         pair<double, double> beam_origin;
         pair<double, double> DCA_cut;       // note : if (< DCA_cut)          -> pass      unit mm
@@ -122,11 +133,16 @@ class INTTZvtx
         
         // note : for tree_out
         double out_ES_zvtx, out_ES_zvtxE, out_ES_rangeL, out_ES_rangeR, out_ES_width_density, MC_true_zvtx;
-        double out_LB_Gaus_mean, out_LB_Gaus_meanE, out_LB_Gaus_width, out_LB_Gaus_size_width, out_LB_Gaus_chi2, out_LB_Gaus_offset, out_LB_geo_mean;
+        double out_LB_Gaus_Mean_mean, out_LB_Gaus_Mean_meanE, out_LB_Gaus_Mean_width, out_LB_Gaus_Mean_chi2;
+        double out_LB_Gaus_Width_width, out_LB_Gaus_Width_size_width, out_LB_Gaus_Width_offset, out_LB_geo_mean;
         double out_LB_refit, out_LB_refitE; // note : not used in the out tree
+        double out_mid_cut_peak_width, out_mid_cut_peak_ratio, out_LB_cut_peak_width, out_LB_cut_peak_ratio;
         bool out_good_zvtx_tag;
-        int out_eID, N_cluster_outer_out, N_cluster_inner_out, out_ES_N_good, out_N_group;
+        int out_eID, N_cluster_outer_out, N_cluster_inner_out, out_ES_N_good, out_mid_cut_Ngroup, out_LB_cut_Ngroup;
         Long64_t bco_full_out; 
+
+        // note : for out parameters
+        double MC_z_diff_peak, MC_z_diff_width; // note : the comparison between Reco - true in MC. Values are from fitting foucsing on the peak region.
 
         void Init();
         void InitHist();
@@ -173,7 +189,7 @@ class INTTZvtx
         
 
         // note : in the event process
-        vector<float> N_comb; vector<float> N_comb_e; vector<float> z_mid; vector<float> z_range;
+        vector<float> N_comb; vector<float> N_comb_e; vector<float> z_mid; vector<float> z_range; vector<double> N_comb_phi;
         vector<double> eff_N_comb; vector<double> eff_z_mid; vector<double> eff_N_comb_e; vector<double> eff_z_range; // note : eff_sig
         vector<double> LB_N_comb; vector<double> LB_z_mid; vector<double> LB_N_comb_e; vector<double> LB_z_range; // note : LB gaus
 
@@ -214,10 +230,12 @@ INTTZvtx::INTTZvtx(string run_type, string out_folder_directory, pair<double,dou
     Z_resolution_vec.clear();
     line_breakdown_vec.clear();
     good_comb_id = 0;
+    MC_z_diff_peak = -777.;
+    MC_z_diff_width = -777.;
 
     N_group_info_detail = {-1.,-1.,-1.,-1.};
 
-    N_comb.clear(); N_comb_e.clear(); z_mid.clear(); z_range.clear();
+    N_comb.clear(); N_comb_e.clear(); z_mid.clear(); z_range.clear(); N_comb_phi.clear();
     eff_N_comb.clear(); eff_z_mid.clear(); eff_N_comb_e.clear(); eff_z_range.clear(); // note : eff_sig
     LB_N_comb.clear(); LB_z_mid.clear(); LB_N_comb_e.clear(); LB_z_range.clear(); // note : LB gaus
 
@@ -401,31 +419,71 @@ void INTTZvtx::InitHist()
     N_group_detail_hist -> GetXaxis() -> SetTitle("N group post cut");
     N_group_detail_hist -> GetYaxis() -> SetTitle("Entry");
     N_group_detail_hist -> GetXaxis() -> SetNdivisions(505);
+
+    evt_select_track_phi = new TH1F("","evt_select_track_phi",361,0,361);
+    evt_select_track_phi -> GetXaxis() -> SetTitle("Track phi [degree]");
+    evt_select_track_phi -> GetYaxis() -> SetTitle("Entry");
+    evt_select_track_phi -> GetXaxis() -> SetNdivisions(505);
+    
+    evt_phi_diff_inner_phi = new TH2F("","evt_phi_diff_inner_phi",361,0,361,100,-1.5,1.5);
+    evt_phi_diff_inner_phi -> GetXaxis() -> SetTitle("Inner phi [degree]");
+    evt_phi_diff_inner_phi -> GetYaxis() -> SetTitle("Inner - Outer [degree]");
+    evt_phi_diff_inner_phi -> GetXaxis() -> SetNdivisions(505);
+
+    evt_inner_outer_phi = new TH2F("","evt_inner_outer_phi",120,0,360,120,0,360);
+    evt_inner_outer_phi -> GetXaxis() -> SetTitle("Inner phi [degree]");
+    evt_inner_outer_phi -> GetYaxis() -> SetTitle("Outer phi [degree]");
+    evt_inner_outer_phi -> GetXaxis() -> SetNdivisions(505);
+
+    evt_phi_diff_1D = new TH1F("","evt_phi_diff_1D",100,-10,10);
+    evt_phi_diff_1D -> GetXaxis() -> SetTitle("Inner - Outer [degree]");
+    evt_phi_diff_1D -> GetYaxis() -> SetTitle("Entry");
+    evt_phi_diff_1D -> GetXaxis() -> SetNdivisions(505);
 }
 
 void INTTZvtx::InitCanvas()
 {
-    c2 = new TCanvas("","",4000,800);    
+    c2 = new TCanvas("","",4000,1600);    
     c2 -> cd();
-    pad_xy = new TPad(Form("pad_xy"), "", 0.0, 0.0, 0.2, 1.0);
+    pad_xy = new TPad(Form("pad_xy"), "", 0.0, 0.5, 0.2, 1.0);
     Characterize_Pad(pad_xy, 0.15, 0.1, 0.1, 0.2, 0, 0);
     pad_xy -> Draw();
 
-    pad_rz = new TPad(Form("pad_rz"), "", 0.2, 0.0, 0.40, 1.0);
+    pad_rz = new TPad(Form("pad_rz"), "", 0.2, 0.5, 0.40, 1.0);
     Characterize_Pad(pad_rz, 0.15, 0.1, 0.1, 0.2, 0, 0);
     pad_rz -> Draw();
 
-    pad_z = new TPad(Form("pad_z"), "", 0.40, 0.0, 0.6, 1.0);
+    pad_z = new TPad(Form("pad_z"), "", 0.40, 0.5, 0.6, 1.0);
     Characterize_Pad(pad_z, 0.15, 0.1, 0.1, 0.2, 0, 0);
     pad_z -> Draw();
     
-    pad_z_hist = new TPad(Form("pad_z_hist"), "", 0.6, 0.0, 0.8, 1.0);
+    pad_z_hist = new TPad(Form("pad_z_hist"), "", 0.6, 0.5, 0.8, 1.0);
     Characterize_Pad(pad_z_hist, 0.15, 0.1, 0.1, 0.2, 0, 0);
     pad_z_hist -> Draw();
 
-    pad_z_line = new TPad(Form("pad_z_line"), "", 0.8, 0.0, 1, 1.0);
+    pad_z_line = new TPad(Form("pad_z_line"), "", 0.8, 0.5, 1, 1.0);
     Characterize_Pad(pad_z_line, 0.15, 0.1, 0.1, 0.2, 0, 0);
     pad_z_line -> Draw();
+
+    pad_phi_diff = new TPad(Form("pad_phi_diff"), "", 0.0, 0.0, 0.2, 0.5);
+    Characterize_Pad(pad_phi_diff, 0.15, 0.1, 0.1, 0.2, 0, 0);
+    pad_phi_diff -> Draw();
+
+    pad_track_phi = new TPad(Form("pad_track_phi"), "", 0.2, 0.0, 0.40, 0.5);
+    Characterize_Pad(pad_track_phi, 0.15, 0.1, 0.1, 0.2, 0, 0);
+    pad_track_phi -> Draw();
+
+    pad_inner_outer_phi = new TPad(Form("pad_inner_outer_phi"), "", 0.4, 0.0, 0.60, 0.5);
+    Characterize_Pad(pad_inner_outer_phi, 0.15, 0.1, 0.1, 0.2, 0, 0);
+    pad_inner_outer_phi -> SetLogz(1);
+    pad_inner_outer_phi -> Draw();
+
+    pad_phi_diff_1D = new TPad(Form("pad_phi_diff_1D"), "", 0.6, 0.0, 0.80, 0.5);
+    Characterize_Pad(pad_phi_diff_1D, 0.15, 0.1, 0.1, 0.2, 0, 0);
+    // pad_phi_diff_1D -> SetLogz(1);
+    pad_phi_diff_1D -> Draw();
+
+
 
     c1 = new TCanvas("","",950,800);
     c1 -> cd();
@@ -440,21 +498,27 @@ void INTTZvtx::InitTreeOut()
     tree_out -> Branch("bco_full",&bco_full_out);
     tree_out -> Branch("nclu_inner",&N_cluster_inner_out);
     tree_out -> Branch("nclu_outer",&N_cluster_outer_out);
-    tree_out -> Branch("ES_zvtx",&out_ES_zvtx);
-    tree_out -> Branch("ES_zvtxE",&out_ES_zvtxE);
-    tree_out -> Branch("ES_rangeL",&out_ES_rangeL);
-    tree_out -> Branch("ES_rangeR",&out_ES_rangeR);
-    tree_out -> Branch("ES_N_good",&out_ES_N_good);
-    tree_out -> Branch("ES_Width_density",&out_ES_width_density);
-    tree_out -> Branch("LB_Gaus_mean",&out_LB_Gaus_mean);
-    tree_out -> Branch("LB_Gaus_meanE",&out_LB_Gaus_meanE);
-    tree_out -> Branch("LB_Gaus_width",&out_LB_Gaus_width);
-    tree_out -> Branch("LB_Gaus_offset", &out_LB_Gaus_offset);
-    tree_out -> Branch("LB_Gaus_chi2", &out_LB_Gaus_chi2);
-    tree_out -> Branch("LB_Gaus_size_width", &out_LB_Gaus_size_width);
-    tree_out -> Branch("LB_geo_mean", &out_LB_geo_mean);
+    tree_out -> Branch("ES_zvtx",&out_ES_zvtx);                   // note : effective sigma, pol0 fit z-vertex
+    tree_out -> Branch("ES_zvtxE",&out_ES_zvtxE);                 // note : effective sigma, pol0 fit z-vertex error
+    tree_out -> Branch("ES_rangeL",&out_ES_rangeL);               // note : effective sigma, selected range left
+    tree_out -> Branch("ES_rangeR",&out_ES_rangeR);               // note : effective sigma, selected range right 
+    tree_out -> Branch("ES_N_good",&out_ES_N_good);               // note : effective sigma, number of z-vertex candidates in the range
+    tree_out -> Branch("ES_Width_density",&out_ES_width_density); // note : effective sigma, N good z-vertex candidates divided by width
+    tree_out -> Branch("LB_Gaus_Mean_mean",&out_LB_Gaus_Mean_mean);              // note : Line break loose offset - gaus mean   
+    tree_out -> Branch("LB_Gaus_Mean_meanE",&out_LB_Gaus_Mean_meanE);            // note : Line break loose offset - gaus mean error
+    tree_out -> Branch("LB_Gaus_Mean_chi2", &out_LB_Gaus_Mean_chi2);             // note : Line break loose offset - reduce chi2
+    tree_out -> Branch("LB_Gaus_Mean_width",&out_LB_Gaus_Mean_width);            // note : Line break loose offset - width
+    tree_out -> Branch("LB_Gaus_Width_width",&out_LB_Gaus_Width_width);                 // note : Line break tight offset - gaus width
+    tree_out -> Branch("LB_Gaus_Width_offset", &out_LB_Gaus_Width_offset);              // note : Line break tight offset - offset
+    tree_out -> Branch("LB_Gaus_Width_size_width", &out_LB_Gaus_Width_size_width);      // note : Line break tight offset - norm. height / width
+    tree_out -> Branch("LB_geo_mean", &out_LB_geo_mean);          // note : Line break peak position directly from the distribution (with the bin width 0.5 mm)
     tree_out -> Branch("good_zvtx_tag", &out_good_zvtx_tag);
-    tree_out -> Branch("N_group", &out_N_group);
+    tree_out -> Branch("mid_cut_Ngroup",     &out_mid_cut_Ngroup);            // note : mid cut Ngroup
+    tree_out -> Branch("mid_cut_peak_width", &out_mid_cut_peak_width);        // note : mid cut peak width
+    tree_out -> Branch("mid_cut_peak_ratio", &out_mid_cut_peak_ratio);        // note : mid cut peak ratio
+    tree_out -> Branch("LB_cut_Ngroup",     &out_LB_cut_Ngroup);         // note : LB cut Ngroup
+    tree_out -> Branch("LB_cut_peak_width", &out_LB_cut_peak_width);     // note : LB cut peak width
+    tree_out -> Branch("LB_cut_peak_ratio", &out_LB_cut_peak_ratio);     // note : LB cut peak ratio
     tree_out -> Branch("MC_true_zvtx",&MC_true_zvtx);
 }
 
@@ -467,7 +531,7 @@ void INTTZvtx::InitRest()
 
     gaus_fit_2 = new TF1("gaus_fit_2",gaus_func,evt_possible_z_range.first,evt_possible_z_range.second,4);
     gaus_fit_2 -> SetLineColor(2);
-    gaus_fit_2 -> SetLineWidth(1);
+    gaus_fit_2 -> SetLineWidth(2);
     gaus_fit_2 -> SetNpx(1000);
 
     double_gaus_fit = new TF1("double_gaus_fit",double_gaus_func,-600,600,7);
@@ -529,22 +593,34 @@ void INTTZvtx::ProcessEvt(
     N_cluster_inner_out = -1;
     N_cluster_outer_out = -1;
     bco_full_out = bco_full;
+    
     out_ES_zvtx = -1;
     out_ES_zvtxE = -1;
     out_ES_rangeL = -1;
     out_ES_rangeR = -1;
     out_ES_N_good = -1;
     out_ES_width_density = -1;
-    out_LB_Gaus_mean = -1;
-    out_LB_Gaus_meanE = -1;
-    out_LB_Gaus_width = -1;
-    out_LB_Gaus_size_width = -1;
-    out_LB_Gaus_chi2 = -1;
+    
+    out_LB_Gaus_Mean_mean = -1;
+    out_LB_Gaus_Mean_meanE = -1;
+    out_LB_Gaus_Mean_chi2 = -1;
+    out_LB_Gaus_Mean_width = -1;
+    
+    out_LB_Gaus_Width_width = -1;
+    out_LB_Gaus_Width_size_width = -1;
+    out_LB_Gaus_Width_offset = -1;
+    
+    out_mid_cut_Ngroup = -1;
+    out_mid_cut_peak_width = -1;
+    out_mid_cut_peak_ratio = -1;
+
+    out_LB_cut_Ngroup = -1;
+    out_LB_cut_peak_width = -1;
+    out_LB_cut_peak_ratio = -1;
+    
     out_LB_geo_mean = -1;
-    out_LB_Gaus_offset = -1;
     out_good_zvtx_tag = 0;
-    MC_true_zvtx = -1000;
-    out_N_group = -1;
+    MC_true_zvtx = TrigZvtxMC * 10.;
     
     out_LB_refit = -1;
     out_LB_refitE = -1;
@@ -573,6 +649,11 @@ void INTTZvtx::ProcessEvt(
         {
             // bool DCA_tag = false;
             // if (used_outer_check[outer_i] == 1) continue; // note : this outer cluster was already used, skip the trial of this combination
+
+            // note : to see the event-by-event 
+            evt_phi_diff_inner_phi -> Fill(temp_sPH_inner_nocolumn_vec[inner_i].phi, temp_sPH_inner_nocolumn_vec[inner_i].phi - temp_sPH_outer_nocolumn_vec[outer_i].phi);
+            evt_inner_outer_phi -> Fill(temp_sPH_inner_nocolumn_vec[inner_i].phi, temp_sPH_outer_nocolumn_vec[outer_i].phi);
+            evt_phi_diff_1D -> Fill(temp_sPH_inner_nocolumn_vec[inner_i].phi - temp_sPH_outer_nocolumn_vec[outer_i].phi); 
 
             if (fabs(temp_sPH_inner_nocolumn_vec[inner_i].phi - temp_sPH_outer_nocolumn_vec[outer_i].phi) < phi_diff_cut)
             {
@@ -616,6 +697,7 @@ void INTTZvtx::ProcessEvt(
                     {
                         N_comb.push_back(good_comb_id);
                         N_comb_e.push_back(0);
+                        N_comb_phi.push_back( (temp_sPH_inner_nocolumn_vec[inner_i].phi + temp_sPH_outer_nocolumn_vec[outer_i].phi)/2. );
                         z_mid.push_back(z_range_info.first);
                         z_range.push_back(z_range_info.second);
 
@@ -688,17 +770,24 @@ void INTTZvtx::ProcessEvt(
                 eff_z_range.push_back(z_range[track_i]);
             }
 
+            if (final_selection_widthD <= z_mid[track_i] && z_mid[track_i] <= final_selection_widthU){
+                // note : for monitoring the the phi distribution that is used for the z vertex determination.
+                // note : in principle, I expect it should be something uniform. 
+                evt_select_track_phi -> Fill(N_comb_phi[track_i]);
+            }
+
             // if ((z_mid[track_i] - z_range[track_i]) > final_selection_widthU || (z_mid[track_i] + z_range[track_i]) < final_selection_widthD) {continue;}
             // else {
-            //     eff_N_comb.push_back(N_comb[track_i]);
-            //     eff_z_mid.push_back(z_mid[track_i]);
-            //     eff_N_comb_e.push_back(N_comb_e[track_i]);
-            //     eff_z_range.push_back(z_range[track_i]);
+            //     // eff_N_comb.push_back(N_comb[track_i]);
+            //     // eff_z_mid.push_back(z_mid[track_i]);
+            //     // eff_N_comb_e.push_back(N_comb_e[track_i]);
+            //     // eff_z_range.push_back(z_range[track_i]);
             // }
         }
+
         z_range_gr = new TGraphErrors(eff_N_comb.size(),&eff_N_comb[0],&eff_z_mid[0],&eff_N_comb_e[0],&eff_z_range[0]);
         z_range_gr -> Fit(zvtx_finder,"NQ","",0,N_comb[N_comb.size() - 1]);
-        width_density_par = (double(eff_N_comb.size()) / fabs(temp_event_zvtx_info[2] - temp_event_zvtx_info[1])) / total_NClus;
+        width_density_par = (double(eff_N_comb.size()) / fabs(temp_event_zvtx_info[2] - temp_event_zvtx_info[1]));
         
         
 
@@ -756,6 +845,7 @@ void INTTZvtx::ProcessEvt(
             
         }
         
+        // note : output the root tree
         out_eID = event_i;
         N_cluster_inner_out = temp_sPH_inner_nocolumn_vec.size();
         N_cluster_outer_out = temp_sPH_outer_nocolumn_vec.size();
@@ -767,22 +857,31 @@ void INTTZvtx::ProcessEvt(
         out_ES_N_good = eff_N_comb.size();
         out_ES_width_density = width_density_par;
 
-        out_LB_Gaus_mean = loose_offset_peak;
-        out_LB_Gaus_meanE = gaus_fit -> GetParError(1); // note : -> loose one
-        out_LB_Gaus_width = tight_offset_width;
-        out_LB_Gaus_chi2 = gaus_fit -> GetChisquare() / double(gaus_fit -> GetNDF()); // note : -> loose one
-        out_LB_Gaus_offset = gaus_fit_offset;
-        out_LB_Gaus_size_width = gaus_ratio;
-        out_N_group = N_group_info[0];
-        out_LB_refit = -1;  // note : not in the out tree
-        out_LB_refitE = -1; // note : not in the out tree
+        out_LB_Gaus_Mean_mean = loose_offset_peak;
+        out_LB_Gaus_Mean_meanE = gaus_fit -> GetParError(1); // note : -> loose one
+        out_LB_Gaus_Mean_chi2 = gaus_fit -> GetChisquare() / double(gaus_fit -> GetNDF()); // note : -> loose one
+        out_LB_Gaus_Mean_width = fabs(gaus_fit -> GetParameter(2));
+
+        out_LB_Gaus_Width_width = tight_offset_width;
+        out_LB_Gaus_Width_offset = gaus_fit_offset;
+        out_LB_Gaus_Width_size_width = gaus_ratio;
+        
+        out_mid_cut_Ngroup = N_group_info[0];   
+        out_mid_cut_peak_ratio = N_group_info[1];
+        out_mid_cut_peak_width = fabs(N_group_info[3] - N_group_info[2]) / 2.;
+
+        out_LB_cut_Ngroup = N_group_info_detail[0];   
+        out_LB_cut_peak_ratio = N_group_info_detail[1];
+        out_LB_cut_peak_width = fabs(N_group_info_detail[3] - N_group_info_detail[2]) / 2.;
+
         out_LB_geo_mean = LB_geo_mean(line_breakdown_hist, { (tight_offset_peak - tight_offset_width), (tight_offset_peak + tight_offset_width) }, event_i);
-
         out_good_zvtx_tag = good_zvtx_tag;
-
         bco_full_out = bco_full;
         MC_true_zvtx = TrigZvtxMC * 10.;
         tree_out -> Fill();
+
+        out_LB_refit = -1;  // note : not in the out tree
+        out_LB_refitE = -1; // note : not in the out tree
 
     } // note : if N good tracks in xy found > certain value
     else {tree_out -> Fill();} 
@@ -889,8 +988,22 @@ void INTTZvtx::ProcessEvt(
 
         if (run_type == "MC") {draw_text -> DrawLatex(0.2, 0.54, Form("True MCz : %.3f mm",  TrigZvtxMC * 10.));}
         
-
+        // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+        pad_phi_diff -> cd();
+        evt_phi_diff_inner_phi -> Draw("colz0");
         
+        // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+        pad_track_phi -> cd();
+        evt_select_track_phi -> Draw("hist");
+
+        // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+        pad_inner_outer_phi -> cd();
+        evt_inner_outer_phi -> Draw("colz0");
+
+        // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+        pad_phi_diff_1D -> cd();
+        evt_phi_diff_1D -> Draw("hist");
+
 
         // temp_event_zvtx -> Draw("hist");
         // // zvtx_fitting -> Draw("lsame");
@@ -902,9 +1015,9 @@ void INTTZvtx::ProcessEvt(
         // draw_text -> DrawLatex(0.2, 0.79, Form("EffSig avg : %.2f mm",temp_event_zvtx_info[0]));
         
         if(draw_event_display && (event_i % print_rate) == 0 /*&& good_zvtx_tag == true*/){c2 -> Print(Form("%s/temp_event_display.pdf",out_folder_directory.c_str()));}
-        else if(good_zvtx_tag == false){c2 -> Print(Form("%s/temp_event_display.pdf",out_folder_directory.c_str()));}
-        // else if(final_zvtx > 0 || final_zvtx < -450) {cout<<"In INTTZvtx class, event :"<<event_i<<" weird zvtx "<<endl; c2 -> Print(Form("%s/temp_event_display.pdf",out_folder_directory.c_str()));}
-        else if(total_NClus > 5000) {cout<<"In INTTZvtx class, event :"<<event_i<<" high Nclus "<<endl; c2 -> Print(Form("%s/temp_event_display.pdf",out_folder_directory.c_str()));}
+        // else if(good_zvtx_tag == false){c2 -> Print(Form("%s/temp_event_display.pdf",out_folder_directory.c_str()));}
+        else if(final_zvtx > 0 || final_zvtx < -450) {cout<<"In INTTZvtx class, event :"<<event_i<<" weird zvtx "<<endl; c2 -> Print(Form("%s/temp_event_display.pdf",out_folder_directory.c_str()));}
+        // else if(total_NClus > 5000) {cout<<"In INTTZvtx class, event :"<<event_i<<" high Nclus "<<endl; c2 -> Print(Form("%s/temp_event_display.pdf",out_folder_directory.c_str()));}
         else if (run_type == "MC" && fabs(final_zvtx - (TrigZvtxMC * 10.)) > 2. && total_NClus > 3000) { cout<<"In INTTZvtx class, event :"<<event_i<<" High NClus, poor Z : "<< fabs(final_zvtx - (TrigZvtxMC * 10.)) <<endl; c2 -> Print(Form("%s/temp_event_display.pdf",out_folder_directory.c_str())); }
         else if (run_type == "MC" && fabs(final_zvtx - (TrigZvtxMC * 10.)) > 2.) { cout<<"In INTTZvtx class, event :"<<event_i<<" low NClus, poor Z : "<< fabs(final_zvtx - (TrigZvtxMC * 10.)) <<endl; c2 -> Print(Form("%s/temp_event_display.pdf",out_folder_directory.c_str())); }
 
@@ -924,6 +1037,10 @@ void INTTZvtx::ProcessEvt(
         pad_z  -> Clear();
         pad_z_hist -> Clear();
         pad_z_line -> Clear();
+        pad_phi_diff -> Clear();
+        pad_track_phi -> Clear();
+        pad_inner_outer_phi -> Clear();
+        pad_phi_diff_1D -> Clear();
 
         // temp_event_xy -> Delete();
         // temp_event_rz -> Delete();
@@ -943,6 +1060,7 @@ void INTTZvtx::ClearEvt()
     temp_event_rz = new TGraph(); temp_event_rz -> Delete();
     bkg = new TGraph(); bkg -> Delete();
     
+    N_comb_phi.clear();
     N_comb.clear();
     N_comb_e.clear();
     z_mid.clear(); 
@@ -964,6 +1082,10 @@ void INTTZvtx::ClearEvt()
 
     evt_possible_z -> Reset("ICESM");
     line_breakdown_hist -> Reset("ICESM");
+    evt_phi_diff_inner_phi -> Reset("ICESM");
+    evt_select_track_phi -> Reset("ICESM");
+    evt_inner_outer_phi -> Reset("ICESM");
+    evt_phi_diff_1D -> Reset("ICESM");
 
     // note : this is the distribution for full run
     // line_breakdown_gaus_ratio_hist -> Reset("ICESM");
@@ -1050,6 +1172,9 @@ void INTTZvtx::PrintPlots()
         ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
         c1 -> Print(Form("%s/Z_resolution.pdf",out_folder_directory.c_str()));
         c1 -> Clear();
+
+        MC_z_diff_peak = gaus_fit_2 -> GetParameter(1);
+        MC_z_diff_width = fabs(gaus_fit_2 -> GetParameter(2));
     }
 
 
@@ -1210,6 +1335,30 @@ void INTTZvtx::EndRun()
     tree_out -> Write("", TObject::kOverwrite);
 
     out_file -> Close();
+}
+
+double INTTZvtx::GetZdiffPeak()
+{
+    if (run_type == "MC" && MC_z_diff_peak != -777.)
+    {
+        return MC_z_diff_peak;
+    }
+    else 
+    {
+        cout<<"in INTTZvtx. Are you playing with data? The MC_z_diff_peak wasn't assigned, the value is still -777. Pleak check"<<endl;
+    }
+}
+
+double INTTZvtx::GetZdiffWidth()
+{
+    if (run_type == "MC" && MC_z_diff_width != -777.)
+    {
+        return MC_z_diff_width;
+    }
+    else 
+    {
+        cout<<"in INTTZvtx. Are you playing with data? The MC_z_diff_width wasn't assigned, the value is still -777. Pleak check"<<endl;
+    }
 }
 
 double INTTZvtx::get_radius(double x, double y)

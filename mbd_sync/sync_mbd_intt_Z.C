@@ -16,7 +16,7 @@ void sync_mbd_intt_Z() {
 
     TDirectory * gDir = gDirectory;
 
-    TFile * f_mbd = TFile::Open("/sphenix/tg/tg01/commissioning/INTT/subsystems/MBD/auau2023_v0/beam_seb18-00020869-0000_mbd.root");
+    TFile * f_mbd = TFile::Open("/sphenix/tg/tg01/commissioning/INTT/subsystems/MBD/auau2023_v1/beam_seb18-00020869-0000_mbd.root");
     gDirectory = gDir;
     TTree * t_mbd = (TTree * ) f_mbd -> Get("t");
     cout << " " << t_mbd << endl;
