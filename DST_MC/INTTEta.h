@@ -1215,7 +1215,7 @@ void INTTEta::PrintPlots()
             ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
             draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s, #eta: %.2f - %.2f",centrality_region[i].c_str(), eta_region_hist -> GetBinCenter(i1+1) - eta_region_hist -> GetBinWidth(i1+1)/2., eta_region_hist -> GetBinCenter(i1+1) + eta_region_hist -> GetBinWidth(i1+1)/2.));
             draw_text -> DrawLatex(0.21, 0.85, Form("Guassian integral : %.2f", gaus_integral));
-            draw_text -> DrawLatex(0.21, 0.85, Form("D-Guassian integral : %.2f", d_gaus_integral));
+            draw_text -> DrawLatex(0.21, 0.80, Form("D-Guassian integral : %.2f", d_gaus_integral));
             c1 -> Print(Form("%s/final_track_delta_phi_1D.pdf", out_folder_directory.c_str()));
             c1 -> Clear();
         }
