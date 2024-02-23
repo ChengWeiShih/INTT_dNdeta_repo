@@ -58,6 +58,9 @@ class INTTXYvtx {
         TF1 * gaus_fit;
         TF1 * gaus_fit_angle_diff;
         TF1 * gaus_fit_MC;
+        TF1 * correlation_Line;
+        TF1 * bkg_fit_pol2;
+        TF1 * draw_pol2_line;
         TF1 * correlation_fit_MC;
 
         TF1 * horizontal_fit_inner;
@@ -264,6 +267,11 @@ void INTTXYvtx::InitRest()
     correlation_fit_MC = new TF1("correlation_fit_MC","pol1",-10,10);
     correlation_fit_MC -> SetLineColor(2);
     correlation_fit_MC -> SetLineWidth(2);
+
+    correlation_Line = new TF1("correlation_Line","pol1",-10000,10000);
+    correlation_Line -> SetLineColor(2);
+    correlation_Line -> SetLineWidth(2);
+    correlation_Line -> SetParameters(0,1);
     // gaus_fit_MC -> SetNpx(1000);
 
 
@@ -320,6 +328,19 @@ void INTTXYvtx::InitRest()
     draw_pol1_line -> SetLineWidth(2);
     draw_pol1_line -> SetLineColor(3);
 
+    bkg_fit_pol2 = new TF1("bkg_fit_pol2",bkg_pol2_func,-5,5,4);
+    bkg_fit_pol2 -> SetLineWidth(2);
+    bkg_fit_pol2 -> SetLineColor(2);
+    bkg_fit_pol2 -> SetNpx(1000);
+
+    draw_pol2_line = new TF1("draw_pol2_line",full_pol2_func,-5,5,4);
+    draw_pol2_line -> SetLineWidth(2);
+    draw_pol2_line -> SetLineColor(2);
+    draw_pol2_line -> SetNpx(1000);
+
+
+
+
     d_gaus_pol1_fit  = new TF1("d_gaus_pol1_fit",d_gaus_pol1_func,-3,3,7);
     d_gaus_pol1_fit -> SetLineWidth(2);
     d_gaus_pol1_fit -> SetLineColor(2);
@@ -329,6 +350,7 @@ void INTTXYvtx::InitRest()
     draw_d_gaus -> SetLineStyle(9);
     draw_d_gaus -> SetLineWidth(2);
     draw_d_gaus -> SetLineColor(3);
+    draw_d_gaus -> SetNpx(1000);
 
 
     // track_pol1_fit = new TF1("track_pol1_fit","pol1",-500,500);

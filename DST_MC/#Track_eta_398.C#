@@ -1,12 +1,11 @@
-#include "INTTReadTree.h"
+0;115;0c#include "INTTReadTree.h"
 #include "INTTEta.h"
 
 void Track_eta_398()
 {
     string input_directory = "/sphenix/user/ChengWei/sPH_dNdeta/HIJING_ana398_xvtx-0p04cm_yvtx0p24cm_zvtx-20cm_dummyAlignParams";
     string file_name = "MC_ZF_zvtx";
-    string out_folder_directory = input_directory + "/Test_combine_majorZ_TrackEta_" + file_name;
-    // string out_folder_directory = input_directory + "/BKGTest_CluMultiUsed_majorZ_TrackEta_" + file_name;
+    string out_folder_directory = input_directory + "/Test4_TrackEta_" + file_name;
     string MC_list_name = "file_list.txt";
     string tree_name = "EventTree";
     
@@ -26,7 +25,6 @@ void Track_eta_398()
     bool draw_event_display = false;
     double peek = 3.324;
     int data_type = 0; // note : MC
-    // int data_type = 5; // note : MC, rotate the cluster of the inner barrel by 180 degrees
     int geo_mode_id = 0; // note : 0 -> perfect geo
     int zvtx_cal_require = 15;
 
@@ -35,7 +33,7 @@ void Track_eta_398()
 
     cout<<"Total event : "<<INTTClu -> GetNEvt()<<endl;
 
-    for (int event_i = 0; event_i < 80000; event_i ++)
+    for (int event_i = 0; event_i < 100; event_i ++)
     {
         INTTClu -> EvtInit(event_i);
         INTTClu -> EvtSetCluGroup();

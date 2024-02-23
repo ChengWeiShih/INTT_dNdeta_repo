@@ -36,7 +36,7 @@ class INTTReadTree
         void set_random_seed(int random_seed_in) {random_seed = random_seed_in;}
 
     private : 
-        string data_type_list[5] = {"MC","data_DST","data_private", "data_private_geo1", "MC_geo_test"};
+        string data_type_list[6] = {"MC","data_DST","data_private", "data_private_geo1", "MC_geo_test", "MC_inner_phi_rotation"};
         long long N_event;
 
         string input_directory; 
@@ -81,6 +81,7 @@ class INTTReadTree
         void TTreeInit_private_geo1();
         void TChainInit_MC_geo_test();
         double get_radius(double x, double y);
+        pair<double,double> rotatePoint(double x, double y);
 
 };
 
@@ -100,11 +101,13 @@ INTTReadTree::INTTReadTree(int data_type, string input_directory, string MC_list
 
     true_track_info.clear();
 
-    if (data_type_list[data_type] == "MC") 
+    if (data_type_list[data_type] == "MC" || data_type_list[data_type] == "MC_inner_phi_rotation") 
     {
         std::cout<<"--- INTTReadTree -> input data type: MC ---"<<std::endl;
         TChainInit_MC();
         std::cout<<"--- INTTReadTree -> Initialization done ---"<<std::endl;
+
+        if (data_type_list[data_type] == "MC_inner_phi_rotation") {std::cout<<"--- INTTReadTree -> note, the clusters in the inner barrel will be rotated ---"<<std::endl;}
     }
     else if (data_type_list[data_type] == "data_private")
     {
@@ -170,7 +173,7 @@ void INTTReadTree::TTreeInit_private_geo1()
 
 void INTTReadTree::EvtInit(long long event_i)
 {
-    if (data_type_list[data_type] == "MC" || data_type_list[data_type] == "MC_geo_test")
+    if (data_type_list[data_type] == "MC" || data_type_list[data_type] == "MC_geo_test" || data_type_list[data_type] == "MC_inner_phi_rotation")
     {
         inttDSTMC->LoadTree(event_i);
         inttDSTMC->GetEntry(event_i);
@@ -181,8 +184,8 @@ void INTTReadTree::EvtInit(long long event_i)
         TrigXvtxMC = inttDSTMC->TruthPV_trig_x;
         TrigYvtxMC = inttDSTMC->TruthPV_trig_y;
         TrigZvtxMC = inttDSTMC->TruthPV_trig_z;
-        Centrality_bimp = inttDSTMC->centrality_bimp;
-        Centrality_mbd = inttDSTMC->centrality_mbd;
+        Centrality_bimp = inttDSTMC->centrality_bimp; // note : the centrality bin information, these two are similar, but a bit different in terms of the definition which leads to the different result, but they more and less have positive correlation
+        Centrality_mbd = inttDSTMC->centrality_mbd;   // note : the centrality bin information,
         for (int track_i = 0; track_i < inttDSTMC->UniqueAncG4P_Eta->size(); track_i++) {true_track_info.push_back({inttDSTMC->UniqueAncG4P_Eta->at(track_i),inttDSTMC->UniqueAncG4P_Phi->at(track_i),float(inttDSTMC->UniqueAncG4P_PID->at(track_i))});}
     }
     else if (data_type_list[data_type] == "data_private" || data_type_list[data_type] == "data_private_geo1")
@@ -217,17 +220,21 @@ unsigned long INTTReadTree::GetEvtNClusPost()
 
 void INTTReadTree::EvtSetCluGroup()
 {
-    if (data_type_list[data_type] == "MC"){
+    if (data_type_list[data_type] == "MC" || data_type_list[data_type] == "MC_inner_phi_rotation"){
         for (int clu_i = 0; clu_i < evt_length; clu_i++)
         {
             if (int(inttDSTMC -> ClusPhiSize -> at(clu_i)) > clu_size_cut) continue; 
             if (int(inttDSTMC -> ClusAdc -> at(clu_i)) < clu_sum_adc_cut) continue;
 
-            double clu_x = inttDSTMC -> ClusX -> at(clu_i) * 10; // note : change the unit from cm to mm
-            double clu_y = inttDSTMC -> ClusY -> at(clu_i) * 10;
+            // double clu_x = inttDSTMC -> ClusX -> at(clu_i) * 10; // note : change the unit from cm to mm
+            // double clu_y = inttDSTMC -> ClusY -> at(clu_i) * 10;
+
+            int    clu_layer = (inttDSTMC -> ClusLayer -> at(clu_i) == 3 || inttDSTMC -> ClusLayer -> at(clu_i) == 4) ? 0 : 1;
+            // note : this is for rotating the clusters in the inner barrel by 180 degrees.
+            double clu_x = (data_type_list[data_type] == "MC_inner_phi_rotation" && clu_layer == 0)? rotatePoint(inttDSTMC -> ClusX -> at(clu_i) * 10, inttDSTMC -> ClusY -> at(clu_i) * 10).first  : inttDSTMC -> ClusX -> at(clu_i) * 10; // note : change the unit from cm to mm
+            double clu_y = (data_type_list[data_type] == "MC_inner_phi_rotation" && clu_layer == 0)? rotatePoint(inttDSTMC -> ClusX -> at(clu_i) * 10, inttDSTMC -> ClusY -> at(clu_i) * 10).second : inttDSTMC -> ClusY -> at(clu_i) * 10;
             double clu_z = inttDSTMC -> ClusZ -> at(clu_i) * 10;
             double clu_phi = (clu_y < 0) ? atan2(clu_y,clu_x) * (180./TMath::Pi()) + 360 : atan2(clu_y,clu_x) * (180./TMath::Pi());
-            int    clu_layer = (inttDSTMC -> ClusLayer -> at(clu_i) == 3 || inttDSTMC -> ClusLayer -> at(clu_i) == 4) ? 0 : 1;
             double clu_radius = get_radius(clu_x, clu_y);
 
             temp_sPH_nocolumn_vec[0].push_back( clu_x );
@@ -247,7 +254,7 @@ void INTTReadTree::EvtSetCluGroup()
                     clu_x, 
                     clu_y, 
                     clu_z, 
-                    clu_layer, 
+                    inttDSTMC -> ClusLayer -> at(clu_i), // note : should be 3 or 4, for the inner layer, this is for the mega cluster search
                     clu_phi
                 });
             }
@@ -262,7 +269,7 @@ void INTTReadTree::EvtSetCluGroup()
                     clu_x, 
                     clu_y, 
                     clu_z, 
-                    clu_layer, 
+                    inttDSTMC -> ClusLayer -> at(clu_i), // note : should be 5 or 6, for the outer layer, this is for the mega cluster search
                     clu_phi
                 });            
             }        
@@ -581,6 +588,25 @@ void INTTReadTree::EndRun()
     }
 
 
+}
+
+// note : rotate the ClusX and ClusY
+pair<double,double> INTTReadTree::rotatePoint(double x, double y)
+{
+    // Convert the rotation angle from degrees to radians
+    double rotation = 180.; // todo rotation is here
+    double angleRad = rotation * M_PI / 180.0;
+
+    // Perform the rotation
+    double xOut = x * cos(angleRad) - y * sin(angleRad);
+    double yOut = x * sin(angleRad) + y * cos(angleRad);
+
+    xOut = (fabs(xOut) < 0.00000001) ? 0 : xOut;
+    yOut = (fabs(yOut) < 0.00000001) ? 0 : yOut;
+
+    // cout<<"Post rotation: "<<xOut<<" "<<yOut<<endl;
+
+    return {xOut,yOut};
 }
 
 #endif

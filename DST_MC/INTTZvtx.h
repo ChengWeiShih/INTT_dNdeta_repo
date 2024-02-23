@@ -37,7 +37,7 @@ class INTTZvtx
 {
     public : 
         INTTZvtx(string run_type, string out_folder_directory, pair<double,double> beam_origin, int geo_mode_id, double phi_diff_cut = 0.11, pair<double, double> DCA_cut = {-1,1}, int N_clu_cutl = 20, int N_clu_cut = 10000, int zvtx_cal_require = 15, pair<double,double> zvtx_QA_width = {39.62, 65.36}, double zvtx_QA_ratio = 0.00001, bool draw_event_display = true, double peek = 3.32405);
-        void ProcessEvt(int event_i, vector<clu_info> temp_sPH_inner_nocolumn_vec, vector<clu_info> temp_sPH_outer_nocolumn_vec, vector<vector<double>> temp_sPH_nocolumn_vec, vector<vector<double>> temp_sPH_nocolumn_rz_vec, int NvtxMC, double TrigZvtxMC, bool PhiCheckTag, Long64_t bco_full);
+        void ProcessEvt(int event_i, vector<clu_info> temp_sPH_inner_nocolumn_vec, vector<clu_info> temp_sPH_outer_nocolumn_vec, vector<vector<double>> temp_sPH_nocolumn_vec, vector<vector<double>> temp_sPH_nocolumn_rz_vec, int NvtxMC, double TrigZvtxMC, bool PhiCheckTag, Long64_t bco_full, int centrality_bin);
         void ClearEvt();
         void PrintPlots();
         void EndRun();
@@ -144,7 +144,7 @@ class INTTZvtx
         double out_LB_refit, out_LB_refitE; // note : not used in the out tree
         double out_mid_cut_peak_width, out_mid_cut_peak_ratio, out_LB_cut_peak_width, out_LB_cut_peak_ratio;
         bool out_good_zvtx_tag;
-        int out_eID, N_cluster_outer_out, N_cluster_inner_out, out_ES_N_good, out_mid_cut_Ngroup, out_LB_cut_Ngroup;
+        int out_eID, N_cluster_outer_out, N_cluster_inner_out, out_ES_N_good, out_mid_cut_Ngroup, out_LB_cut_Ngroup, out_centrality_bin;
         Long64_t bco_full_out; 
 
         // note : for out parameters
@@ -528,6 +528,7 @@ void INTTZvtx::InitTreeOut()
     tree_out -> Branch("LB_cut_peak_width", &out_LB_cut_peak_width);     // note : LB cut peak width
     tree_out -> Branch("LB_cut_peak_ratio", &out_LB_cut_peak_ratio);     // note : LB cut peak ratio
     tree_out -> Branch("MC_true_zvtx",&MC_true_zvtx);
+    tree_out -> Branch("Centrality_bin",&out_centrality_bin);
 }
 
 void INTTZvtx::InitRest()
@@ -594,7 +595,8 @@ void INTTZvtx::ProcessEvt(
     int NvtxMC,
     double TrigZvtxMC,
     bool PhiCheckTag,
-    Long64_t bco_full
+    Long64_t bco_full,
+    int centrality_bin
 )
 {
     out_eID = event_i;
@@ -637,6 +639,8 @@ void INTTZvtx::ProcessEvt(
     good_zvtx_tag_int = 0;
     loose_offset_peak = -999; // note : unit [mm]
     loose_offset_peakE = -999; // note : unit [mm]
+
+    out_centrality_bin = -1;
 
 
 
@@ -908,6 +912,8 @@ void INTTZvtx::ProcessEvt(
         out_LB_cut_Ngroup = N_group_info_detail[0];   
         out_LB_cut_peak_ratio = N_group_info_detail[1];
         out_LB_cut_peak_width = fabs(N_group_info_detail[3] - N_group_info_detail[2]) / 2.;
+
+        out_centrality_bin = centrality_bin;
 
         out_LB_geo_mean = LB_geo_mean(line_breakdown_hist, { (tight_offset_peak - tight_offset_width), (tight_offset_peak + tight_offset_width) }, event_i);
         out_good_zvtx_tag = good_zvtx_tag;

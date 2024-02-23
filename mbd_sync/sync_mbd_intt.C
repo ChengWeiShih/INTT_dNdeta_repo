@@ -60,6 +60,13 @@ void sync_mbd_intt()
 
   TH2F *h_qmbd_nintt = new TH2F("h_qmbd_nintt", "BbcQ vs Intt N", 200, 0, 20000, 200, 0, 4000);
   TH2F *intt_mbd_bco = new TH2F("intt_mbd_bco", "INTT - MBD", 100, 0, 600000, 100, -10, 100000);
+  // TH2F *intt_mbd_bco = new TH2F("intt_mbd_bco", "INTT - MBD", 100, 0, 10000, 100, -10, 100000);
+  intt_mbd_bco->GetXaxis()->SetTitle("evt");
+  intt_mbd_bco->GetYaxis()->SetTitle("clock_diff");
+
+  TH1F *intt_mbd_bco_1D = new TH1F("intt_mbd_bco_1D", "INTT - MBD", 100, -10, 100000);
+  intt_mbd_bco_1D->GetXaxis()->SetTitle("clock_diff");
+  intt_mbd_bco_1D->GetYaxis()->SetTitle("entry");
 
   int        prev_mbdclk = 0;
   ULong64_t  prev_bco = 0;
@@ -67,11 +74,12 @@ void sync_mbd_intt()
   bool found_firstevt=false;
   int mbd_evt_offset = 0;
   int intt_evt_offset = 0;
-  for(int i=0; i<t_mbd->GetEntries(); i++){
+  for(int i=0; i< t_mbd->GetEntries(); i++){
     mbdt.LoadTree(i+mbd_evt_offset);
     mbdt.GetEntry(i+mbd_evt_offset);
 
-    // int evtseq = inttEvt->evtSeq;
+    int INTT_evtseq = inttEvt->evtSeq;
+    int MBD_evtseq = mbdt.evt;
     // cout<<evtseq<<endl;
     // if(evtseq==0) found_firstevt=true;
     // if(!found_firstevt){
@@ -105,14 +113,15 @@ void sync_mbd_intt()
     int       mbd_prvdif  = (mbdclk-prev_mbdclk)&0xFFFF;
     ULong64_t intt_prvdif = bco-prev_bco;
 
-    if((i%1000)==0){cout<<i<<" "<<hex<<setw(6)<<mbdclk<<" "<<setw(6)<<bco16<<" (mbd-intt)"<<setw(6)<<((mbdclk-bco16)&0xFFFF)
-        <<"      (femclk-prev)"<<setw(6)<<mbd_prvdif<<" (bco-prev)"<<setw(6)<<intt_prvdif<<dec<<endl;}
+    if((i%2000)==0){cout<<i<<" "<<hex<<setw(6)<<mbdclk<<" "<<setw(6)<<bco16<<" (mbd-intt)"<<setw(6)<<((mbdclk-bco16)&0xFFFF)
+        <<"      (femclk-prev)"<<setw(6)<<mbd_prvdif<<" (bco-prev)"<<setw(6)<<intt_prvdif<<dec<<" INTT Evt: "<<INTT_evtseq<<" MBD Evt: "<<MBD_evtseq<<endl;}
 
     
     if (mbdt.bqs > 200 && mbdt.bqn > 200)
       h_qmbd_nintt->Fill(nintt, bbcq);
     
     intt_mbd_bco -> Fill(i,(mbdclk-bco16)&0xFFFF);
+    intt_mbd_bco_1D -> Fill((mbdclk-bco16)&0xFFFF);
 
     prev_mbdclk = mbdclk;
     prev_bco    = bco;
@@ -133,6 +142,7 @@ void sync_mbd_intt()
   TFile* froot = new TFile("/sphenix/user/ChengWei/INTT/INTT_commissioning/ZeroField/20869/sync.root", "recreate");
   h_qmbd_nintt->Write();
   intt_mbd_bco->Write();
+  intt_mbd_bco_1D->Write();
   froot->Close();
   
 /*

@@ -37,7 +37,7 @@ to_ch_str convertToIndices(int input) {
 void hot_chan_finder(string run_ID)
 {   
     // string run_ID = "20864";
-    string folder_directory = "/sphenix/user/ChengWei/INTT/INTT_commissioning/ZeroField/" + run_ID;
+    string folder_directory = "/sphenix/user/ChengWei/INTT/INTT_commissioning/Field_ON/" + run_ID;
     string file_name = "beam_inttall-000"+ run_ID +"-0000_event_base_ana";
     string output_directory = folder_directory + "/PreCheck_" + file_name;
     double standard_ch_ratio_typeA = 1. / (8*14*16*128); // note : typeA, 16 sensor cells
