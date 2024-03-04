@@ -36,6 +36,7 @@ double cos_func(double *x, double *par)
 class INTTXYvtx {
     public:
         INTTXYvtx(string run_type, string out_folder_directory, pair<double,double> beam_origin, int geo_mode_id, double phi_diff_cut = 0.11, pair<double, double> DCA_cut = {-1,1}, int N_clu_cutl = 20, int N_clu_cut = 10000, bool draw_event_display = true, double peek = 3.32405, double angle_diff_new_l = 0.0, double angle_diff_new_r = 3, bool print_message_opt = true);
+        INTTXYvtx(string run_type, string out_folder_directory);
         void ProcessEvt(int event_i, vector<clu_info> temp_sPH_inner_nocolumn_vec, vector<clu_info> temp_sPH_outer_nocolumn_vec, vector<vector<double>> temp_sPH_nocolumn_vec, vector<vector<double>> temp_sPH_nocolumn_rz_vec, int NvtxMC, double TrigZvtxMC, bool PhiCheckTag, Long64_t bco_full);
         virtual void ClearEvt();
         virtual void PrintPlots();
@@ -221,6 +222,18 @@ INTTXYvtx::INTTXYvtx(string run_type, string out_folder_directory, pair<double,d
     MacroVTXxyCorrection_new_function_call_count = 0;
 }
 
+INTTXYvtx::INTTXYvtx(string run_type, string out_folder_directory)
+:run_type(run_type), out_folder_directory(out_folder_directory)
+{
+    SetsPhenixStyle();
+    if (filesystem::exists(out_folder_directory.c_str()) == false) {system(Form("mkdir %s",out_folder_directory.c_str()));}
+    gErrorIgnoreLevel = kWarning; // note : To not print the "print plot info."
+
+    InitCanvas();
+    InitRest();
+    plot_text = (run_type == "MC") ? "Simulation" : "Work-in-progress";
+}
+
 void INTTXYvtx::Init()
 {
     InitHist();
@@ -328,7 +341,7 @@ void INTTXYvtx::InitRest()
     draw_pol1_line -> SetLineWidth(2);
     draw_pol1_line -> SetLineColor(3);
 
-    bkg_fit_pol2 = new TF1("bkg_fit_pol2",bkg_pol2_func,-5,5,4);
+    bkg_fit_pol2 = new TF1("bkg_fit_pol2",bkg_pol2_func,-5,5,5);
     bkg_fit_pol2 -> SetLineWidth(2);
     bkg_fit_pol2 -> SetLineColor(2);
     bkg_fit_pol2 -> SetNpx(1000);

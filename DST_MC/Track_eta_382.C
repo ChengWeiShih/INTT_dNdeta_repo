@@ -1,19 +1,20 @@
 #include "INTTReadTree.h"
 #include "INTTEta.h"
 
-void Track_eta_398()
+void Track_eta_382()
 {
-    string input_directory = "/sphenix/user/ChengWei/sPH_dNdeta/HIJING_ana398_xvtx-0p04cm_yvtx0p24cm_zvtx-20cm_dummyAlignParams";
+    string input_directory = "/sphenix/user/ChengWei/sPH_dNdeta/dNdEta_INTT_MC_382";
     string file_name = "MC_ZF_zvtx";
     // string out_folder_directory = input_directory + "/CodeTest1_combine_FullZ_TrackEta_" + file_name;
-    string out_folder_directory = input_directory + "/New_TrackCounting_TrueZ_noMegaTrackRemoval";
-    string MC_list_name = "file_list.txt";
+    string out_folder_directory = input_directory + "/MegaTrackFinderClassTest1_combine_FullZ_TrackEta_" + file_name;
+    string MC_list_name = "dst_INTTdNdEta_382_small.list";
     string tree_name = "EventTree";
     
     // pair<double, double> beam_origin = {-0.015, 0.012};
     // pair<double, double> beam_origin = {-0.0, 0.0};
     // pair<double, double> beam_origin = {-0.4, 2.4};
-    pair<double, double> beam_origin = {-0.394532, 2.40234}; // note : line fill + quadrant method average
+    // pair<double, double> beam_origin = {-0.394532, 2.40234}; // note : line fill + quadrant method average
+    pair<double, double> beam_origin = {0,0}; // note : line fill + quadrant method average
     pair<double, double> DCA_cut = {-3, 3}; // {-1, 1};
     pair<double, double> zvtx_QA_width = {35, 70}; 
     double zvtx_QA_ratio = 0.00005;
@@ -35,7 +36,7 @@ void Track_eta_398()
 
     cout<<"Total event : "<<INTTClu -> GetNEvt()<<endl;
 
-    for (int event_i = 0; event_i < 80000; event_i ++)
+    for (int event_i = 0; event_i < 500; event_i ++)
     {
         INTTClu -> EvtInit(event_i);
         INTTClu -> EvtSetCluGroup();

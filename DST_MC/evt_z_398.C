@@ -5,7 +5,7 @@ void evt_z_398()
 {
     string input_directory = "/sphenix/user/ChengWei/sPH_dNdeta/HIJING_ana398_xvtx-0p04cm_yvtx0p24cm_zvtx-20cm_dummyAlignParams";
     string file_name = "MC_ZF_zvtx";
-    string out_folder_directory = input_directory + "/SemiFinal_EvtZ_" + file_name;
+    string out_folder_directory = input_directory + "/NewLoop_SemiFinal_EvtZ_withMegaTrackRemoval_TrueZGiven";
     string MC_list_name = "file_list.txt";
     string tree_name = "EventTree";
     

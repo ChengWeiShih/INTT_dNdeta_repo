@@ -5,7 +5,8 @@
 #include "/sphenix/user/ChengWei/INTT/INTT_commissioning/INTT_CW/INTT_commissioning/DAC_Scan/InttClustering.h"
 #include "../sigmaEff.h"
 #include "gaus_func.h"
-#include "../sPhenixStyle.C"
+#include "MegaTrackFinder.h"
+// #include "../sPhenixStyle.C"
 
 // double gaus_func(double *x, double *par)
 // {
@@ -136,6 +137,9 @@ class INTTZvtx
         int geo_mode_id;
         int N_clu_cut;                // note : if (> N_clu_cut)         -> continue  unit number
         int N_clu_cutl;               // note : if (< N_clu_cutl)        -> continue  unit number
+
+        vector<vector<pair<bool,clu_info>>> inner_clu_phi_map; // note: phi
+        vector<vector<pair<bool,clu_info>>> outer_clu_phi_map; // note: phi
         
         // note : for tree_out
         double out_ES_zvtx, out_ES_zvtxE, out_ES_rangeL, out_ES_rangeR, out_ES_width_density, MC_true_zvtx;
@@ -185,8 +189,21 @@ class INTTZvtx
         int fit_winner_id;
         int good_comb_id;
         
-        
-        
+
+        // note : the class that handles the 3/4-cluster tracklet finder
+        MegaTrackFinder * mega_track_finder; 
+        map<int,int> centrality_map = {
+            {5, 0},
+            {15, 1},
+            {25, 2},
+            {35, 3},
+            {45, 4},
+            {55, 5},
+            {65, 6},
+            {75, 7},
+            {85, 8},
+            {95, 9}
+        };
 
 
         TGraphErrors * z_range_gr;
@@ -212,6 +229,8 @@ class INTTZvtx
         void Characterize_Pad(TPad *pad, float left = 0.15, float right = 0.1, float top = 0.1, float bottom = 0.12, bool set_logY = false, int setgrid_bool = 0);
         void line_breakdown(TH1F* hist_in, pair<double,double> line_range);
         int min_width_ID(vector<double> input_width_vec);
+        double get_delta_phi(double angle_1, double angle_2);
+        double get_track_phi(double inner_clu_phi_in, double delta_phi_in);
         
         
 
@@ -247,10 +266,17 @@ INTTZvtx::INTTZvtx(string run_type, string out_folder_directory, pair<double,dou
     eff_N_comb.clear(); eff_z_mid.clear(); eff_N_comb_e.clear(); eff_z_range.clear(); // note : eff_sig
     LB_N_comb.clear(); LB_z_mid.clear(); LB_N_comb_e.clear(); LB_z_range.clear(); // note : LB gaus
 
+    inner_clu_phi_map.clear();
+    outer_clu_phi_map.clear();
+    inner_clu_phi_map = vector<vector<pair<bool,clu_info>>>(360);
+    outer_clu_phi_map = vector<vector<pair<bool,clu_info>>>(360);
+
     Init();
 
     plot_text = (run_type == "MC") ? "Simulation" : "Work-in-progress";
     
+    mega_track_finder = new MegaTrackFinder(run_type, out_folder_directory, centrality_map.size(), beam_origin);
+
     if (draw_event_display) {c2 -> Print(Form("%s/temp_event_display.pdf(",out_folder_directory.c_str()));}
 }
 
@@ -660,101 +686,193 @@ void INTTZvtx::ProcessEvt(
         return;
     }
 
+    // note : put the cluster into the phi map, the first bool is for the cluster usage.
+    // note : false means the cluster is not used
+    for (int inner_i = 0; inner_i < temp_sPH_inner_nocolumn_vec.size(); inner_i++) {
+        Clus_InnerPhi_Offset = (temp_sPH_inner_nocolumn_vec[inner_i].y - beam_origin.second < 0) ? atan2(temp_sPH_inner_nocolumn_vec[inner_i].y - beam_origin.second, temp_sPH_inner_nocolumn_vec[inner_i].x - beam_origin.first) * (180./TMath::Pi()) + 360 : atan2(temp_sPH_inner_nocolumn_vec[inner_i].y - beam_origin.second, temp_sPH_inner_nocolumn_vec[inner_i].x - beam_origin.first) * (180./TMath::Pi());
+        // cout<<"inner clu phi : "<<Clus_InnerPhi_Offset<<" origin: "<< temp_sPH_inner_nocolumn_vec[inner_i].phi <<endl;
+        // cout<<" ("<<Clus_InnerPhi_Offset<<", "<< temp_sPH_inner_nocolumn_vec[inner_i].phi<<")" <<endl;
+        inner_clu_phi_map[ int(Clus_InnerPhi_Offset) ].push_back({false,temp_sPH_inner_nocolumn_vec[inner_i]});
+    }
+    for (int outer_i = 0; outer_i < temp_sPH_outer_nocolumn_vec.size(); outer_i++) {
+        Clus_OuterPhi_Offset = (temp_sPH_outer_nocolumn_vec[outer_i].y - beam_origin.second < 0) ? atan2(temp_sPH_outer_nocolumn_vec[outer_i].y - beam_origin.second, temp_sPH_outer_nocolumn_vec[outer_i].x - beam_origin.first) * (180./TMath::Pi()) + 360 : atan2(temp_sPH_outer_nocolumn_vec[outer_i].y - beam_origin.second, temp_sPH_outer_nocolumn_vec[outer_i].x - beam_origin.first) * (180./TMath::Pi());
+        outer_clu_phi_map[ int(Clus_OuterPhi_Offset) ].push_back({false,temp_sPH_outer_nocolumn_vec[outer_i]});
+    }
+
+    // note : for the mega cluster finder, the 3/4-cluster tracklet that happens at the overlap region
+    mega_track_finder -> FindMegaTracks(inner_clu_phi_map, outer_clu_phi_map, {MC_true_zvtx,2}, centrality_map[centrality_bin]);    
+
     double good_pair_count = 0;    
 
-    for ( int inner_i = 0; inner_i < temp_sPH_inner_nocolumn_vec.size(); inner_i++ )
-    {    
-        for ( int outer_i = 0; outer_i < temp_sPH_outer_nocolumn_vec.size(); outer_i++ )
+    for (int inner_phi_i = 0; inner_phi_i < 360; inner_phi_i++) // note : each phi cell (1 degree)
+    {
+        // note : N cluster in this phi cell
+        for (int inner_phi_clu_i = 0; inner_phi_clu_i < inner_clu_phi_map[inner_phi_i].size(); inner_phi_clu_i++)
         {
-            // bool DCA_tag = false;
-            // if (used_outer_check[outer_i] == 1) continue; // note : this outer cluster was already used, skip the trial of this combination
+            if (inner_clu_phi_map[inner_phi_i][inner_phi_clu_i].first == true) {continue;}
 
-            // note : The vertex XY is not at zero, which leads to the fact that the angle difference between two clusters (one from inner, one from outer) doesn't have to be zero. (even in the ideal geometry)
-            // note : Therefore, apply the vertex offset before calculating the cluster phi angle can actually help us reduce the backgroup as it then is expected to be at zero when calculating the angle difference.  
-            Clus_InnerPhi_Offset = (temp_sPH_inner_nocolumn_vec[inner_i].y - beam_origin.second < 0) ? atan2(temp_sPH_inner_nocolumn_vec[inner_i].y - beam_origin.second, temp_sPH_inner_nocolumn_vec[inner_i].x - beam_origin.first) * (180./TMath::Pi()) + 360 : atan2(temp_sPH_inner_nocolumn_vec[inner_i].y - beam_origin.second, temp_sPH_inner_nocolumn_vec[inner_i].x - beam_origin.first) * (180./TMath::Pi());
-            Clus_OuterPhi_Offset = (temp_sPH_outer_nocolumn_vec[outer_i].y - beam_origin.second < 0) ? atan2(temp_sPH_outer_nocolumn_vec[outer_i].y - beam_origin.second, temp_sPH_outer_nocolumn_vec[outer_i].x - beam_origin.first) * (180./TMath::Pi()) + 360 : atan2(temp_sPH_outer_nocolumn_vec[outer_i].y - beam_origin.second, temp_sPH_outer_nocolumn_vec[outer_i].x - beam_origin.first) * (180./TMath::Pi());
+            Clus_InnerPhi_Offset = (inner_clu_phi_map[inner_phi_i][inner_phi_clu_i].second.y - beam_origin.second < 0) ? atan2(inner_clu_phi_map[inner_phi_i][inner_phi_clu_i].second.y - beam_origin.second, inner_clu_phi_map[inner_phi_i][inner_phi_clu_i].second.x - beam_origin.first) * (180./TMath::Pi()) + 360 : atan2(inner_clu_phi_map[inner_phi_i][inner_phi_clu_i].second.y - beam_origin.second, inner_clu_phi_map[inner_phi_i][inner_phi_clu_i].second.x - beam_origin.first) * (180./TMath::Pi());
 
-            // note : to see the event-by-event 
-            // evt_phi_diff_inner_phi -> Fill(temp_sPH_inner_nocolumn_vec[inner_i].phi, temp_sPH_inner_nocolumn_vec[inner_i].phi - temp_sPH_outer_nocolumn_vec[outer_i].phi);
-            // evt_inner_outer_phi -> Fill(temp_sPH_inner_nocolumn_vec[inner_i].phi, temp_sPH_outer_nocolumn_vec[outer_i].phi);
-            // evt_phi_diff_1D -> Fill(temp_sPH_inner_nocolumn_vec[inner_i].phi - temp_sPH_outer_nocolumn_vec[outer_i].phi); 
-            evt_phi_diff_inner_phi -> Fill(Clus_InnerPhi_Offset, Clus_InnerPhi_Offset - Clus_OuterPhi_Offset);
-            evt_inner_outer_phi -> Fill(Clus_InnerPhi_Offset, Clus_OuterPhi_Offset);
-            evt_phi_diff_1D -> Fill(Clus_InnerPhi_Offset - Clus_OuterPhi_Offset); 
-
-            if (fabs(Clus_InnerPhi_Offset - Clus_OuterPhi_Offset) < phi_diff_cut)
-            // if (fabs(temp_sPH_inner_nocolumn_vec[inner_i].phi - temp_sPH_outer_nocolumn_vec[outer_i].phi) < phi_diff_cut)
+            // todo: change the outer phi scan range
+            // note : the outer phi index, -1, 0, 1
+            for (int scan_i = -1; scan_i < 2; scan_i++)
             {
-                // vector<double> DCA_info_vec = calculateDistanceAndClosestPoint(
-                //     temp_sPH_inner_nocolumn_vec[inner_i].x, temp_sPH_inner_nocolumn_vec[inner_i].y,
-                //     temp_sPH_outer_nocolumn_vec[outer_i].x, temp_sPH_outer_nocolumn_vec[outer_i].y,
-                //     beam_origin.first, beam_origin.second
-                // );
+                int true_scan_i = ((inner_phi_i + scan_i) < 0) ? 360 + (inner_phi_i + scan_i) : ((inner_phi_i + scan_i) > 359) ? (inner_phi_i + scan_i)-360 : inner_phi_i + scan_i;
 
-                double DCA_sign = calculateAngleBetweenVectors(
-                    temp_sPH_outer_nocolumn_vec[outer_i].x, temp_sPH_outer_nocolumn_vec[outer_i].y,
-                    temp_sPH_inner_nocolumn_vec[inner_i].x, temp_sPH_inner_nocolumn_vec[inner_i].y,
-                    beam_origin.first, beam_origin.second
-                );
+                // note : N clusters in that outer phi cell
+                for (int outer_phi_clu_i = 0; outer_phi_clu_i < outer_clu_phi_map[true_scan_i].size(); outer_phi_clu_i++)
+                {
+                    if (outer_clu_phi_map[true_scan_i][outer_phi_clu_i].first == true) {continue;}
 
-                // if (DCA_info_vec[0] != fabs(DCA_sign) && fabs( DCA_info_vec[0] - fabs(DCA_sign) ) > 0.1 ){
-                //     cout<<"different DCA : "<<DCA_info_vec[0]<<" "<<DCA_sign<<" diff : "<<DCA_info_vec[0] - fabs(DCA_sign)<<endl;
-                // }
+                    Clus_OuterPhi_Offset = (outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.y - beam_origin.second < 0) ? atan2(outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.y - beam_origin.second, outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.x - beam_origin.first) * (180./TMath::Pi()) + 360 : atan2(outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.y - beam_origin.second, outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.x - beam_origin.first) * (180./TMath::Pi());
+                    double delta_phi = get_delta_phi(Clus_InnerPhi_Offset, Clus_OuterPhi_Offset);
 
-                if (DCA_cut.first < DCA_sign && DCA_sign < DCA_cut.second){
-                    // cout<<" "<<endl;
-                    // cout<<"good pair : "<<good_pair_count<<" inner: ("<<temp_sPH_inner_nocolumn_vec[inner_i].x<<", "<<temp_sPH_inner_nocolumn_vec[inner_i].y<<", "<<temp_sPH_inner_nocolumn_vec[inner_i].z<<")"<<endl;
-                    // cout<<"good pair : "<<good_pair_count<<" outer: ("<<temp_sPH_outer_nocolumn_vec[outer_i].x<<", "<<temp_sPH_outer_nocolumn_vec[outer_i].y<<", "<<temp_sPH_outer_nocolumn_vec[outer_i].z<<")"<<endl;
-                    // cout<<"good pair : "<<good_pair_count<<" corrected phi, inner : "<<Clus_InnerPhi_Offset<<" outer : "<<Clus_OuterPhi_Offset<<endl;
-                    // cout<<"good pair : "<<good_pair_count<<" DCA : "<<DCA_sign<<endl;
-                    // cout<<"good pair : "<<good_pair_count<<" phi diff : "<<fabs(Clus_InnerPhi_Offset - Clus_OuterPhi_Offset)<<endl;
-                    good_pair_count += 1;
-                    // used_outer_check[outer_i] = 1; //note : this outer cluster was already used!
-
-                    // pair<double,double> z_range_info = Get_possible_zvtx( 
-                    //     get_radius(beam_origin.first,beam_origin.second), 
-                    //     {get_radius(temp_sPH_inner_nocolumn_vec[inner_i].x, temp_sPH_inner_nocolumn_vec[inner_i].y), temp_sPH_inner_nocolumn_vec[inner_i].z}, // note : unsign radius
-                    //     {get_radius(temp_sPH_outer_nocolumn_vec[outer_i].x, temp_sPH_outer_nocolumn_vec[outer_i].y), temp_sPH_outer_nocolumn_vec[outer_i].z}  // note : unsign radius
-                    // );
+                    evt_phi_diff_inner_phi -> Fill(Clus_InnerPhi_Offset, delta_phi);
+                    evt_inner_outer_phi -> Fill(Clus_InnerPhi_Offset, Clus_OuterPhi_Offset);
+                    evt_phi_diff_1D -> Fill(delta_phi); 
                     
-                    // note : we basically transform the coordinate from cartesian to cylinder 
-                    // note : we should set the offset first, otherwise it provides the bias
-                    // todo : which point should be used, DCA point or vertex xy ? Has to be studied 
-                    pair<double,double> z_range_info = Get_possible_zvtx( 
-                        0., // get_radius(beam_origin.first,beam_origin.second), 
-                        {get_radius(temp_sPH_inner_nocolumn_vec[inner_i].x - beam_origin.first, temp_sPH_inner_nocolumn_vec[inner_i].y - beam_origin.second), temp_sPH_inner_nocolumn_vec[inner_i].z}, // note : unsign radius
-                        {get_radius(temp_sPH_outer_nocolumn_vec[outer_i].x - beam_origin.first, temp_sPH_outer_nocolumn_vec[outer_i].y - beam_origin.second), temp_sPH_outer_nocolumn_vec[outer_i].z}  // note : unsign radius
-                    );
-
-                    // note : try to remove some crazy background candidates. Can be a todo
-                    if (evt_possible_z_range.first < z_range_info.first && z_range_info.first < evt_possible_z_range.second) 
+                    if (fabs(delta_phi) < phi_diff_cut)
                     {
-                        N_comb.push_back(good_comb_id);
-                        N_comb_e.push_back(0);
-                        // N_comb_phi.push_back( (temp_sPH_inner_nocolumn_vec[inner_i].phi + temp_sPH_outer_nocolumn_vec[outer_i].phi)/2. );
-                        N_comb_phi.push_back( (Clus_InnerPhi_Offset + Clus_OuterPhi_Offset)/2. );
-                        z_mid.push_back(z_range_info.first);
-                        z_range.push_back(z_range_info.second);
+                        double DCA_sign = calculateAngleBetweenVectors(
+                            outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.x, outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.y,
+                            inner_clu_phi_map[inner_phi_i][inner_phi_clu_i].second.x, inner_clu_phi_map[inner_phi_i][inner_phi_clu_i].second.y,
+                            beam_origin.first, beam_origin.second
+                        );   
 
-                        evt_possible_z -> Fill(z_range_info.first);
+                        if (DCA_cut.first < DCA_sign && DCA_sign < DCA_cut.second){
+                            good_pair_count += 1;
+                            // used_outer_check[outer_i] = 1; //note : this outer cluster was already used!
+                            
+                            // note : we basically transform the coordinate from cartesian to cylinder 
+                            // note : we should set the offset first, otherwise it provides the bias
+                            // todo : which point should be used, DCA point or vertex xy ? Has to be studied 
+                            pair<double,double> z_range_info = Get_possible_zvtx( 
+                                0., // get_radius(beam_origin.first,beam_origin.second), 
+                                {get_radius(inner_clu_phi_map[inner_phi_i][inner_phi_clu_i].second.x - beam_origin.first, inner_clu_phi_map[inner_phi_i][inner_phi_clu_i].second.y - beam_origin.second), inner_clu_phi_map[inner_phi_i][inner_phi_clu_i].second.z}, // note : unsign radius
+                                {get_radius(outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.x - beam_origin.first, outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.y - beam_origin.second), outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.z}  // note : unsign radius
+                            );
 
-                        // note : fill the line_breakdwon histogram as well as a vector for the width determination
-                        line_breakdown(line_breakdown_hist,{z_range_info.first - z_range_info.second, z_range_info.first + z_range_info.second});
+                            // note : try to remove some crazy background candidates. Can be a todo
+                            if (evt_possible_z_range.first < z_range_info.first && z_range_info.first < evt_possible_z_range.second) 
+                            {
+                                N_comb.push_back(good_comb_id);
+                                N_comb_e.push_back(0);
+                                // N_comb_phi.push_back( (inner_clu_phi_map[inner_phi_i][inner_phi_clu_i].second.phi + outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.phi)/2. );
+                                N_comb_phi.push_back( get_track_phi(Clus_InnerPhi_Offset, delta_phi) );
+                                z_mid.push_back(z_range_info.first);
+                                z_range.push_back(z_range_info.second);
 
-                        good_comb_id += 1;    
+                                evt_possible_z -> Fill(z_range_info.first);
+
+                                // note : fill the line_breakdwon histogram as well as a vector for the width determination
+                                line_breakdown(line_breakdown_hist,{z_range_info.first - z_range_info.second, z_range_info.first + z_range_info.second});
+
+                                good_comb_id += 1;    
+                            }
+                        
+                        }
                     }
-
-                    // DCA_tag = true;
+                    
                 }
+            } // note : end of outer clu loop
+        } 
 
-                // if(DCA_tag == true) break; // note : since this combination (one inner cluster, one outer cluster) satisfied the reuqiremet, no reason to ask this inner cluster try with other outer clusters
+    } // note : end of inner clu loop
 
-                // cout<<"good comb : "<<fabs(temp_sPH_inner_nocolumn_vec[inner_i].phi - temp_sPH_outer_nocolumn_vec[outer_i].phi)<<" radius in : "<<get_radius(temp_sPH_inner_nocolumn_vec[inner_i].x, temp_sPH_inner_nocolumn_vec[inner_i].y)<<" radius out : "<<get_radius(temp_sPH_outer_nocolumn_vec[outer_i].x, temp_sPH_outer_nocolumn_vec[outer_i].y)<<endl;
-            } // note : end of if 
+    // note : the original two-nested loop method
+    // for ( int inner_i = 0; inner_i < temp_sPH_inner_nocolumn_vec.size(); inner_i++ )
+    // {    
+    //     for ( int outer_i = 0; outer_i < temp_sPH_outer_nocolumn_vec.size(); outer_i++ )
+    //     {
+    //         // bool DCA_tag = false;
+    //         // if (used_outer_check[outer_i] == 1) continue; // note : this outer cluster was already used, skip the trial of this combination
+
+    //         // note : The vertex XY is not at zero, which leads to the fact that the angle difference between two clusters (one from inner, one from outer) doesn't have to be zero. (even in the ideal geometry)
+    //         // note : Therefore, apply the vertex offset before calculating the cluster phi angle can actually help us reduce the backgroup as it then is expected to be at zero when calculating the angle difference.  
+    //         Clus_InnerPhi_Offset = (temp_sPH_inner_nocolumn_vec[inner_i].y - beam_origin.second < 0) ? atan2(temp_sPH_inner_nocolumn_vec[inner_i].y - beam_origin.second, temp_sPH_inner_nocolumn_vec[inner_i].x - beam_origin.first) * (180./TMath::Pi()) + 360 : atan2(temp_sPH_inner_nocolumn_vec[inner_i].y - beam_origin.second, temp_sPH_inner_nocolumn_vec[inner_i].x - beam_origin.first) * (180./TMath::Pi());
+    //         Clus_OuterPhi_Offset = (temp_sPH_outer_nocolumn_vec[outer_i].y - beam_origin.second < 0) ? atan2(temp_sPH_outer_nocolumn_vec[outer_i].y - beam_origin.second, temp_sPH_outer_nocolumn_vec[outer_i].x - beam_origin.first) * (180./TMath::Pi()) + 360 : atan2(temp_sPH_outer_nocolumn_vec[outer_i].y - beam_origin.second, temp_sPH_outer_nocolumn_vec[outer_i].x - beam_origin.first) * (180./TMath::Pi());
+
+    //         // note : to see the event-by-event 
+    //         // evt_phi_diff_inner_phi -> Fill(temp_sPH_inner_nocolumn_vec[inner_i].phi, temp_sPH_inner_nocolumn_vec[inner_i].phi - temp_sPH_outer_nocolumn_vec[outer_i].phi);
+    //         // evt_inner_outer_phi -> Fill(temp_sPH_inner_nocolumn_vec[inner_i].phi, temp_sPH_outer_nocolumn_vec[outer_i].phi);
+    //         // evt_phi_diff_1D -> Fill(temp_sPH_inner_nocolumn_vec[inner_i].phi - temp_sPH_outer_nocolumn_vec[outer_i].phi); 
+    //         evt_phi_diff_inner_phi -> Fill(Clus_InnerPhi_Offset, Clus_InnerPhi_Offset - Clus_OuterPhi_Offset);
+    //         evt_inner_outer_phi -> Fill(Clus_InnerPhi_Offset, Clus_OuterPhi_Offset);
+    //         evt_phi_diff_1D -> Fill(Clus_InnerPhi_Offset - Clus_OuterPhi_Offset); 
+
+    //         if (fabs(Clus_InnerPhi_Offset - Clus_OuterPhi_Offset) < phi_diff_cut)
+    //         // if (fabs(temp_sPH_inner_nocolumn_vec[inner_i].phi - temp_sPH_outer_nocolumn_vec[outer_i].phi) < phi_diff_cut)
+    //         {
+    //             // vector<double> DCA_info_vec = calculateDistanceAndClosestPoint(
+    //             //     temp_sPH_inner_nocolumn_vec[inner_i].x, temp_sPH_inner_nocolumn_vec[inner_i].y,
+    //             //     temp_sPH_outer_nocolumn_vec[outer_i].x, temp_sPH_outer_nocolumn_vec[outer_i].y,
+    //             //     beam_origin.first, beam_origin.second
+    //             // );
+
+    //             double DCA_sign = calculateAngleBetweenVectors(
+    //                 temp_sPH_outer_nocolumn_vec[outer_i].x, temp_sPH_outer_nocolumn_vec[outer_i].y,
+    //                 temp_sPH_inner_nocolumn_vec[inner_i].x, temp_sPH_inner_nocolumn_vec[inner_i].y,
+    //                 beam_origin.first, beam_origin.second
+    //             );
+
+    //             // if (DCA_info_vec[0] != fabs(DCA_sign) && fabs( DCA_info_vec[0] - fabs(DCA_sign) ) > 0.1 ){
+    //             //     cout<<"different DCA : "<<DCA_info_vec[0]<<" "<<DCA_sign<<" diff : "<<DCA_info_vec[0] - fabs(DCA_sign)<<endl;
+    //             // }
+
+    //             if (DCA_cut.first < DCA_sign && DCA_sign < DCA_cut.second){
+    //                 // cout<<" "<<endl;
+    //                 // cout<<"good pair : "<<good_pair_count<<" inner: ("<<temp_sPH_inner_nocolumn_vec[inner_i].x<<", "<<temp_sPH_inner_nocolumn_vec[inner_i].y<<", "<<temp_sPH_inner_nocolumn_vec[inner_i].z<<")"<<endl;
+    //                 // cout<<"good pair : "<<good_pair_count<<" outer: ("<<temp_sPH_outer_nocolumn_vec[outer_i].x<<", "<<temp_sPH_outer_nocolumn_vec[outer_i].y<<", "<<temp_sPH_outer_nocolumn_vec[outer_i].z<<")"<<endl;
+    //                 // cout<<"good pair : "<<good_pair_count<<" corrected phi, inner : "<<Clus_InnerPhi_Offset<<" outer : "<<Clus_OuterPhi_Offset<<endl;
+    //                 // cout<<"good pair : "<<good_pair_count<<" DCA : "<<DCA_sign<<endl;
+    //                 // cout<<"good pair : "<<good_pair_count<<" phi diff : "<<fabs(Clus_InnerPhi_Offset - Clus_OuterPhi_Offset)<<endl;
+    //                 good_pair_count += 1;
+    //                 // used_outer_check[outer_i] = 1; //note : this outer cluster was already used!
+
+    //                 // pair<double,double> z_range_info = Get_possible_zvtx( 
+    //                 //     get_radius(beam_origin.first,beam_origin.second), 
+    //                 //     {get_radius(temp_sPH_inner_nocolumn_vec[inner_i].x, temp_sPH_inner_nocolumn_vec[inner_i].y), temp_sPH_inner_nocolumn_vec[inner_i].z}, // note : unsign radius
+    //                 //     {get_radius(temp_sPH_outer_nocolumn_vec[outer_i].x, temp_sPH_outer_nocolumn_vec[outer_i].y), temp_sPH_outer_nocolumn_vec[outer_i].z}  // note : unsign radius
+    //                 // );
+                    
+    //                 // note : we basically transform the coordinate from cartesian to cylinder 
+    //                 // note : we should set the offset first, otherwise it provides the bias
+    //                 // todo : which point should be used, DCA point or vertex xy ? Has to be studied 
+    //                 pair<double,double> z_range_info = Get_possible_zvtx( 
+    //                     0., // get_radius(beam_origin.first,beam_origin.second), 
+    //                     {get_radius(temp_sPH_inner_nocolumn_vec[inner_i].x - beam_origin.first, temp_sPH_inner_nocolumn_vec[inner_i].y - beam_origin.second), temp_sPH_inner_nocolumn_vec[inner_i].z}, // note : unsign radius
+    //                     {get_radius(temp_sPH_outer_nocolumn_vec[outer_i].x - beam_origin.first, temp_sPH_outer_nocolumn_vec[outer_i].y - beam_origin.second), temp_sPH_outer_nocolumn_vec[outer_i].z}  // note : unsign radius
+    //                 );
+
+    //                 // note : try to remove some crazy background candidates. Can be a todo
+    //                 if (evt_possible_z_range.first < z_range_info.first && z_range_info.first < evt_possible_z_range.second) 
+    //                 {
+    //                     N_comb.push_back(good_comb_id);
+    //                     N_comb_e.push_back(0);
+    //                     // N_comb_phi.push_back( (temp_sPH_inner_nocolumn_vec[inner_i].phi + temp_sPH_outer_nocolumn_vec[outer_i].phi)/2. );
+    //                     N_comb_phi.push_back( (Clus_InnerPhi_Offset + Clus_OuterPhi_Offset)/2. );
+    //                     z_mid.push_back(z_range_info.first);
+    //                     z_range.push_back(z_range_info.second);
+
+    //                     evt_possible_z -> Fill(z_range_info.first);
+
+    //                     // note : fill the line_breakdwon histogram as well as a vector for the width determination
+    //                     line_breakdown(line_breakdown_hist,{z_range_info.first - z_range_info.second, z_range_info.first + z_range_info.second});
+
+    //                     good_comb_id += 1;    
+    //                 }
+
+    //                 // DCA_tag = true;
+    //             }
+
+    //             // if(DCA_tag == true) break; // note : since this combination (one inner cluster, one outer cluster) satisfied the reuqiremet, no reason to ask this inner cluster try with other outer clusters
+
+    //             // cout<<"good comb : "<<fabs(temp_sPH_inner_nocolumn_vec[inner_i].phi - temp_sPH_outer_nocolumn_vec[outer_i].phi)<<" radius in : "<<get_radius(temp_sPH_inner_nocolumn_vec[inner_i].x, temp_sPH_inner_nocolumn_vec[inner_i].y)<<" radius out : "<<get_radius(temp_sPH_outer_nocolumn_vec[outer_i].x, temp_sPH_outer_nocolumn_vec[outer_i].y)<<endl;
+    //         } // note : end of if 
                 
 
-        } // note : end of outer loop
-    } // note : end of inner loop
+    //     } // note : end of outer loop
+    // } // note : end of inner loop
     
     // cout<<"good pair count : "<<good_pair_count<<endl;
 
@@ -1127,6 +1245,11 @@ void INTTZvtx::ClearEvt()
     evt_select_track_phi -> Reset("ICESM");
     evt_inner_outer_phi -> Reset("ICESM");
     evt_phi_diff_1D -> Reset("ICESM");
+
+    inner_clu_phi_map.clear();
+    outer_clu_phi_map.clear();
+    inner_clu_phi_map = vector<vector<pair<bool,clu_info>>>(360);
+    outer_clu_phi_map = vector<vector<pair<bool,clu_info>>>(360);
 
     // note : this is the distribution for full run
     // line_breakdown_gaus_ratio_hist -> Reset("ICESM");
@@ -1702,6 +1825,23 @@ vector<double> INTTZvtx::find_Ngroup(TH1F * hist_in)
     
     // note : {N_group, ratio (if two), peak widthL, peak widthR}
     return {double(group_Nbin_vec.size()), peak_group_ratio, group_widthL_vec[peak_group_ID], group_widthR_vec[peak_group_ID]};
+}
+
+double INTTZvtx::get_delta_phi(double angle_1, double angle_2)
+{
+    vector<double> vec_abs = {fabs(angle_1 - angle_2), fabs(angle_1 - angle_2 + 360), fabs(angle_1 - angle_2 - 360)};
+    vector<double> vec = {(angle_1 - angle_2), (angle_1 - angle_2 + 360), (angle_1 - angle_2 - 360)};
+    return vec[std::distance(vec_abs.begin(), std::min_element(vec_abs.begin(),vec_abs.end()))];
+}
+
+double INTTZvtx::get_track_phi(double inner_clu_phi_in, double delta_phi_in)
+{
+    double track_phi = inner_clu_phi_in - (delta_phi_in/2.);
+    if (track_phi < 0) {track_phi += 360;}
+    else if (track_phi > 360) {track_phi -= 360;}
+    else if (track_phi == 360) {track_phi = 0;}
+    else {track_phi = track_phi;}
+    return track_phi;
 }
 #endif
 

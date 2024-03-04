@@ -69,6 +69,8 @@ class INTTReadTree
         TFile * file_in = nullptr;
         TTree * tree;
 
+        string run_type_out;
+
         // vector<string> included_ladder_vec = {
         //     "B0L000S","B0L002S","B0L003S", "B0L005S", "B0L006S", "B0L008S", "B0L009S", 
         //     "B1L000S","B1L003S","B1L004S", "B1L007S", "B1L008S", "B1L011S", "B1L012S"
@@ -103,6 +105,7 @@ INTTReadTree::INTTReadTree(int data_type, string input_directory, string MC_list
 
     if (data_type_list[data_type] == "MC" || data_type_list[data_type] == "MC_inner_phi_rotation") 
     {
+        run_type_out = "MC";
         std::cout<<"--- INTTReadTree -> input data type: MC ---"<<std::endl;
         TChainInit_MC();
         std::cout<<"--- INTTReadTree -> Initialization done ---"<<std::endl;
@@ -111,18 +114,21 @@ INTTReadTree::INTTReadTree(int data_type, string input_directory, string MC_list
     }
     else if (data_type_list[data_type] == "data_private")
     {
+        run_type_out = "data_private";
         std::cout<<"--- INTTReadTree -> input data type: private gen cluster ---"<<std::endl;
         TTreeInit_private();
         std::cout<<"--- INTTReadTree -> Initialization done ---"<<std::endl;
     }
     else if (data_type_list[data_type] == "data_private_geo1")
     {
+        run_type_out = "data_private_geo1";
         std::cout<<"--- INTTReadTree -> input data type: private gen cluster with geo correction 1 ---"<<std::endl;
         TTreeInit_private_geo1();
         std::cout<<"--- INTTReadTree -> Initialization done ---"<<std::endl;
     }
     else if (data_type_list[data_type] == "MC_geo_test")
     {
+        run_type_out = "MC";
         std::cout<<"--- INTTReadTree -> input data type: MC geometry test ---"<<std::endl;
         TChainInit_MC_geo_test();
         std::cout<<"--- INTTReadTree -> Initialization done ---"<<std::endl;
@@ -207,7 +213,7 @@ unsigned long INTTReadTree::GetEvtNClus() { return evt_length; }
 double INTTReadTree::GetTrigZvtxMC() {return TrigZvtxMC;}
 vector<double> INTTReadTree::GetTrigvtxMC() {return {TrigXvtxMC,TrigYvtxMC,TrigZvtxMC};}
 int INTTReadTree::GetNvtxMC() {return NvtxMC;}
-string INTTReadTree::GetRunType() { return data_type_list[data_type]; }
+string INTTReadTree::GetRunType() { return run_type_out; }
 Long64_t INTTReadTree::GetBCOFull() {return bco_full;}
 map<string, pair<double,double>> INTTReadTree::GetLadderOffsetMap() {return ladder_offset_map;}
 float INTTReadTree::GetCentralityBin() {return Centrality_bimp;}

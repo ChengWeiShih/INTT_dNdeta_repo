@@ -18,6 +18,11 @@ class INTTXYvtxEvt : public INTTXYvtx{
             if (draw_event_display == true) {c2 -> Print(Form("%s/temp_event_display.pdf(",out_folder_directory.c_str()));}
         };
 
+        INTTXYvtxEvt(string run_type, string out_folder_directory):INTTXYvtx(run_type, out_folder_directory)
+        {
+            return;
+        };
+
         // note : the function that new created for this class
         virtual void ProcessEvt(int event_i, vector<clu_info> temp_sPH_inner_nocolumn_vec, vector<clu_info> temp_sPH_outer_nocolumn_vec, vector<vector<double>> temp_sPH_nocolumn_vec, vector<vector<double>> temp_sPH_nocolumn_rz_vec, int NvtxMC, vector<double> TrigvtxMC, bool PhiCheckTag, Long64_t bco_full, pair<double,double> evt_z);
         pair<double,double> GetVtxXYEvt();

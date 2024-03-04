@@ -64,7 +64,7 @@ void zvtx_study()
     Z_resolution_centrality_gr -> GetYaxis()->SetTitle("#DeltaZ width");
 
     vector<TH1F *> Z_resolution; Z_resolution.clear();
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < centrality_region.size(); i++)
     {
         Z_resolution.push_back(new TH1F("","",100,-40,40)); // note : unit: mm
         Z_resolution[i]->GetXaxis()->SetTitle("#DeltaZ (Reco - True) [mm]");
@@ -81,6 +81,7 @@ void zvtx_study()
         if (read_tree -> good_zvtx_tag != 1) {continue;}
 
         Z_resolution[ centrality_map[read_tree->Centrality_bin] ] -> Fill( read_tree->LB_Gaus_Mean_mean - read_tree->MC_true_zvtx );
+        Z_resolution[ Z_resolution.size() - 1 ]                   -> Fill( read_tree->LB_Gaus_Mean_mean - read_tree->MC_true_zvtx );
         // cout<<"test : "<<event_i<<" read_tree->Centrality_bin "<<read_tree->Centrality_bin<<endl;
         // cout<<read_tree->MC_true_zvtx<<endl;
     }
@@ -90,7 +91,18 @@ void zvtx_study()
     {
         Z_resolution[i] -> SetMinimum(0);
         Z_resolution[i] -> Draw("hist");
-        Z_resolution[i] -> Fit(gaus_fit,"NQ");
+        
+        if (i == Z_resolution.size() - 1) 
+        {
+            Z_resolution[i] -> Fit(gaus_fit,"NQ","", Z_resolution[i]->GetStdDev() * -1, Z_resolution[i]->GetStdDev());
+            gaus_fit -> SetRange(gaus_fit->GetParameter(1) - 1.5 * gaus_fit->GetParameter(2), gaus_fit->GetParameter(1) + 1.5 * gaus_fit->GetParameter(2));
+        }
+        else 
+        {
+            Z_resolution[i] -> Fit(gaus_fit,"NQ");
+        }
+
+        
         ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", "Simulation"));
         draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s",centrality_region[i].c_str()));
         gaus_fit -> Draw("lsame");
