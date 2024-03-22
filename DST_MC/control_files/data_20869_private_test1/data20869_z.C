@@ -1,11 +1,11 @@
-#include "INTTReadTree.h"
-#include "INTTZvtx.h"
+#include "../../INTTReadTree.h"
+#include "../../INTTZvtx.h"
 
 void data20869_z()
 {
     string input_directory = "/sphenix/user/ChengWei/INTT/INTT_commissioning/ZeroField/20869";
     string file_name = "beam_inttall-00020869-0000_event_base_ana_cluster_full_survey_3.32_excludeR40000_200kEvent_3HotCut";
-    string out_folder_directory = input_directory + "/" + "folder_beam_inttall-00020869-0000_event_base_ana_cluster_full_survey_3.32_excludeR40000_200kEvent_3HotCut_advanced_test";
+    string out_folder_directory = input_directory + "/" + "folder_beam_inttall-00020869-0000_event_base_ana_cluster_full_survey_3.32_excludeR40000_200kEvent_3HotCut_advanced_correlation_study";
     string tree_name = "tree_clu";
     
     pair<double, double> beam_origin = {-0.457 + 0.0276, 2.657 - 0.2814}; // note : for run20869
@@ -29,7 +29,7 @@ void data20869_z()
 
     cout<<"Total event : "<<INTTClu -> GetNEvt()<<endl;
 
-    for (int event_i = 0; event_i < 20000/*INTTClu -> GetNEvt()*/; event_i ++)
+    for (int event_i = 0; event_i < 50000; event_i ++)
     {
         INTTClu -> EvtInit(event_i);
         INTTClu -> EvtSetCluGroup();
@@ -38,7 +38,7 @@ void data20869_z()
             event_i, 
             INTTClu -> temp_sPH_inner_nocolumn_vec, INTTClu -> temp_sPH_outer_nocolumn_vec, 
             INTTClu -> temp_sPH_nocolumn_vec, INTTClu -> temp_sPH_nocolumn_rz_vec, 
-            INTTClu -> GetNvtxMC(), INTTClu -> GetTrigZvtxMC(), INTTClu -> GetPhiCheckTag(), INTTClu -> GetBCOFull()  // note : no bco_full for MC
+            INTTClu -> GetNvtxMC(), INTTClu -> GetTrigZvtxMC(), INTTClu -> GetPhiCheckTag(), INTTClu -> GetBCOFull(), 5  // note : no bco_full for MC
         );        
 
         MCz -> ClearEvt();

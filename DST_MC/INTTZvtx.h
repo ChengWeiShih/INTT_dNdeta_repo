@@ -149,6 +149,7 @@ class INTTZvtx
         double out_mid_cut_peak_width, out_mid_cut_peak_ratio, out_LB_cut_peak_width, out_LB_cut_peak_ratio;
         bool out_good_zvtx_tag;
         int out_eID, N_cluster_outer_out, N_cluster_inner_out, out_ES_N_good, out_mid_cut_Ngroup, out_LB_cut_Ngroup, out_centrality_bin;
+        int out_N_cluster_north, out_N_cluster_south;
         Long64_t bco_full_out; 
 
         // note : for out parameters
@@ -259,6 +260,9 @@ INTTZvtx::INTTZvtx(string run_type, string out_folder_directory, pair<double,dou
     good_comb_id = 0;
     MC_z_diff_peak = -777.;
     MC_z_diff_width = -777.;
+
+    out_N_cluster_south = 0;
+    out_N_cluster_north = 0;
 
     N_group_info_detail = {-1.,-1.,-1.,-1.};
 
@@ -532,6 +536,8 @@ void INTTZvtx::InitTreeOut()
     tree_out -> Branch("bco_full",&bco_full_out);
     tree_out -> Branch("nclu_inner",&N_cluster_inner_out);
     tree_out -> Branch("nclu_outer",&N_cluster_outer_out);
+    tree_out -> Branch("nclu_south",&out_N_cluster_south);
+    tree_out -> Branch("nclu_north",&out_N_cluster_north);
     tree_out -> Branch("ES_zvtx",&out_ES_zvtx);                   // note : effective sigma, pol0 fit z-vertex
     tree_out -> Branch("ES_zvtxE",&out_ES_zvtxE);                 // note : effective sigma, pol0 fit z-vertex error
     tree_out -> Branch("ES_rangeL",&out_ES_rangeL);               // note : effective sigma, selected range left
@@ -668,6 +674,9 @@ void INTTZvtx::ProcessEvt(
 
     out_centrality_bin = -1;
 
+    out_N_cluster_north = 0;
+    out_N_cluster_south = 0;
+
 
 
     if (event_i%1000 == 0) {cout<<"In INTTZvtx class, running event : "<<event_i<<endl;}
@@ -693,14 +702,20 @@ void INTTZvtx::ProcessEvt(
         // cout<<"inner clu phi : "<<Clus_InnerPhi_Offset<<" origin: "<< temp_sPH_inner_nocolumn_vec[inner_i].phi <<endl;
         // cout<<" ("<<Clus_InnerPhi_Offset<<", "<< temp_sPH_inner_nocolumn_vec[inner_i].phi<<")" <<endl;
         inner_clu_phi_map[ int(Clus_InnerPhi_Offset) ].push_back({false,temp_sPH_inner_nocolumn_vec[inner_i]});
+
+        if (temp_sPH_inner_nocolumn_vec[inner_i].z > 0) {out_N_cluster_north += 1;}
+        else {out_N_cluster_south += 1;}
     }
     for (int outer_i = 0; outer_i < temp_sPH_outer_nocolumn_vec.size(); outer_i++) {
         Clus_OuterPhi_Offset = (temp_sPH_outer_nocolumn_vec[outer_i].y - beam_origin.second < 0) ? atan2(temp_sPH_outer_nocolumn_vec[outer_i].y - beam_origin.second, temp_sPH_outer_nocolumn_vec[outer_i].x - beam_origin.first) * (180./TMath::Pi()) + 360 : atan2(temp_sPH_outer_nocolumn_vec[outer_i].y - beam_origin.second, temp_sPH_outer_nocolumn_vec[outer_i].x - beam_origin.first) * (180./TMath::Pi());
         outer_clu_phi_map[ int(Clus_OuterPhi_Offset) ].push_back({false,temp_sPH_outer_nocolumn_vec[outer_i]});
+
+        if (temp_sPH_outer_nocolumn_vec[outer_i].z > 0) {out_N_cluster_north += 1;}
+        else {out_N_cluster_south += 1;}
     }
 
     // note : for the mega cluster finder, the 3/4-cluster tracklet that happens at the overlap region
-    mega_track_finder -> FindMegaTracks(inner_clu_phi_map, outer_clu_phi_map, {MC_true_zvtx,2}, centrality_map[centrality_bin]);    
+    mega_track_finder -> FindMegaTracks(inner_clu_phi_map, outer_clu_phi_map, {MC_true_zvtx,0.5}, centrality_map[centrality_bin]);    
 
     double good_pair_count = 0;    
 
@@ -1212,6 +1227,9 @@ void INTTZvtx::ProcessEvt(
 void INTTZvtx::ClearEvt()
 {
     good_comb_id = 0;
+    out_N_cluster_north = 0;
+    out_N_cluster_south = 0;
+
     // note : ultra-stupid way to avoid the errors
     z_range_gr_draw = new TGraphErrors(); z_range_gr_draw -> Delete();
     z_range_gr = new TGraphErrors(); z_range_gr -> Delete();
@@ -1250,6 +1268,8 @@ void INTTZvtx::ClearEvt()
     outer_clu_phi_map.clear();
     inner_clu_phi_map = vector<vector<pair<bool,clu_info>>>(360);
     outer_clu_phi_map = vector<vector<pair<bool,clu_info>>>(360);
+
+    mega_track_finder -> ClearEvt();
 
     // note : this is the distribution for full run
     // line_breakdown_gaus_ratio_hist -> Reset("ICESM");

@@ -1,7 +1,7 @@
 #include <TFile.h>
 #include <TTree.h>
 
-void RemoveFirstTwoEvents(const char* inputFile_INTT, const char* treeName_INTT, const char* inputFile_MBD, const char* treeName_MBD, const char* outputFile, const char* treeName_out = "EventTree") {
+void RemoveFirstTwoEvents(const char* inputFile_INTT, const char* treeName_INTT, const char* treeName_INTT, const char* inputFile_MBD, const char* treeName_MBD, const char* outputFile, const char* treeName_out = "EventTree") {
     // Open the input ROOT file
     TFile* inFile_INTT = TFile::Open(inputFile_INTT, "READ");
     if (!inFile_INTT || inFile_INTT->IsZombie()) {
@@ -26,7 +26,7 @@ void RemoveFirstTwoEvents(const char* inputFile_INTT, const char* treeName_INTT,
     // Get the input TTree
     TTree* inTree_MBD = dynamic_cast<TTree*>(inFile_MBD->Get(treeName_MBD));
     if (!inTree_MBD) {
-        std::cerr << "Error: Could not retrieve input TTree." << std::endl;
+        std::cerr << "Error: inTree_MBD, could not retrieve input TTree." << std::endl;
         inFile_MBD->Close();
         return;
     }

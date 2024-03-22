@@ -1,13 +1,14 @@
-#include "INTTReadTree.h"
-#include "INTTEta.h"
-#include "ReadINTTZ_v2.C"
+#include "../../INTTReadTree.h"
+#include "../../INTTEta.h"
+#include "../../ReadINTTZ_v2.C"
 
-void Track_eta_398_recoZ()
+void Track_eta_398_trueZused_recoZcut()
 {
     string input_directory = "/sphenix/user/ChengWei/sPH_dNdeta/HIJING_ana398_xvtx-0p04cm_yvtx0p24cm_zvtx-20cm_dummyAlignParams";
     string file_name = "MC_ZF_RECO_zvtx";
-    string out_folder_directory = input_directory + "/New_TrackCounting_BKGStudy_InnerPhiRotate_RecoZ_noMegaTrackRemoval";
+    string out_folder_directory = input_directory + "/New_TrackCounting_trueZused_RecoZcut_noMegaTrackRemoval_35k";
     // string out_folder_directory = input_directory + "/BKGTest_CluMultiUsed_majorZ_TrackEta_" + file_name;
+    // string out_folder_directory = input_directory + "/MegaTrackFinding_ratio";
     string MC_list_name = "file_list.txt";
     string tree_name = "EventTree";
 
@@ -33,8 +34,8 @@ void Track_eta_398_recoZ()
     
     bool draw_event_display = false;
     double peek = 3.324;
-    // int data_type = 0; // note : MC
-    int data_type = 5; // note : MC, rotate the cluster of the inner barrel by 180 degrees
+    int data_type = 0; // note : MC
+    // int data_type = 5; // note : MC, rotate the cluster of the inner barrel by 180 degrees
     int geo_mode_id = 0; // note : 0 -> perfect geo
     int zvtx_cal_require = 15;
 
@@ -73,7 +74,7 @@ void Track_eta_398_recoZ()
 
     cout<<"Total event : "<<INTTClu -> GetNEvt()<<endl;
 
-    for (int event_i = 0; event_i < 80000; event_i ++)
+    for (int event_i = 0; event_i < 35000; event_i ++)
     {
         INTTClu -> EvtInit(event_i);
         INTTClu -> EvtSetCluGroup();
@@ -89,10 +90,10 @@ void Track_eta_398_recoZ()
             event_i, 
             INTTClu -> temp_sPH_inner_nocolumn_vec, INTTClu -> temp_sPH_outer_nocolumn_vec, 
             INTTClu -> temp_sPH_nocolumn_vec, INTTClu -> temp_sPH_nocolumn_rz_vec, 
-            INTTClu -> GetNvtxMC(), INTTClu -> GetTrigvtxMC(), INTTClu -> GetPhiCheckTag(), -1, {read_recoZ -> LB_Gaus_Mean_mean, reco_Z_resolution[centrality_map[INTTClu->GetCentralityBin()]]}, INTTClu->GetCentralityBin(), INTTClu->GetTrueTrackInfo() // note : no bco_full for MC
+            INTTClu -> GetNvtxMC(), INTTClu -> GetTrigvtxMC(), INTTClu -> GetPhiCheckTag(), -1, {INTTClu -> GetTrigvtxMC()[2]*10,0.5}, INTTClu->GetCentralityBin(), INTTClu->GetTrueTrackInfo() // note : no bco_full for MC
         );
 
-        cout<<"Z check, recoZ: "<<read_recoZ -> LB_Gaus_Mean_mean<<" TrueZ: "<<INTTClu -> GetTrigvtxMC()[2]*10<<" diff: "<< read_recoZ -> LB_Gaus_Mean_mean - INTTClu -> GetTrigvtxMC()[2]*10<<" MBin: "<<INTTClu->GetCentralityBin()<<" recoZ resolution: "<<reco_Z_resolution[centrality_map[INTTClu->GetCentralityBin()]]<<endl;
+        // cout<<"Z check, recoZ: "<<read_recoZ -> LB_Gaus_Mean_mean<<" TrueZ: "<<INTTClu -> GetTrigvtxMC()[2]*10<<" diff: "<< read_recoZ -> LB_Gaus_Mean_mean - INTTClu -> GetTrigvtxMC()[2]*10<<" MBin: "<<INTTClu->GetCentralityBin()<<" recoZ resolution: "<<reco_Z_resolution[centrality_map[INTTClu->GetCentralityBin()]]<<endl;
 
         MCEta -> ClearEvt();
         INTTClu -> EvtClear();

@@ -33,6 +33,7 @@ class EtaDistReader : public INTTEta
             SignalNTrack_Single.clear(); 
             SignalNTrack_Multi.clear();
             N_event_counting = vector<vector<int>>(N_centrality_bin, vector<int>(included_eta_z_map.size(),0));
+            N_event_counting_MC = vector<vector<int>>(N_centrality_bin, vector<int>(included_eta_z_map.size(),0));
 
             DeltaPhi_Multi_Stack_hist_out.clear();
 
@@ -74,6 +75,7 @@ class EtaDistReader : public INTTEta
         map<string,TH1F *> DeltaPhi_Multi_1D;
         vector<TH2F *> TrueNtrack_eta_z_MC_2D;
         TH2F * centrality_Z_map;
+        TH2F * centrality_Z_map_MC;
         TH2F * eta_z_ref;
 
         vector<TH1F *> dNdeta_1D_MC;
@@ -85,6 +87,7 @@ class EtaDistReader : public INTTEta
         map<string, int> SignalNTrack_Single;
         map<string, int> SignalNTrack_Multi;
         vector<vector<int>> N_event_counting;
+        vector<vector<int>> N_event_counting_MC;
 
         TH1F * temp_hist;
 
@@ -129,7 +132,8 @@ void EtaDistReader::ReadFileHist()
 
     // note : the centrality Z map, to keep the N event counting
     string centrality_Z_map_name = (centrality_Z_map_bool == 0) ? "MBin_Z_evt_map" : "Z_MBin_evt_map"; // todo : the correct name should be "MBin_Z_evt_map", correct next time
-    centrality_Z_map = (TH2F *) file_in -> Get(centrality_Z_map_name.c_str()); 
+    centrality_Z_map    = (TH2F *) file_in -> Get(centrality_Z_map_name.c_str());
+    centrality_Z_map_MC = (TH2F *) file_in -> Get((centrality_Z_map_name+"_MC").c_str()); 
 
     // note : the reference map of Eta-Z 2D histogram
     eta_z_ref = (TH2F *) file_in -> Get("Eta_Z_reference");
@@ -223,7 +227,8 @@ void EtaDistReader::MainPreparation()
                 // note : to count the TrueNTtrack in the true level information
                 dNdeta_1D_MC[Mbin]->SetBinContent(eta_z.first - eta_correction, TrueNtrack_eta_z_MC_2D[Mbin] -> GetBinContent(eta_z.first, zbin) + dNdeta_1D_MC[Mbin]->GetBinContent(eta_z.first - eta_correction));
 
-                N_event_counting[Mbin][eta_z.first - eta_correction - 1] += centrality_Z_map -> GetBinContent(Mbin + 1, zbin);
+                N_event_counting[Mbin][eta_z.first - eta_correction - 1]    += centrality_Z_map -> GetBinContent(Mbin + 1, zbin);
+                N_event_counting_MC[Mbin][eta_z.first - eta_correction - 1] += centrality_Z_map_MC -> GetBinContent(Mbin + 1, zbin);
             }
 
             // note : Background fit on the DeltaPhi distributions, to know the background level
@@ -305,17 +310,38 @@ void EtaDistReader::FinaldNdEta()
 
         for (int i = 0; i < included_eta_z_map.size(); i++)
         {
-            dNdeta_1D_MC[Mbin] -> SetBinContent(i+1, dNdeta_1D_MC[Mbin] -> GetBinContent(i+1) / double(N_event_counting[Mbin][i]));
-            dNdeta_1D_MC[Mbin] -> SetBinError(i+1, dNdeta_1D_MC[Mbin] -> GetBinError(i+1) / double(N_event_counting[Mbin][i]));
+            dNdeta_1D_MC[Mbin] -> SetBinContent(i+1, dNdeta_1D_MC[Mbin] -> GetBinContent(i+1) / double(N_event_counting_MC[Mbin][i]));
+            dNdeta_1D_MC[Mbin] -> SetBinError(i+1, dNdeta_1D_MC[Mbin] -> GetBinError(i+1) / double(N_event_counting_MC[Mbin][i]));
 
             dNdeta_1D_reco_single[Mbin] -> SetBinContent(i+1, dNdeta_1D_reco_single[Mbin] -> GetBinContent(i+1) / double(N_event_counting[Mbin][i]));
             dNdeta_1D_reco_single[Mbin] -> SetBinError(i+1, dNdeta_1D_reco_single[Mbin] -> GetBinError(i+1) / double(N_event_counting[Mbin][i]));
 
             dNdeta_1D_reco_multi[Mbin]  -> SetBinContent(i+1, dNdeta_1D_reco_multi[Mbin] -> GetBinContent(i+1) / double(N_event_counting[Mbin][i]));
             dNdeta_1D_reco_multi[Mbin]  -> SetBinError(i+1, dNdeta_1D_reco_multi[Mbin] -> GetBinError(i+1) / double(N_event_counting[Mbin][i]));
-
         }
         
+        cout<<"----------- for the case of method tight ----------------" <<endl;
+        for (int i = 0; i < included_eta_z_map.size(); i++)
+        {
+            // note : to print the ratio between reco track and MC track
+            std::cout << "centrality bin : "<<Mbin<<", ";
+            for (int bin_i = 0; bin_i < dNdeta_1D_MC[Mbin] -> GetNbinsX(); bin_i++) {
+                std::cout <<"--"<<dNdeta_1D_reco_single[Mbin] -> GetBinContent(bin_i+1) <<", "<< dNdeta_1D_MC[Mbin] -> GetBinContent(bin_i+1)<< ", " << Form("%.3f",dNdeta_1D_reco_single[Mbin] -> GetBinContent(bin_i+1) / dNdeta_1D_MC[Mbin] -> GetBinContent(bin_i+1)) <<"--, ";
+            }
+            std::cout << std::endl;
+        }
+
+        cout<<"----------- for the case of method inclusive ----------------" <<endl;
+        for (int i = 0; i < included_eta_z_map.size(); i++)
+        {
+            // note : to print the ratio between reco track and MC track
+            std::cout << "centrality bin : "<<Mbin<<", ";
+            for (int bin_i = 0; bin_i < dNdeta_1D_MC[Mbin] -> GetNbinsX(); bin_i++) {
+                std::cout <<"--"<<dNdeta_1D_reco_multi[Mbin] -> GetBinContent(bin_i+1) <<", "<< dNdeta_1D_MC[Mbin] -> GetBinContent(bin_i+1)<< ", " << Form( "%.3f", dNdeta_1D_reco_multi[Mbin] -> GetBinContent(bin_i+1) / dNdeta_1D_MC[Mbin] -> GetBinContent(bin_i+1)) <<"--, ";
+            }
+            std::cout << std::endl;
+        }
+
         // note : check the bin content of the three histograms
         // note : and check the bin error of the three histograms
         // for (int i = 0; i < included_eta_z_map.size(); i++)

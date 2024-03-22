@@ -193,9 +193,10 @@ void MegaTrackFinder::FindMegaTracks(vector<vector<pair<bool,clu_info>>>& inner_
     {
         for (int inner_clu1_second = 0; inner_clu1_second < inner_clu_phi_map[inner_clu1_first].size(); inner_clu1_second++) // note : the first inner clu
         {
+            if (inner_clu_phi_map[inner_clu1_first][inner_clu1_second].first == true) {continue;} // note : if the cluster is used, skip it
+
             double inner_clu1_radius = get_radius(inner_clu_phi_map[inner_clu1_first][inner_clu1_second].second.x - beam_origin.first, inner_clu_phi_map[inner_clu1_first][inner_clu1_second].second.y - beam_origin.second);
-            double inner_clu1_phi    = get_offset_clu_phi(inner_clu_phi_map[inner_clu1_first][inner_clu1_second].second.x, inner_clu_phi_map[inner_clu1_first][inner_clu1_second].second.y);
-            
+            double inner_clu1_phi    = get_offset_clu_phi(inner_clu_phi_map[inner_clu1_first][inner_clu1_second].second.x, inner_clu_phi_map[inner_clu1_first][inner_clu1_second].second.y);     
 
             for (int scan_inner_i2 = -1; scan_inner_i2 < 2; scan_inner_i2++) // note : -1, 0, 1
             {
@@ -203,6 +204,8 @@ void MegaTrackFinder::FindMegaTracks(vector<vector<pair<bool,clu_info>>>& inner_
 
                 for (int inner_clu2_second = 0; inner_clu2_second < inner_clu_phi_map[inner_clu2_first].size(); inner_clu2_second++) // note : the second inner clu
                 {
+                    if (inner_clu_phi_map[inner_clu2_first][inner_clu2_second].first == true) {continue;} // note : if the cluster is used, skip it
+
                     // note : the cluster itself
                     if (inner_clu1_first == inner_clu2_first && inner_clu1_second == inner_clu2_second) {continue;} 
                     // note : in the same sub-layer, skip
@@ -226,6 +229,8 @@ void MegaTrackFinder::FindMegaTracks(vector<vector<pair<bool,clu_info>>>& inner_
 
                         for (int outer_clu1_second = 0; outer_clu1_second < outer_clu_phi_map[outer_clu1_first].size(); outer_clu1_second++)
                         {
+                            if (outer_clu_phi_map[outer_clu1_first][outer_clu1_second].first == true) {continue;} // note : if the cluster is used, skip it
+
                             double outer_clu1_radius = get_radius(outer_clu_phi_map[outer_clu1_first][outer_clu1_second].second.x - beam_origin.first, outer_clu_phi_map[outer_clu1_first][outer_clu1_second].second.y - beam_origin.second);
                             double outer_clu1_phi    = get_offset_clu_phi(outer_clu_phi_map[outer_clu1_first][outer_clu1_second].second.x, outer_clu_phi_map[outer_clu1_first][outer_clu1_second].second.y);
                             
@@ -263,6 +268,8 @@ void MegaTrackFinder::FindMegaTracks(vector<vector<pair<bool,clu_info>>>& inner_
 
                                 for (int outer_clu2_second = 0; outer_clu2_second < outer_clu_phi_map[outer_clu2_first].size(); outer_clu2_second++)
                                 {
+                                    if (outer_clu_phi_map[outer_clu2_first][outer_clu2_second].first == true) {continue;}
+
                                     // note : the cluster itself
                                     if (outer_clu1_first == outer_clu2_first && outer_clu1_second == outer_clu2_second) {continue;} 
                                     // note : in the same sub-layer, skip
@@ -322,9 +329,10 @@ void MegaTrackFinder::FindMegaTracks(vector<vector<pair<bool,clu_info>>>& inner_
     {
         for (int outer_clu1_second = 0; outer_clu1_second < outer_clu_phi_map[outer_clu1_first].size(); outer_clu1_second++) // note : the first outer clu
         {
+            if (outer_clu_phi_map[outer_clu1_first][outer_clu1_second].first == true) {continue;} // note : if the cluster is used, skip it
+
             double outer_clu1_radius = get_radius(outer_clu_phi_map[outer_clu1_first][outer_clu1_second].second.x - beam_origin.first, outer_clu_phi_map[outer_clu1_first][outer_clu1_second].second.y - beam_origin.second);
             double outer_clu1_phi    = get_offset_clu_phi(outer_clu_phi_map[outer_clu1_first][outer_clu1_second].second.x, outer_clu_phi_map[outer_clu1_first][outer_clu1_second].second.y);
-            
 
             for (int scan_outer_i2 = -1; scan_outer_i2 < 2; scan_outer_i2++) // note : -1, 0, 1
             {
@@ -332,6 +340,8 @@ void MegaTrackFinder::FindMegaTracks(vector<vector<pair<bool,clu_info>>>& inner_
 
                 for (int outer_clu2_second = 0; outer_clu2_second < outer_clu_phi_map[outer_clu2_first].size(); outer_clu2_second++) // note : the second outer clu
                 {
+                    if (outer_clu_phi_map[outer_clu2_first][outer_clu2_second].first == true) {continue;} // note : if the cluster is used, skip it
+
                     // note : the cluster itself
                     if (outer_clu1_first == outer_clu2_first && outer_clu1_second == outer_clu2_second) {continue;} 
                     // note : in the same sub-layer, skip
@@ -355,6 +365,8 @@ void MegaTrackFinder::FindMegaTracks(vector<vector<pair<bool,clu_info>>>& inner_
 
                         for (int inner_clu1_second = 0; inner_clu1_second < inner_clu_phi_map[inner_clu1_first].size(); inner_clu1_second++)
                         {
+                            if (inner_clu_phi_map[inner_clu1_first][inner_clu1_second].first == true) {continue;} // note : if the cluster is used, skip it
+
                             double inner_clu1_radius = get_radius(inner_clu_phi_map[inner_clu1_first][inner_clu1_second].second.x - beam_origin.first, inner_clu_phi_map[inner_clu1_first][inner_clu1_second].second.y - beam_origin.second);
                             double inner_clu1_phi    = get_offset_clu_phi(inner_clu_phi_map[inner_clu1_first][inner_clu1_second].second.x, inner_clu_phi_map[inner_clu1_first][inner_clu1_second].second.y);
                             
@@ -499,6 +511,7 @@ void MegaTrackFinder::FindMegaTracks(vector<vector<pair<bool,clu_info>>>& inner_
             // ", "<<<inner_clu_phi_map[clu3_track_index[better_track_index][0]][clu3_track_index[better_track_index][1]].second.y
             // ", "<<<inner_clu_phi_map[clu3_track_index[better_track_index][2]][clu3_track_index[better_track_index][3]].second.y
             // ", "<<<outer_clu_phi_map[clu3_track_index[better_track_index][4]][clu3_track_index[better_track_index][5]].second.y
+            cout<<"("<<clu3_track_clu_phi[better_track_index].first<<", "<<Get_eta_pair.second<<"), ";
             
             // note : mark the clusters as used
             inner_used_mega_clu[Form("%i_%i", clu3_track_index[better_track_index][0], clu3_track_index[better_track_index][1])] += 1;
@@ -551,6 +564,8 @@ void MegaTrackFinder::FindMegaTracks(vector<vector<pair<bool,clu_info>>>& inner_
             // ", "<<<outer_clu_phi_map[clu3_track_index[better_track_index][0]][clu3_track_index[better_track_index][1]].second.y
             // ", "<<<outer_clu_phi_map[clu3_track_index[better_track_index][2]][clu3_track_index[better_track_index][3]].second.y
             // ", "<<<inner_clu_phi_map[clu3_track_index[better_track_index][4]][clu3_track_index[better_track_index][5]].second.y
+
+            cout<<"("<<clu3_track_clu_phi[better_track_index].first<<", "<<Get_eta_pair.second<<"), ";
 
             // note : mark the clusters as used
             outer_used_mega_clu[Form("%i_%i", clu3_track_index[better_track_index][0], clu3_track_index[better_track_index][1])] += 1;

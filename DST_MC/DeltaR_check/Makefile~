@@ -1,0 +1,2 @@
+libReadEtaV2_1.so:
+	g++ `root-config --cflags --libs` -fPIC -shared -o $@  ReadEta_v2.C

@@ -42,12 +42,20 @@ class INTTEta : public INTTXYvtxEvt
             coarse_Reco_SignalNTracklet_Single_eta_z_2D.clear();
             coarse_Reco_SignalNTracklet_Multi_eta_z_2D.clear();
 
-            out_track_eta_d.clear();
+            out_recotrack_eta_d.clear();
+            out_recotrack_phi_d.clear();
+            out_truetrack_eta_d.clear();
+            out_truetrack_phi_d.clear();
+
             out_track_eta_i.clear();
             out_track_delta_phi_d.clear();
             clu_multi_used_tight = 0;
             clu_multi_used_loose = 0;
             effective_total_NClus = 0;
+
+            out_N2Clu_track = 0;
+            out_N3Clu_track = 0;
+            out_N4Clu_track = 0;
 
             eta_z_convert_map.clear();
             eta_z_convert_inverse_map.clear();
@@ -60,7 +68,7 @@ class INTTEta : public INTTXYvtxEvt
             inner_clu_phi_map = vector<vector<pair<bool,clu_info>>>(360);
             outer_clu_phi_map = vector<vector<pair<bool,clu_info>>>(360);
 
-            mega_track_finder = new MegaTrackFinder(run_type, out_folder_directory, centrality_map.size(), beam_origin);
+            mega_track_finder = new MegaTrackFinder(run_type, out_folder_directory, centrality_map.size(), beam_origin, true); // note : "true" means we marked the clusters as used
 
             // note : 10 is for the centrality bin
             N_GoodEvent_vec = vector<long long>(10,0); // todo : if the centrality bin is changed, the vector should be updated 
@@ -162,6 +170,8 @@ class INTTEta : public INTTXYvtxEvt
         TH1F * clu4_track_ReducedChi2_1D;
         TH1F * clu3_track_ReducedChi2_1D;
         TH1F * mega_track_eta_1D;
+        TH2F * mega_track_finding_ratio_2D;
+        TH2F * mega_track_contamination_2D;
 
         // note : diagnostic plots
         TH1F * check_inner_layer_clu_phi_1D;
@@ -215,8 +225,17 @@ class INTTEta : public INTTXYvtxEvt
         TTree * tree_out;
         int out_eID;
         int out_evt_centrality_bin;
+        int out_NTrueTrack;
+        int out_total_NClus;
+        int out_N2Clu_track; // note : method tight
+        int out_N3Clu_track; // note : mega cluster track 3-cluster track
+        int out_N4Clu_track; // note : mega cluster track 4-cluster track
         double out_evt_zvtx;
-        vector<double> out_track_eta_d;
+        double out_true_zvtx;
+        vector<double> out_recotrack_eta_d;
+        vector<double> out_recotrack_phi_d;
+        vector<double> out_truetrack_eta_d;
+        vector<double> out_truetrack_phi_d;
         vector<int> out_track_eta_i;
         vector<double> out_track_delta_phi_d;
 
@@ -310,7 +329,8 @@ class INTTEta : public INTTXYvtxEvt
         vector<TH2F *> coarse_eta_z_2D_MC; // note : keep the number of true tracks in each eta and z bin, for each centrality
         vector<TH2F *> coarse_Reco_SignalNTracklet_Single_eta_z_2D; // note : keep the counting of the N reco tracklet in the signal region for each eta, z and centrality bin. (for the single-cluster-used tracklet)
         vector<TH2F *> coarse_Reco_SignalNTracklet_Multi_eta_z_2D;  // note : // note : keep the counting of the N reco tracklet in the signal region for each eta, z and centrality bin. (for the multi-cluster-used tracklet)
-        TH2F * MBin_Z_evt_hist_2D;  // note : keep the number of event as a function of the z vertex and centrality bin
+        TH2F * MBin_Z_evt_hist_2D;    // note : keep the number of event as a function of the z vertex and centrality bin
+        TH2F * MBin_Z_evt_hist_2D_MC; // note : keep the number of event as a function of the z vertex and centrality bin, but the zvtx info. is given by the MC, the true zvtx
         
 
         // todo : change the single region cut here
@@ -541,11 +561,27 @@ void INTTEta::InitHist()
             final_track_multi_delta_phi_1D[i][eta_i] -> GetXaxis() -> SetNdivisions(505);
         }
     }
+    
+    mega_track_contamination_2D = new TH2F("","", 200,0,8500, 200, 0, 5);
+    mega_track_contamination_2D -> GetXaxis() -> SetTitle("INTT NClus");
+    mega_track_contamination_2D -> GetYaxis() -> SetTitle("Mega Track contamination ratio [%]");
+    mega_track_contamination_2D -> GetXaxis() -> SetNdivisions(505);
+
+    mega_track_finding_ratio_2D = new TH2F("","", 200,0,8500, 200, 0, 2);
+    mega_track_finding_ratio_2D -> GetXaxis() -> SetTitle("INTT NClus");
+    mega_track_finding_ratio_2D -> GetYaxis() -> SetTitle("Mega Track finding ratio");
+    mega_track_finding_ratio_2D -> GetXaxis() -> SetNdivisions(505);
 
     MBin_Z_evt_hist_2D = new TH2F("","", centrality_region.size(), 0, centrality_region.size(), z_region.size() - 1, &z_region[0]);
     MBin_Z_evt_hist_2D -> GetXaxis() -> SetTitle("Centrality bin");
     MBin_Z_evt_hist_2D -> GetYaxis() -> SetTitle("Z vertex [mm]");
     MBin_Z_evt_hist_2D -> GetXaxis() -> SetNdivisions(505); 
+
+    MBin_Z_evt_hist_2D_MC = new TH2F("","", centrality_region.size(), 0, centrality_region.size(), z_region.size() - 1, &z_region[0]);
+    MBin_Z_evt_hist_2D_MC -> GetXaxis() -> SetTitle("Centrality bin");
+    MBin_Z_evt_hist_2D_MC -> GetYaxis() -> SetTitle("Z vertex [mm]");
+    MBin_Z_evt_hist_2D_MC -> GetXaxis() -> SetNdivisions(505); 
+
 
     track_cluster_ratio_multiplicity_2D = new TH2F("","track_cluster_ratio_multiplicity_2D", 200, 0, 9000, 200, 0, 15);
     track_cluster_ratio_multiplicity_2D -> GetXaxis() -> SetTitle("NClus");
@@ -651,9 +687,18 @@ void INTTEta::InitTree()
     tree_out -> Branch("eID",&out_eID);
     tree_out -> Branch("Evt_centrality_bin",&out_evt_centrality_bin);
     tree_out -> Branch("Evt_zvtx", &out_evt_zvtx);
-    tree_out -> Branch("Track_eta_d", &out_track_eta_d);
-    tree_out -> Branch("Track_eta_i", &out_track_eta_i);
-    tree_out -> Branch("Track_delta_phi_d", &out_track_delta_phi_d);
+    tree_out -> Branch("True_zvtx", &out_true_zvtx);
+    tree_out -> Branch("NTrueTrack", &out_NTrueTrack);
+    tree_out -> Branch("NClus", &out_total_NClus);
+    tree_out -> Branch("RecoTrack_eta_d", &out_recotrack_eta_d);
+    tree_out -> Branch("RecoTrack_phi_d", &out_recotrack_phi_d);
+    tree_out -> Branch("TrueTrack_eta_d", &out_truetrack_eta_d);
+    tree_out -> Branch("TrueTrack_phi_d", &out_truetrack_phi_d);
+    // tree_out -> Branch("RecoTrack_eta_i", &out_track_eta_i);
+    // tree_out -> Branch("Track_delta_phi_d", &out_track_delta_phi_d);
+    tree_out -> Branch("N2Clu_track", &out_N2Clu_track);
+    tree_out -> Branch("N3Clu_track", &out_N3Clu_track);
+    tree_out -> Branch("N4Clu_track", &out_N4Clu_track);
     
     return;
 }
@@ -931,7 +976,7 @@ void INTTEta::print_evt_plot(int event_i, int NTrueTrack, int innerNClu, int out
 //                         final_track_delta_phi_1D[centrality_map[centrality_bin]][eta_bin - 1]      -> Fill(delta_phi);
 //                         final_track_delta_phi_1D[final_track_delta_phi_1D.size() - 1][eta_bin - 1] -> Fill(delta_phi);
 //                         out_track_delta_phi_d.push_back(delta_phi);
-//                         out_track_eta_d.push_back(Get_eta_pair.second);
+//                         out_recotrack_eta_d.push_back(Get_eta_pair.second);
 //                         out_track_eta_i.push_back(eta_bin);
 //                     }
                     
@@ -1030,6 +1075,9 @@ void INTTEta::ProcessEvt(int event_i, vector<clu_info> temp_sPH_inner_nocolumn_v
 
     if (run_type == "MC")
     {
+        MBin_Z_evt_hist_2D_MC -> Fill(centrality_map[centrality_bin], TrigvtxMC[2]*10.);
+        MBin_Z_evt_hist_2D_MC -> Fill(MBin_Z_evt_hist_2D_MC -> GetNbinsX()-1, TrigvtxMC[2]*10.);
+
         // note : for the true track case ----------------------------------------------------------------------------------------------------------------------------------------------------------------
         // if (event_i % 100 == 0){cout<<"z : "<<TrigvtxMC[2]*10.<<" eta : "<<INTT_eta_acceptance_l<<" "<<INTT_eta_acceptance_r<<endl;}
 
@@ -1064,6 +1112,8 @@ void INTTEta::ProcessEvt(int event_i, vector<clu_info> temp_sPH_inner_nocolumn_v
                 // cout<<"("<<true_track_info[track_i][0]<<", "<<convertTo360(true_track_info[track_i][1])<<"), ";
 
                 evt_true_track_gr -> SetPoint(evt_true_track_gr->GetN(),true_track_info[track_i][0], convertTo360(true_track_info[track_i][1]));
+                out_truetrack_eta_d.push_back(true_track_info[track_i][0]);
+                out_truetrack_phi_d.push_back(convertTo360(true_track_info[track_i][1]));
 
                 evt_NTrack_MC += 1;
             }
@@ -1093,7 +1143,15 @@ void INTTEta::ProcessEvt(int event_i, vector<clu_info> temp_sPH_inner_nocolumn_v
     }
 
     // note : for the mega cluster finder, the 3/4-cluster tracklet that happens at the overlap region
-    // mega_track_finder -> FindMegaTracks(inner_clu_phi_map, outer_clu_phi_map, evt_z, centrality_map[centrality_bin]);    
+    // mega_track_finder -> FindMegaTracks(inner_clu_phi_map, outer_clu_phi_map, evt_z, centrality_map[centrality_bin]);
+    // note : the followings are the study of the mega track finder efficiency
+    // int N_mega_track_with_recoZ = mega_track_finder -> Get_NClu3_track_count() + mega_track_finder -> Get_NClu4_track_count();
+    // mega_track_finder -> ClearEvt();    
+    // mega_track_finder -> FindMegaTracks(inner_clu_phi_map, outer_clu_phi_map, {TrigvtxMC[2] * 10., 0.5}, centrality_map[centrality_bin]);
+    // int N_mega_track_with_trueZ = mega_track_finder -> Get_NClu3_track_count() + mega_track_finder -> Get_NClu4_track_count();
+    // mega_track_finder -> ClearEvt();
+    // if (N_mega_track_with_recoZ != N_mega_track_with_trueZ) {cout<<N_mega_track_with_recoZ<<" "<<N_mega_track_with_trueZ<<endl;}
+    // if (N_mega_track_with_trueZ != 0) {mega_track_finding_ratio_2D -> Fill(total_NClus, double(N_mega_track_with_recoZ) / double(N_mega_track_with_trueZ));}
 
     // note : for two-cluster tracklets only
     for (int inner_phi_i = 0; inner_phi_i < 360; inner_phi_i++) // note : each phi cell (1 degree)
@@ -1128,10 +1186,10 @@ void INTTEta::ProcessEvt(int event_i, vector<clu_info> temp_sPH_inner_nocolumn_v
                     double outer_clu_eta = get_clu_eta({beam_origin.first, beam_origin.second, evt_z.first},{outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.x, outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.y, outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.z});
                     double delta_eta = inner_clu_eta - outer_clu_eta;
 
-                    track_delta_eta_1D[centrality_map[centrality_bin]] -> Fill( delta_eta );
+                    track_delta_eta_1D[centrality_map[centrality_bin]] -> Fill( delta_eta ); // note : all zvtx range and all eta region
                     track_delta_eta_1D[track_delta_eta_1D.size() - 1]  -> Fill( delta_eta );
 
-                    track_DeltaPhi_DeltaEta_2D[centrality_map[centrality_bin]]        -> Fill(delta_phi, delta_eta);
+                    track_DeltaPhi_DeltaEta_2D[centrality_map[centrality_bin]]        -> Fill(delta_phi, delta_eta); // note : all zvtx range and all eta region 
                     track_DeltaPhi_DeltaEta_2D[track_DeltaPhi_DeltaEta_2D.size() - 1] -> Fill(delta_phi, delta_eta);
 
                     pair<double,double> z_range_info = Get_possible_zvtx( 
@@ -1158,7 +1216,7 @@ void INTTEta::ProcessEvt(int event_i, vector<clu_info> temp_sPH_inner_nocolumn_v
                     track_phi_DCA_2D[centrality_map[centrality_bin]] -> Fill( delta_phi, DCA_sign );
                     track_phi_DCA_2D[track_phi_DCA_2D.size() - 1]    -> Fill( delta_phi, DCA_sign );
                     
-                    track_delta_phi_1D[centrality_map[centrality_bin]] -> Fill( delta_phi );
+                    track_delta_phi_1D[centrality_map[centrality_bin]] -> Fill( delta_phi ); // note : the pairs that pass the rough delta phi cut and eta cut
                     track_delta_phi_1D[track_delta_phi_1D.size() - 1]  -> Fill( delta_phi );
 
                     proto_pair_index.push_back({inner_phi_i, inner_phi_clu_i, true_scan_i, outer_phi_clu_i});
@@ -1191,7 +1249,7 @@ void INTTEta::ProcessEvt(int event_i, vector<clu_info> temp_sPH_inner_nocolumn_v
                     double eta_z_bin = GetTH2Index1D(GetTH2BinXY(coarse_eta_z_map->GetNbinsX(), coarse_eta_z_map->GetNbinsY(), coarse_eta_z_map -> Fill(Get_eta_pair.second, evt_z.first)), coarse_eta_z_map->GetNbinsX());
                     if (int(eta_z_bin) != -1)
                     {
-                        final_track_multi_delta_phi_1D[centrality_map[centrality_bin]][eta_z_bin]            -> Fill(delta_phi);
+                        final_track_multi_delta_phi_1D[centrality_map[centrality_bin]][eta_z_bin]            -> Fill(delta_phi); // note : each coarse eta and z bin
                         final_track_multi_delta_phi_1D[final_track_multi_delta_phi_1D.size() - 1][eta_z_bin] -> Fill(delta_phi);
 
                         if (fabs(delta_phi) <= signal_region) { 
@@ -1272,7 +1330,7 @@ void INTTEta::ProcessEvt(int event_i, vector<clu_info> temp_sPH_inner_nocolumn_v
             //     final_track_delta_phi_1D[final_track_delta_phi_1D.size() - 1][eta_bin - 1] -> Fill(pair_delta_phi);
 
             //     out_track_delta_phi_d.push_back(pair_delta_phi);
-            //     out_track_eta_d.push_back(Get_eta_pair.second);
+            //     out_recotrack_eta_d.push_back(Get_eta_pair.second);
             //     out_track_eta_i.push_back(eta_bin);
             // }
 
@@ -1338,6 +1396,12 @@ void INTTEta::ProcessEvt(int event_i, vector<clu_info> temp_sPH_inner_nocolumn_v
             track_eta_z_2D[centrality_map[centrality_bin]] -> Fill(Get_eta_pair.second, evt_z.first);
             track_eta_z_2D[track_eta_z_2D.size() - 1]      -> Fill(Get_eta_pair.second, evt_z.first);
 
+            out_recotrack_eta_d.push_back(Get_eta_pair.second);
+            out_recotrack_phi_d.push_back(track_phi);
+
+            // cout<<"good 2clu track, eta: "<<Get_eta_pair.second<<" phi: "<<track_phi<<" delta_phi: "<<delta_phi<<" -- index, inner: "<<inner_index_0<<" "<<inner_index_1<<" outer: "<<outer_index_0<<" "<<outer_index_1<<endl;
+            // cout<<" pair_line->DrawLine("<<inner_index_0<<","<<inner_index_1<<", "<<outer_index_0<<","<<outer_index_1<<");"<<endl;
+            // cout<<"("<<track_phi<<", "<<Get_eta_pair.second<<"), ";
             evt_NTrack += 1;
         }
         
@@ -1359,7 +1423,7 @@ void INTTEta::ProcessEvt(int event_i, vector<clu_info> temp_sPH_inner_nocolumn_v
         //     }
 
         //     out_track_delta_phi_d.push_back(delta_phi);
-        //     out_track_eta_d.push_back(Get_eta_pair.second);
+        //     out_recotrack_eta_d.push_back(Get_eta_pair.second);
         //     out_track_eta_i.push_back(eta_bin);
         // }
 
@@ -1380,7 +1444,7 @@ void INTTEta::ProcessEvt(int event_i, vector<clu_info> temp_sPH_inner_nocolumn_v
 
             // note : save the information in detail
             // out_track_delta_phi_d.push_back(delta_phi);
-            // out_track_eta_d.push_back(Get_eta_pair.second);
+            // out_recotrack_eta_d.push_back(Get_eta_pair.second);
             // out_track_eta_i.push_back(eta_bin);
 
         }
@@ -1391,12 +1455,19 @@ void INTTEta::ProcessEvt(int event_i, vector<clu_info> temp_sPH_inner_nocolumn_v
         inner_used_clu[Form("%i_%i", inner_index_0, inner_index_1)] += 1;
         outer_used_clu[Form("%i_%i", outer_index_0, outer_index_1)] += 1;
     }
-
     // note : save the information in detail
-    // out_eID = event_i;
-    // out_evt_centrality_bin = centrality_bin;
-    // out_evt_zvtx = evt_z.first;
-    // tree_out -> Fill();
+    out_eID = event_i;
+    out_evt_centrality_bin = centrality_bin;
+    out_evt_zvtx = evt_z.first;
+    out_true_zvtx = TrigvtxMC[2] * 10.;
+    out_NTrueTrack = evt_NTrack_MC;
+    out_total_NClus = total_NClus;
+    out_N2Clu_track = evt_NTrack;
+    out_N3Clu_track = mega_track_finder -> Get_NClu3_track_count();
+    out_N4Clu_track = mega_track_finder -> Get_NClu4_track_count();
+    tree_out -> Fill();
+
+    cout<<"event confirmation : "<<out_N2Clu_track<<" "<<out_N3Clu_track<<" "<<out_N4Clu_track<<endl;
 
     // cout<<" "<<endl;
     // cout<<" "<<endl;
@@ -1432,7 +1503,10 @@ void INTTEta::ClearEvt()
     if (evt_true_track_gr -> GetN() != 0) {evt_true_track_gr -> Set(0);}
     if (track_gr -> GetN() != 0) {track_gr -> Set(0);}
 
-    out_track_eta_d.clear();
+    out_recotrack_eta_d.clear();
+    out_recotrack_phi_d.clear();
+    out_truetrack_eta_d.clear();
+    out_truetrack_phi_d.clear();
     out_track_eta_i.clear();
     out_track_delta_phi_d.clear();
 
@@ -1459,6 +1533,10 @@ void INTTEta::ClearEvt()
     inner_used_clu.clear();
     outer_used_clu.clear();
 
+    out_N2Clu_track = 0;
+    out_N3Clu_track = 0;
+    out_N4Clu_track = 0;
+
     return_tag = 0;
     evt_NTrack = 0;
     evt_NTrack_MC = 0;
@@ -1484,6 +1562,14 @@ void INTTEta::PrintPlots()
     mega_track_eta_1D = mega_track_finder -> Get_mega_track_eta_1D();
 
     c1 -> cd();
+
+    // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+    mega_track_finding_ratio_2D -> Draw("colz0");
+    mega_track_finding_ratio_2D -> SetMinimum(0);
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    c1 -> Print( Form("%s/mega_track_finding_ratio_2D.pdf", out_folder_directory.c_str()) );
+    c1 -> Clear();
+
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     cluster3_inner_track_eta_1D -> Draw("hist");
@@ -1701,181 +1787,182 @@ void INTTEta::PrintPlots()
     }
     c1 -> Print( Form("%s/track_ratio_1D.pdf)", out_folder_directory.c_str()) );
     
-    // // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
-    // for (int i = 0; i < final_track_delta_phi_1D.size(); i++)
-    // {
-    //     c1 -> Print( Form("%s/final_track_delta_phi_1D_MBin%i.pdf(", out_folder_directory.c_str(), i) );
-    //     for (int i1 = 0; i1 < final_track_delta_phi_1D[i].size(); i1++)
-    //     {   
-    //         double hist_offset = get_dist_offset(final_track_delta_phi_1D[i][i1], 15);
-    //         gaus_pol1_fit->SetParameters( final_track_delta_phi_1D[i][i1] -> GetBinContent(final_track_delta_phi_1D[i][i1] -> GetMaximumBin()) - hist_offset, 0, final_track_delta_phi_1D[i][i1]->GetStdDev()/2., hist_offset, 0);
-    //         final_track_delta_phi_1D[i][i1] -> Fit(gaus_pol1_fit,"NQ");
+    // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+    for (int i = 0; i < final_track_delta_phi_1D.size(); i++)
+    {
+        c1 -> Print( Form("%s/final_track_delta_phi_1D_MBin%i.pdf(", out_folder_directory.c_str(), i) );
+        for (int i1 = 0; i1 < final_track_delta_phi_1D[i].size(); i1++)
+        {   
+            double hist_offset = get_dist_offset(final_track_delta_phi_1D[i][i1], 15);
+            gaus_pol1_fit->SetParameters( final_track_delta_phi_1D[i][i1] -> GetBinContent(final_track_delta_phi_1D[i][i1] -> GetMaximumBin()) - hist_offset, 0, final_track_delta_phi_1D[i][i1]->GetStdDev()/2., hist_offset, 0);
+            final_track_delta_phi_1D[i][i1] -> Fit(gaus_pol1_fit,"NQ");
 
-    //         // note : par[0] : size
-    //         // note : par[1] : ratio of the two gaussians
-    //         // note : par[2] : mean
-    //         // note : par[3] : width of gaus 1
-    //         // note : par[4] : width of gaus 2
-    //         // note : par[5] : offset
-    //         // note : par[6] : slope
-    //         // note : fit with double gaussian function + pol1
-    //         d_gaus_pol1_fit -> SetParameters(final_track_delta_phi_1D[i][i1] -> GetBinContent(final_track_delta_phi_1D[i][i1] -> GetMaximumBin()) - hist_offset, 0.2, 0, final_track_delta_phi_1D[i][i1]->GetStdDev()/2., final_track_delta_phi_1D[i][i1]->GetStdDev()/2., hist_offset, 0);
-    //         d_gaus_pol1_fit -> SetParLimits(1, 0, 0.5);  // note : the first gaussian is  the main distribution, So it should contain more than 50% of the total distribution
-    //         d_gaus_pol1_fit -> SetParLimits(3, 0, 1000); // note : the width of the gaussian should be positive
-    //         d_gaus_pol1_fit -> SetParLimits(4, 0, 1000); // note : the width of the gaussian should be positive
-    //         final_track_delta_phi_1D[i][i1] -> Fit(d_gaus_pol1_fit,"NQ");
-    //         // note : extract the signal region
-    //         draw_d_gaus -> SetParameters(d_gaus_pol1_fit->GetParameter(0), d_gaus_pol1_fit->GetParameter(1), d_gaus_pol1_fit->GetParameter(2), d_gaus_pol1_fit->GetParameter(3), d_gaus_pol1_fit->GetParameter(4));
-    //         // note : extract the part of pol1 background
-    //         draw_pol1_line -> SetParameters(d_gaus_pol1_fit -> GetParameter(5), d_gaus_pol1_fit -> GetParameter(6));
+            // note : par[0] : size
+            // note : par[1] : ratio of the two gaussians
+            // note : par[2] : mean
+            // note : par[3] : width of gaus 1
+            // note : par[4] : width of gaus 2
+            // note : par[5] : offset
+            // note : par[6] : slope
+            // note : fit with double gaussian function + pol1
+            d_gaus_pol1_fit -> SetParameters(final_track_delta_phi_1D[i][i1] -> GetBinContent(final_track_delta_phi_1D[i][i1] -> GetMaximumBin()) - hist_offset, 0.2, 0, final_track_delta_phi_1D[i][i1]->GetStdDev()/2., final_track_delta_phi_1D[i][i1]->GetStdDev()/2., hist_offset, 0);
+            d_gaus_pol1_fit -> SetParLimits(1, 0, 0.5);  // note : the first gaussian is  the main distribution, So it should contain more than 50% of the total distribution
+            d_gaus_pol1_fit -> SetParLimits(3, 0, 1000); // note : the width of the gaussian should be positive
+            d_gaus_pol1_fit -> SetParLimits(4, 0, 1000); // note : the width of the gaussian should be positive
+            final_track_delta_phi_1D[i][i1] -> Fit(d_gaus_pol1_fit,"NQ");
+            // note : extract the signal region
+            draw_d_gaus -> SetParameters(d_gaus_pol1_fit->GetParameter(0), d_gaus_pol1_fit->GetParameter(1), d_gaus_pol1_fit->GetParameter(2), d_gaus_pol1_fit->GetParameter(3), d_gaus_pol1_fit->GetParameter(4));
+            // note : extract the part of pol1 background
+            draw_pol1_line -> SetParameters(d_gaus_pol1_fit -> GetParameter(5), d_gaus_pol1_fit -> GetParameter(6));
 
-    //         // note : fit the background region only by the pol2 function
-    //         // note : p[0] + p[1]*(x-p[3])+p[2] * (x-p[3])^2
-    //         bkg_fit_pol2 -> SetParameters(hist_offset, 0, -0.2, 0, signal_region);
-    //         bkg_fit_pol2 -> FixParameter(4, signal_region);
-    //         bkg_fit_pol2 -> SetParLimits(2, -100, 0);
-    //         final_track_delta_phi_1D[i][i1] -> Fit(bkg_fit_pol2,"NQ");
-    //         // note : extract the background region (which includes the signal region also)
-    //         draw_pol2_line -> SetParameters(bkg_fit_pol2 -> GetParameter(0), bkg_fit_pol2 -> GetParameter(1), bkg_fit_pol2 -> GetParameter(2), bkg_fit_pol2 -> GetParameter(3));
+            // note : fit the background region only by the pol2 function
+            // note : p[0] + p[1]*(x-p[3])+p[2] * (x-p[3])^2
+            bkg_fit_pol2 -> SetParameters(hist_offset, 0, -0.2, 0, signal_region);
+            bkg_fit_pol2 -> FixParameter(4, signal_region);
+            bkg_fit_pol2 -> SetParLimits(2, -100, 0);
+            final_track_delta_phi_1D[i][i1] -> Fit(bkg_fit_pol2,"NQ");
+            // note : extract the background region (which includes the signal region also)
+            draw_pol2_line -> SetParameters(bkg_fit_pol2 -> GetParameter(0), bkg_fit_pol2 -> GetParameter(1), bkg_fit_pol2 -> GetParameter(2), bkg_fit_pol2 -> GetParameter(3));
 
-    //         final_track_delta_phi_1D[i][i1] -> SetMinimum(0);
-    //         final_track_delta_phi_1D[i][i1] -> SetMaximum( final_track_delta_phi_1D[i][i1] -> GetBinContent(final_track_delta_phi_1D[i][i1] -> GetMaximumBin()) * 1.5);
-    //         final_track_delta_phi_1D[i][i1] -> Draw("hist"); 
-    //         // d_gaus_pol1_fit -> Draw("lsame");
-    //         // draw_d_gaus -> Draw("lsame");
-    //         // draw_pol1_line -> Draw("lsame");
-    //         draw_pol2_line -> Draw("lsame");
+            final_track_delta_phi_1D[i][i1] -> SetMinimum(0);
+            final_track_delta_phi_1D[i][i1] -> SetMaximum( final_track_delta_phi_1D[i][i1] -> GetBinContent(final_track_delta_phi_1D[i][i1] -> GetMaximumBin()) * 1.5);
+            final_track_delta_phi_1D[i][i1] -> Draw("hist"); 
+            // d_gaus_pol1_fit -> Draw("lsame");
+            // draw_d_gaus -> Draw("lsame");
+            // draw_pol1_line -> Draw("lsame");
+            draw_pol2_line -> Draw("lsame");
 
-    //         // gaus_pol1_fit -> Draw("lsame");
-    //         // draw_gaus_line -> SetParameters(fabs(gaus_pol1_fit -> GetParameter(0)), gaus_pol1_fit -> GetParameter(1), fabs(gaus_pol1_fit -> GetParameter(2)), 0);
-    //         // draw_gaus_line -> Draw("lsame");
-    //         // draw_pol1_line -> SetParameters(gaus_pol1_fit -> GetParameter(3), gaus_pol1_fit -> GetParameter(4));
-    //         // draw_pol1_line -> Draw("lsame");
+            // gaus_pol1_fit -> Draw("lsame");
+            // draw_gaus_line -> SetParameters(fabs(gaus_pol1_fit -> GetParameter(0)), gaus_pol1_fit -> GetParameter(1), fabs(gaus_pol1_fit -> GetParameter(2)), 0);
+            // draw_gaus_line -> Draw("lsame");
+            // draw_pol1_line -> SetParameters(gaus_pol1_fit -> GetParameter(3), gaus_pol1_fit -> GetParameter(4));
+            // draw_pol1_line -> Draw("lsame");
 
-    //         cout<<" "<<endl;
-    //         // final_eta_entry[i].push_back((draw_gaus_line -> GetParameter(1) - 3 * draw_gaus_line -> GetParameter(2)), draw_gaus_line -> GetParameter(1) + 3 * draw_gaus_line -> GetParameter(2));
-    //         // cout<<i<<" "<<i1<<" gaus fit par  : "<<fabs(gaus_pol1_fit -> GetParameter(0))<<" "<<(gaus_pol1_fit -> GetParameter(1))<<" "<<fabs(gaus_pol1_fit -> GetParameter(2))<<endl;
-    //         double gaus_integral = fabs(draw_gaus_line -> Integral( (draw_gaus_line -> GetParameter(1) - 3 * fabs(draw_gaus_line -> GetParameter(2))), draw_gaus_line -> GetParameter(1) + 3 * fabs(draw_gaus_line -> GetParameter(2)) )) / final_track_delta_phi_1D[i][i1] -> GetBinWidth(1);
-    //         // cout<<i<<" "<<i1<<" gaus integral : "<< gaus_integral <<endl;
+            cout<<" "<<endl;
+            // final_eta_entry[i].push_back((draw_gaus_line -> GetParameter(1) - 3 * draw_gaus_line -> GetParameter(2)), draw_gaus_line -> GetParameter(1) + 3 * draw_gaus_line -> GetParameter(2));
+            // cout<<i<<" "<<i1<<" gaus fit par  : "<<fabs(gaus_pol1_fit -> GetParameter(0))<<" "<<(gaus_pol1_fit -> GetParameter(1))<<" "<<fabs(gaus_pol1_fit -> GetParameter(2))<<endl;
+            double gaus_integral = fabs(draw_gaus_line -> Integral( (draw_gaus_line -> GetParameter(1) - 3 * fabs(draw_gaus_line -> GetParameter(2))), draw_gaus_line -> GetParameter(1) + 3 * fabs(draw_gaus_line -> GetParameter(2)) )) / final_track_delta_phi_1D[i][i1] -> GetBinWidth(1);
+            // cout<<i<<" "<<i1<<" gaus integral : "<< gaus_integral <<endl;
 
-    //         double d_gaus_integral = fabs(draw_d_gaus -> Integral( -1. * signal_region, signal_region )) / final_track_delta_phi_1D[i][i1] -> GetBinWidth(1);
-    //         // cout<<i<<" "<<i1<<" D-gaus integral : "<< d_gaus_integral <<endl;
+            double d_gaus_integral = fabs(draw_d_gaus -> Integral( -1. * signal_region, signal_region )) / final_track_delta_phi_1D[i][i1] -> GetBinWidth(1);
+            // cout<<i<<" "<<i1<<" D-gaus integral : "<< d_gaus_integral <<endl;
             
-    //         double pol2_bkg_integral = fabs(draw_pol2_line -> Integral( -1. * signal_region, signal_region )) / final_track_delta_phi_1D[i][i1] -> GetBinWidth(1);
-    //         cout<<i<<" "<<i1<<" pol2_bkg integral: "<<pol2_bkg_integral<<endl;
+            double pol2_bkg_integral = fabs(draw_pol2_line -> Integral( -1. * signal_region, signal_region )) / final_track_delta_phi_1D[i][i1] -> GetBinWidth(1);
+            cout<<i<<" "<<i1<<" pol2_bkg integral: "<<pol2_bkg_integral<<endl;
 
-    //         int binID_X = eta_z_convert_inverse_map[i1].first;
-    //         int binID_Y = eta_z_convert_inverse_map[i1].second;
-    //         // final_dNdeta_1D[i]->SetBinContent(i1 + 1, good_tracklet_counting[i][i1] - pol2_bkg_integral );
-    //         // final_dNdeta_1D[i]->SetBinContent(i1 + 1, good_tracklet_counting[i][i1] ); // note : no background subtraction
-    //         if (binID_Y == tight_zvtx_bin) { final_dNdeta_1D[i]->SetBinContent(binID_X, good_tracklet_counting[i][i1] ); } // note : no background subtraction
+            int binID_X = eta_z_convert_inverse_map[i1].first;
+            int binID_Y = eta_z_convert_inverse_map[i1].second;
+            // final_dNdeta_1D[i]->SetBinContent(i1 + 1, good_tracklet_counting[i][i1] - pol2_bkg_integral );
+            // final_dNdeta_1D[i]->SetBinContent(i1 + 1, good_tracklet_counting[i][i1] ); // note : no background subtraction
+            if (binID_Y == tight_zvtx_bin) { final_dNdeta_1D[i]->SetBinContent(binID_X, good_tracklet_counting[i][i1] ); } // note : no background subtraction
 
-    //         coord_line -> DrawLine(-1*signal_region, 0, -1 * signal_region, final_track_delta_phi_1D[i][i1] -> GetBinContent(final_track_delta_phi_1D[i][i1] -> GetMaximumBin()) * 1.5);
-    //         coord_line -> DrawLine(signal_region, 0, signal_region, final_track_delta_phi_1D[i][i1] -> GetBinContent(final_track_delta_phi_1D[i][i1] -> GetMaximumBin()) * 1.5);
+            coord_line -> DrawLine(-1*signal_region, 0, -1 * signal_region, final_track_delta_phi_1D[i][i1] -> GetBinContent(final_track_delta_phi_1D[i][i1] -> GetMaximumBin()) * 1.5);
+            coord_line -> DrawLine(signal_region, 0, signal_region, final_track_delta_phi_1D[i][i1] -> GetBinContent(final_track_delta_phi_1D[i][i1] -> GetMaximumBin()) * 1.5);
             
-    //         ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
-    //         draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s, #eta: %.2f ~ %.2f, Z: %.0f ~ %.0f mm",centrality_region[i].c_str(), eta_region_hist -> GetBinCenter(binID_X) - eta_region_hist -> GetBinWidth(binID_X)/2., eta_region_hist -> GetBinCenter(binID_X) + eta_region_hist -> GetBinWidth(binID_X)/2., coarse_eta_z_map -> GetYaxis() -> GetBinCenter(binID_Y) - coarse_eta_z_map -> GetYaxis() -> GetBinWidth(binID_Y)/2., coarse_eta_z_map -> GetYaxis() -> GetBinCenter(binID_Y) + coarse_eta_z_map -> GetYaxis() -> GetBinWidth(binID_Y)/2.));
-    //         draw_text -> DrawLatex(0.21, 0.85, Form("MBin: %i, #eta bin: %i, Z bin: %i", i, binID_X, binID_Y));
-    //         // draw_text -> DrawLatex(0.21, 0.85, Form("Guassian integral : %.2f", gaus_integral));
-    //         // draw_text -> DrawLatex(0.21, 0.80, Form("D-Guassian integral : %.2f", d_gaus_integral));
-    //         draw_text -> DrawLatex(0.21, 0.80, Form("pol2: %.2f + %.2f(x-%.2f) + %.2f(x-%.2f)^{2}", bkg_fit_pol2 -> GetParameter(0), bkg_fit_pol2 -> GetParameter(1), bkg_fit_pol2 -> GetParameter(3), bkg_fit_pol2 -> GetParameter(2), bkg_fit_pol2 -> GetParameter(3)));
-    //         c1 -> Print( Form("%s/final_track_delta_phi_1D_MBin%i.pdf", out_folder_directory.c_str(), i) );
-    //         c1 -> Clear();
-    //     }
-    //     c1 -> Print( Form("%s/final_track_delta_phi_1D_MBin%i.pdf)", out_folder_directory.c_str(), i) );
-    // }
+            ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+            draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s, #eta: %.2f ~ %.2f, Z: %.0f ~ %.0f mm",centrality_region[i].c_str(), eta_region_hist -> GetBinCenter(binID_X) - eta_region_hist -> GetBinWidth(binID_X)/2., eta_region_hist -> GetBinCenter(binID_X) + eta_region_hist -> GetBinWidth(binID_X)/2., coarse_eta_z_map -> GetYaxis() -> GetBinCenter(binID_Y) - coarse_eta_z_map -> GetYaxis() -> GetBinWidth(binID_Y)/2., coarse_eta_z_map -> GetYaxis() -> GetBinCenter(binID_Y) + coarse_eta_z_map -> GetYaxis() -> GetBinWidth(binID_Y)/2.));
+            draw_text -> DrawLatex(0.21, 0.85, Form("MBin: %i, #eta bin: %i, Z bin: %i", i, binID_X, binID_Y));
+            // draw_text -> DrawLatex(0.21, 0.85, Form("Guassian integral : %.2f", gaus_integral));
+            // draw_text -> DrawLatex(0.21, 0.80, Form("D-Guassian integral : %.2f", d_gaus_integral));
+            draw_text -> DrawLatex(0.21, 0.80, Form("pol2: %.2f + %.2f(x-%.2f) + %.2f(x-%.2f)^{2}", bkg_fit_pol2 -> GetParameter(0), bkg_fit_pol2 -> GetParameter(1), bkg_fit_pol2 -> GetParameter(3), bkg_fit_pol2 -> GetParameter(2), bkg_fit_pol2 -> GetParameter(3)));
+            c1 -> Print( Form("%s/final_track_delta_phi_1D_MBin%i.pdf", out_folder_directory.c_str(), i) );
+            c1 -> Clear();
+        }
+        c1 -> Print( Form("%s/final_track_delta_phi_1D_MBin%i.pdf)", out_folder_directory.c_str(), i) );
+    }
 
-    // // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
-    // for (int i = 0; i < final_track_multi_delta_phi_1D.size(); i++)
-    // {
-    //     c1 -> Print( Form("%s/final_track_multi_delta_phi_1D_MBin%i.pdf(", out_folder_directory.c_str(), i) );
-    //     for (int i1 = 0; i1 < final_track_multi_delta_phi_1D[i].size(); i1++)
-    //     {   
-    //         double hist_offset = get_dist_offset(final_track_multi_delta_phi_1D[i][i1], 15);
-    //         gaus_pol1_fit->SetParameters( final_track_multi_delta_phi_1D[i][i1] -> GetBinContent(final_track_multi_delta_phi_1D[i][i1] -> GetMaximumBin()) - hist_offset, 0, final_track_multi_delta_phi_1D[i][i1]->GetStdDev()/2., hist_offset, 0);
-    //         final_track_multi_delta_phi_1D[i][i1] -> Fit(gaus_pol1_fit,"NQ");
+    // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+    for (int i = 0; i < final_track_multi_delta_phi_1D.size(); i++)
+    {
+        c1 -> Print( Form("%s/final_track_multi_delta_phi_1D_MBin%i.pdf(", out_folder_directory.c_str(), i) );
+        for (int i1 = 0; i1 < final_track_multi_delta_phi_1D[i].size(); i1++)
+        {   
+            double hist_offset = get_dist_offset(final_track_multi_delta_phi_1D[i][i1], 15);
+            gaus_pol1_fit->SetParameters( final_track_multi_delta_phi_1D[i][i1] -> GetBinContent(final_track_multi_delta_phi_1D[i][i1] -> GetMaximumBin()) - hist_offset, 0, final_track_multi_delta_phi_1D[i][i1]->GetStdDev()/2., hist_offset, 0);
+            final_track_multi_delta_phi_1D[i][i1] -> Fit(gaus_pol1_fit,"NQ");
 
-    //         // note : par[0] : size
-    //         // note : par[1] : ratio of the two gaussians
-    //         // note : par[2] : mean
-    //         // note : par[3] : width of gaus 1
-    //         // note : par[4] : width of gaus 2
-    //         // note : par[5] : offset
-    //         // note : par[6] : slope
-    //         // note : fit with double gaussian function + pol1
-    //         d_gaus_pol1_fit -> SetParameters(final_track_multi_delta_phi_1D[i][i1] -> GetBinContent(final_track_multi_delta_phi_1D[i][i1] -> GetMaximumBin()) - hist_offset, 0.2, 0, final_track_multi_delta_phi_1D[i][i1]->GetStdDev()/2., final_track_multi_delta_phi_1D[i][i1]->GetStdDev()/2., hist_offset, 0);
-    //         d_gaus_pol1_fit -> SetParLimits(1, 0, 0.5);  // note : the first gaussian is  the main distribution, So it should contain more than 50% of the total distribution
-    //         d_gaus_pol1_fit -> SetParLimits(3, 0, 1000); // note : the width of the gaussian should be positive
-    //         d_gaus_pol1_fit -> SetParLimits(4, 0, 1000); // note : the width of the gaussian should be positive
-    //         final_track_multi_delta_phi_1D[i][i1] -> Fit(d_gaus_pol1_fit,"NQ");
-    //         // note : extract the signal region
-    //         draw_d_gaus -> SetParameters(d_gaus_pol1_fit->GetParameter(0), d_gaus_pol1_fit->GetParameter(1), d_gaus_pol1_fit->GetParameter(2), d_gaus_pol1_fit->GetParameter(3), d_gaus_pol1_fit->GetParameter(4));
-    //         // note : extract the part of pol1 background
-    //         draw_pol1_line -> SetParameters(d_gaus_pol1_fit -> GetParameter(5), d_gaus_pol1_fit -> GetParameter(6));
+            // note : par[0] : size
+            // note : par[1] : ratio of the two gaussians
+            // note : par[2] : mean
+            // note : par[3] : width of gaus 1
+            // note : par[4] : width of gaus 2
+            // note : par[5] : offset
+            // note : par[6] : slope
+            // note : fit with double gaussian function + pol1
+            d_gaus_pol1_fit -> SetParameters(final_track_multi_delta_phi_1D[i][i1] -> GetBinContent(final_track_multi_delta_phi_1D[i][i1] -> GetMaximumBin()) - hist_offset, 0.2, 0, final_track_multi_delta_phi_1D[i][i1]->GetStdDev()/2., final_track_multi_delta_phi_1D[i][i1]->GetStdDev()/2., hist_offset, 0);
+            d_gaus_pol1_fit -> SetParLimits(1, 0, 0.5);  // note : the first gaussian is  the main distribution, So it should contain more than 50% of the total distribution
+            d_gaus_pol1_fit -> SetParLimits(3, 0, 1000); // note : the width of the gaussian should be positive
+            d_gaus_pol1_fit -> SetParLimits(4, 0, 1000); // note : the width of the gaussian should be positive
+            final_track_multi_delta_phi_1D[i][i1] -> Fit(d_gaus_pol1_fit,"NQ");
+            // note : extract the signal region
+            draw_d_gaus -> SetParameters(d_gaus_pol1_fit->GetParameter(0), d_gaus_pol1_fit->GetParameter(1), d_gaus_pol1_fit->GetParameter(2), d_gaus_pol1_fit->GetParameter(3), d_gaus_pol1_fit->GetParameter(4));
+            // note : extract the part of pol1 background
+            draw_pol1_line -> SetParameters(d_gaus_pol1_fit -> GetParameter(5), d_gaus_pol1_fit -> GetParameter(6));
 
-    //         // note : fit the background region only by the pol2 function
-    //         // note : p[0] + p[1]*(x-p[3])+p[2] * (x-p[3])^2
-    //         bkg_fit_pol2 -> SetParameters(hist_offset, 0, -0.2, 0, signal_region);
-    //         bkg_fit_pol2 -> FixParameter(4, signal_region);
-    //         bkg_fit_pol2 -> SetParLimits(2, -100, 0);
-    //         final_track_multi_delta_phi_1D[i][i1] -> Fit(bkg_fit_pol2,"NQ");
-    //         // note : extract the background region (which includes the signal region also)
-    //         draw_pol2_line -> SetParameters(bkg_fit_pol2 -> GetParameter(0), bkg_fit_pol2 -> GetParameter(1), bkg_fit_pol2 -> GetParameter(2), bkg_fit_pol2 -> GetParameter(3));
+            // note : fit the background region only by the pol2 function
+            // note : p[0] + p[1]*(x-p[3])+p[2] * (x-p[3])^2
+            bkg_fit_pol2 -> SetParameters(hist_offset, 0, -0.2, 0, signal_region);
+            bkg_fit_pol2 -> FixParameter(4, signal_region);
+            bkg_fit_pol2 -> SetParLimits(2, -100, 0);
+            final_track_multi_delta_phi_1D[i][i1] -> Fit(bkg_fit_pol2,"NQ");
+            // note : extract the background region (which includes the signal region also)
+            draw_pol2_line -> SetParameters(bkg_fit_pol2 -> GetParameter(0), bkg_fit_pol2 -> GetParameter(1), bkg_fit_pol2 -> GetParameter(2), bkg_fit_pol2 -> GetParameter(3));
 
-    //         final_track_multi_delta_phi_1D[i][i1] -> SetMinimum(0);
-    //         final_track_multi_delta_phi_1D[i][i1] -> SetMaximum( final_track_multi_delta_phi_1D[i][i1] -> GetBinContent(final_track_multi_delta_phi_1D[i][i1] -> GetMaximumBin()) * 1.5);
-    //         final_track_multi_delta_phi_1D[i][i1] -> Draw("hist"); 
-    //         // d_gaus_pol1_fit -> Draw("lsame");
-    //         // draw_d_gaus -> Draw("lsame");
-    //         // draw_pol1_line -> Draw("lsame");
-    //         draw_pol2_line -> Draw("lsame");
+            final_track_multi_delta_phi_1D[i][i1] -> SetMinimum(0);
+            final_track_multi_delta_phi_1D[i][i1] -> SetMaximum( final_track_multi_delta_phi_1D[i][i1] -> GetBinContent(final_track_multi_delta_phi_1D[i][i1] -> GetMaximumBin()) * 1.5);
+            final_track_multi_delta_phi_1D[i][i1] -> Draw("hist"); 
+            // d_gaus_pol1_fit -> Draw("lsame");
+            // draw_d_gaus -> Draw("lsame");
+            // draw_pol1_line -> Draw("lsame");
+            draw_pol2_line -> Draw("lsame");
 
-    //         // gaus_pol1_fit -> Draw("lsame");
-    //         // draw_gaus_line -> SetParameters(fabs(gaus_pol1_fit -> GetParameter(0)), gaus_pol1_fit -> GetParameter(1), fabs(gaus_pol1_fit -> GetParameter(2)), 0);
-    //         // draw_gaus_line -> Draw("lsame");
-    //         // draw_pol1_line -> SetParameters(gaus_pol1_fit -> GetParameter(3), gaus_pol1_fit -> GetParameter(4));
-    //         // draw_pol1_line -> Draw("lsame");
+            // gaus_pol1_fit -> Draw("lsame");
+            // draw_gaus_line -> SetParameters(fabs(gaus_pol1_fit -> GetParameter(0)), gaus_pol1_fit -> GetParameter(1), fabs(gaus_pol1_fit -> GetParameter(2)), 0);
+            // draw_gaus_line -> Draw("lsame");
+            // draw_pol1_line -> SetParameters(gaus_pol1_fit -> GetParameter(3), gaus_pol1_fit -> GetParameter(4));
+            // draw_pol1_line -> Draw("lsame");
 
-    //         cout<<" "<<endl;
-    //         // final_eta_entry[i].push_back((draw_gaus_line -> GetParameter(1) - 3 * draw_gaus_line -> GetParameter(2)), draw_gaus_line -> GetParameter(1) + 3 * draw_gaus_line -> GetParameter(2));
-    //         // cout<<i<<" "<<i1<<" gaus fit par  : "<<fabs(gaus_pol1_fit -> GetParameter(0))<<" "<<(gaus_pol1_fit -> GetParameter(1))<<" "<<fabs(gaus_pol1_fit -> GetParameter(2))<<endl;
-    //         double gaus_integral = fabs(draw_gaus_line -> Integral( (draw_gaus_line -> GetParameter(1) - 3 * fabs(draw_gaus_line -> GetParameter(2))), draw_gaus_line -> GetParameter(1) + 3 * fabs(draw_gaus_line -> GetParameter(2)) )) / final_track_multi_delta_phi_1D[i][i1] -> GetBinWidth(1);
-    //         // cout<<i<<" "<<i1<<" gaus integral : "<< gaus_integral <<endl;
+            cout<<" "<<endl;
+            // final_eta_entry[i].push_back((draw_gaus_line -> GetParameter(1) - 3 * draw_gaus_line -> GetParameter(2)), draw_gaus_line -> GetParameter(1) + 3 * draw_gaus_line -> GetParameter(2));
+            // cout<<i<<" "<<i1<<" gaus fit par  : "<<fabs(gaus_pol1_fit -> GetParameter(0))<<" "<<(gaus_pol1_fit -> GetParameter(1))<<" "<<fabs(gaus_pol1_fit -> GetParameter(2))<<endl;
+            double gaus_integral = fabs(draw_gaus_line -> Integral( (draw_gaus_line -> GetParameter(1) - 3 * fabs(draw_gaus_line -> GetParameter(2))), draw_gaus_line -> GetParameter(1) + 3 * fabs(draw_gaus_line -> GetParameter(2)) )) / final_track_multi_delta_phi_1D[i][i1] -> GetBinWidth(1);
+            // cout<<i<<" "<<i1<<" gaus integral : "<< gaus_integral <<endl;
 
-    //         double d_gaus_integral = fabs(draw_d_gaus -> Integral( -1. * signal_region, signal_region )) / final_track_multi_delta_phi_1D[i][i1] -> GetBinWidth(1);
-    //         // cout<<i<<" "<<i1<<" D-gaus integral : "<< d_gaus_integral <<endl;
+            double d_gaus_integral = fabs(draw_d_gaus -> Integral( -1. * signal_region, signal_region )) / final_track_multi_delta_phi_1D[i][i1] -> GetBinWidth(1);
+            // cout<<i<<" "<<i1<<" D-gaus integral : "<< d_gaus_integral <<endl;
             
-    //         double pol2_bkg_integral = fabs(draw_pol2_line -> Integral( -1. * signal_region, signal_region )) / final_track_multi_delta_phi_1D[i][i1] -> GetBinWidth(1);
-    //         cout<<i<<" "<<i1<<" pol2_bkg integral: "<<pol2_bkg_integral<<endl;
+            double pol2_bkg_integral = fabs(draw_pol2_line -> Integral( -1. * signal_region, signal_region )) / final_track_multi_delta_phi_1D[i][i1] -> GetBinWidth(1);
+            cout<<i<<" "<<i1<<" pol2_bkg integral: "<<pol2_bkg_integral<<endl;
 
-    //         // final_dNdeta_multi_1D[i]->SetBinContent(i1 + 1, good_tracklet_multi_counting[i][i1] - pol2_bkg_integral );
-    //         int binID_X = eta_z_convert_inverse_map[i1].first;
-    //         int binID_Y = eta_z_convert_inverse_map[i1].second;
-    //         if (binID_Y == tight_zvtx_bin && final_track_multi_delta_phi_1D[i][i1] -> GetEntries() != 0) { final_dNdeta_multi_1D[i]->SetBinContent(binID_X, good_tracklet_multi_counting[i][i1] - pol2_bkg_integral ); } // note : no background subtraction
+            // final_dNdeta_multi_1D[i]->SetBinContent(i1 + 1, good_tracklet_multi_counting[i][i1] - pol2_bkg_integral );
+            int binID_X = eta_z_convert_inverse_map[i1].first;
+            int binID_Y = eta_z_convert_inverse_map[i1].second;
+            if (binID_Y == tight_zvtx_bin && final_track_multi_delta_phi_1D[i][i1] -> GetEntries() != 0) { final_dNdeta_multi_1D[i]->SetBinContent(binID_X, good_tracklet_multi_counting[i][i1] - pol2_bkg_integral ); } // note : no background subtraction
 
-    //         coord_line -> DrawLine(-1*signal_region, 0, -1 * signal_region, final_track_multi_delta_phi_1D[i][i1] -> GetBinContent(final_track_multi_delta_phi_1D[i][i1] -> GetMaximumBin()) * 1.5);
-    //         coord_line -> DrawLine(signal_region, 0, signal_region, final_track_multi_delta_phi_1D[i][i1] -> GetBinContent(final_track_multi_delta_phi_1D[i][i1] -> GetMaximumBin()) * 1.5);
+            coord_line -> DrawLine(-1*signal_region, 0, -1 * signal_region, final_track_multi_delta_phi_1D[i][i1] -> GetBinContent(final_track_multi_delta_phi_1D[i][i1] -> GetMaximumBin()) * 1.5);
+            coord_line -> DrawLine(signal_region, 0, signal_region, final_track_multi_delta_phi_1D[i][i1] -> GetBinContent(final_track_multi_delta_phi_1D[i][i1] -> GetMaximumBin()) * 1.5);
             
-    //         ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
-    //         draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s, #eta: %.2f ~ %.2f, Z: %.0f ~ %.0f mm",centrality_region[i].c_str(), eta_region_hist -> GetBinCenter(binID_X) - eta_region_hist -> GetBinWidth(binID_X)/2., eta_region_hist -> GetBinCenter(binID_X) + eta_region_hist -> GetBinWidth(binID_X)/2., coarse_eta_z_map -> GetYaxis() -> GetBinCenter(binID_Y) - coarse_eta_z_map -> GetYaxis() -> GetBinWidth(binID_Y)/2., coarse_eta_z_map -> GetYaxis() -> GetBinCenter(binID_Y) + coarse_eta_z_map -> GetYaxis() -> GetBinWidth(binID_Y)/2.));
-    //         draw_text -> DrawLatex(0.21, 0.85, Form("MBin: %i, #eta bin: %i, Z bin: %i", i, binID_X, binID_Y));
-    //         // draw_text -> DrawLatex(0.21, 0.85, Form("Guassian integral : %.2f", gaus_integral));
-    //         // draw_text -> DrawLatex(0.21, 0.80, Form("D-Guassian integral : %.2f", d_gaus_integral));
-    //         draw_text -> DrawLatex(0.21, 0.80, Form("pol2: %.2f + %.2f(x-%.2f) + %.2f(x-%.2f)^{2}", bkg_fit_pol2 -> GetParameter(0), bkg_fit_pol2 -> GetParameter(1), bkg_fit_pol2 -> GetParameter(3), bkg_fit_pol2 -> GetParameter(2), bkg_fit_pol2 -> GetParameter(3)));
-    //         c1 -> Print( Form("%s/final_track_multi_delta_phi_1D_MBin%i.pdf", out_folder_directory.c_str(), i) );
-    //         c1 -> Clear();
-    //     }
-    //     c1 -> Print( Form("%s/final_track_multi_delta_phi_1D_MBin%i.pdf)", out_folder_directory.c_str(), i) );
-    // }
+            ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+            draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s, #eta: %.2f ~ %.2f, Z: %.0f ~ %.0f mm",centrality_region[i].c_str(), eta_region_hist -> GetBinCenter(binID_X) - eta_region_hist -> GetBinWidth(binID_X)/2., eta_region_hist -> GetBinCenter(binID_X) + eta_region_hist -> GetBinWidth(binID_X)/2., coarse_eta_z_map -> GetYaxis() -> GetBinCenter(binID_Y) - coarse_eta_z_map -> GetYaxis() -> GetBinWidth(binID_Y)/2., coarse_eta_z_map -> GetYaxis() -> GetBinCenter(binID_Y) + coarse_eta_z_map -> GetYaxis() -> GetBinWidth(binID_Y)/2.));
+            draw_text -> DrawLatex(0.21, 0.85, Form("MBin: %i, #eta bin: %i, Z bin: %i", i, binID_X, binID_Y));
+            // draw_text -> DrawLatex(0.21, 0.85, Form("Guassian integral : %.2f", gaus_integral));
+            // draw_text -> DrawLatex(0.21, 0.80, Form("D-Guassian integral : %.2f", d_gaus_integral));
+            draw_text -> DrawLatex(0.21, 0.80, Form("pol2: %.2f + %.2f(x-%.2f) + %.2f(x-%.2f)^{2}", bkg_fit_pol2 -> GetParameter(0), bkg_fit_pol2 -> GetParameter(1), bkg_fit_pol2 -> GetParameter(3), bkg_fit_pol2 -> GetParameter(2), bkg_fit_pol2 -> GetParameter(3)));
+            c1 -> Print( Form("%s/final_track_multi_delta_phi_1D_MBin%i.pdf", out_folder_directory.c_str(), i) );
+            c1 -> Clear();
+        }
+        c1 -> Print( Form("%s/final_track_multi_delta_phi_1D_MBin%i.pdf)", out_folder_directory.c_str(), i) );
+    }
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     c1 -> Print( Form("%s/final_dNdeta_1D.pdf(", out_folder_directory.c_str()) );
     for (int i = 0; i < final_dNdeta_1D.size(); i++)
     {   
-        double N_correction_evt = (i == final_dNdeta_1D_MC.size() - 1) ? MBin_Z_evt_hist_2D -> GetBinContent(MBin_Z_evt_hist_2D -> GetNbinsX(),tight_zvtx_bin) : MBin_Z_evt_hist_2D -> GetBinContent(i+1,tight_zvtx_bin);
+        double N_correction_evt_MC = (i == final_dNdeta_1D_MC.size() - 1) ? MBin_Z_evt_hist_2D_MC -> GetBinContent(MBin_Z_evt_hist_2D_MC -> GetNbinsX(),tight_zvtx_bin) : MBin_Z_evt_hist_2D_MC -> GetBinContent(i+1,tight_zvtx_bin);
         final_dNdeta_1D_MC[i] -> Scale(1./double(final_dNdeta_1D_MC[i] -> GetBinWidth(1) ));
-        final_dNdeta_1D_MC[i] -> Scale(1./double(N_correction_evt));
+        final_dNdeta_1D_MC[i] -> Scale(1./double(N_correction_evt_MC));
         
+        double N_correction_evt = (i == final_dNdeta_1D_MC.size() - 1) ? MBin_Z_evt_hist_2D -> GetBinContent(MBin_Z_evt_hist_2D -> GetNbinsX(),tight_zvtx_bin) : MBin_Z_evt_hist_2D -> GetBinContent(i+1,tight_zvtx_bin);
         final_dNdeta_1D[i] -> Scale(1./double(final_dNdeta_1D[i] -> GetBinWidth(1) ));
         final_dNdeta_1D[i] -> Scale(1./double(N_correction_evt));
         final_dNdeta_1D[i] -> GetYaxis() -> SetRangeUser(0, final_dNdeta_1D[i] -> GetMaximum() * 1.5);
@@ -2082,6 +2169,12 @@ void INTTEta::PrintPlots()
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+    MBin_Z_evt_hist_2D_MC -> Draw("colz0");
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    c1 -> Print( Form("%s/MBin_Z_evt_hist_2D_MC.pdf", out_folder_directory.c_str()) );
+    c1 -> Clear();
+
+    // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     c1 -> Print( Form("%s/coarse_Reco_SignalNTracklet_Single_eta_z_2D.pdf(", out_folder_directory.c_str()) );
     for (int i = 0; i < coarse_Reco_SignalNTracklet_Single_eta_z_2D.size(); i++)
     {
@@ -2162,6 +2255,9 @@ void INTTEta::EndRun()
     // note : the number of event for each centrality bin and z vertex bin
     MBin_Z_evt_hist_2D -> Write("MBin_Z_evt_map");
 
+    // note : the number of event for each centrality bin and z vertex bin, the zvtx is from MC
+    MBin_Z_evt_hist_2D_MC -> Write("MBin_Z_evt_map_MC");
+
     // note : to save the fine binning 2D eta-z track historgram 
     for (int i = 0; i < track_eta_z_2D_MC.size(); i++) 
     { 
@@ -2199,7 +2295,7 @@ void INTTEta::EndRun()
     for (int i = 0; i < track_ratio_1D.size(); i++){ track_ratio_1D[i] -> Write(Form("track_ratio_1D_MBin%i",i)); }
     track_ratio_2D -> Write("track_ratio_2D");
 
-    // tree_out -> Write("", TObject::kOverwrite);
+    tree_out -> Write("", TObject::kOverwrite);
 
     out_file -> Close();
 
@@ -2873,7 +2969,7 @@ void INTTEta::DrawEtaZGrid()
 //                         }
 
 //                         out_track_delta_phi_d.push_back(delta_phi);
-//                         out_track_eta_d.push_back(Get_eta_pair.second);
+//                         out_recotrack_eta_d.push_back(Get_eta_pair.second);
 //                         out_track_eta_i.push_back(eta_bin);
 //                     }
 //                 }
@@ -2932,7 +3028,7 @@ void INTTEta::DrawEtaZGrid()
 //             //     final_track_delta_phi_1D[final_track_delta_phi_1D.size() - 1][eta_bin - 1] -> Fill(pair_delta_phi);
 
 //             //     out_track_delta_phi_d.push_back(pair_delta_phi);
-//             //     out_track_eta_d.push_back(Get_eta_pair.second);
+//             //     out_recotrack_eta_d.push_back(Get_eta_pair.second);
 //             //     out_track_eta_i.push_back(eta_bin);
 //             // }
 

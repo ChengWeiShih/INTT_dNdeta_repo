@@ -1,12 +1,13 @@
-#include "INTTReadTree.h"
-#include "INTTEta.h"
+#include "../../INTTReadTree.h"
+#include "../../INTTEta.h"
 
 void Track_eta_398()
 {
     string input_directory = "/sphenix/user/ChengWei/sPH_dNdeta/HIJING_ana398_xvtx-0p04cm_yvtx0p24cm_zvtx-20cm_dummyAlignParams";
     string file_name = "MC_ZF_zvtx";
     // string out_folder_directory = input_directory + "/CodeTest1_combine_FullZ_TrackEta_" + file_name;
-    string out_folder_directory = input_directory + "/New_TrackCounting_TrueZ_noMegaTrackRemoval";
+    string out_folder_directory = input_directory + "/New_TrackCounting_TrueZ_noMegaTrackRemoval_35k";
+    // string out_folder_directory = input_directory + "/MegaTrackFinding_study";
     string MC_list_name = "file_list.txt";
     string tree_name = "EventTree";
     
@@ -35,7 +36,7 @@ void Track_eta_398()
 
     cout<<"Total event : "<<INTTClu -> GetNEvt()<<endl;
 
-    for (int event_i = 0; event_i < 80000; event_i ++)
+    for (int event_i = 0; event_i < 35000; event_i ++)
     {
         INTTClu -> EvtInit(event_i);
         INTTClu -> EvtSetCluGroup();
@@ -44,7 +45,7 @@ void Track_eta_398()
             event_i, 
             INTTClu -> temp_sPH_inner_nocolumn_vec, INTTClu -> temp_sPH_outer_nocolumn_vec, 
             INTTClu -> temp_sPH_nocolumn_vec, INTTClu -> temp_sPH_nocolumn_rz_vec, 
-            INTTClu -> GetNvtxMC(), INTTClu -> GetTrigvtxMC(), INTTClu -> GetPhiCheckTag(), -1, {INTTClu -> GetTrigvtxMC()[2]*10,2}, INTTClu->GetCentralityBin(), INTTClu->GetTrueTrackInfo() // note : no bco_full for MC
+            INTTClu -> GetNvtxMC(), INTTClu -> GetTrigvtxMC(), INTTClu -> GetPhiCheckTag(), -1, {INTTClu -> GetTrigvtxMC()[2]*10,0.5}, INTTClu->GetCentralityBin(), INTTClu->GetTrueTrackInfo() // note : no bco_full for MC
         );
 
         MCEta -> ClearEvt();
