@@ -1,11 +1,11 @@
-#include "INTTReadTree.h"
-#include "INTTXYvtx.h"
+#include "../../INTTReadTree.h"
+#include "../../INTTXYvtx.h"
 
 void data20869_xy()
 {
     string input_directory = "/sphenix/user/ChengWei/INTT/INTT_commissioning/ZeroField/20869";
     string file_name = "beam_inttall-00020869-0000_event_base_ana_cluster_full_survey_3.32_excludeR1500_20kEvent_3HotCut";
-    string out_folder_directory = input_directory + "/" + "folder_beam_inttall-00020869-0000_event_base_ana_cluster_full_survey_3.32_excludeR1500_20kEvent_3HotCut_VTXxy";
+    string out_folder_directory = input_directory + "/" + "SemiFinal_RunXY_"+ file_name;
     string tree_name = "tree_clu";
     
     // pair<double, double> beam_origin = {-0.015, 0.012};
@@ -17,7 +17,7 @@ void data20869_xy()
     double phi_diff_cut = 5.72;
     int clu_sum_adc_cut = 31;
     int clu_size_cut = 4;
-    int N_clu_cut = 500;
+    int N_clu_cut = 350;
     int N_clu_cutl = 20;
     
     bool draw_event_display = false;
@@ -51,9 +51,24 @@ void data20869_xy()
     // MCxy -> MacroVTXxyCorrection(0,1,2,0.,360.);
     
     // MCxy -> MacroVTXxyCorrection_new(50, 250, 21);
-    vector<pair<double,double>> out_vtx = MCxy -> MacroVTXSquare(3,9);
+    // vector<pair<double,double>> out_vtx = MCxy -> MacroVTXSquare(3,9);
+    // cout<<"The best vertex throughout the scan: "<<out_vtx[0].first<<" "<<out_vtx[0].second<<endl;
+    // cout<<"The origin during that scan: "<<out_vtx[1].first<<" "<<out_vtx[1].second<<endl;
+    // MCxy -> EndRun();
+
+    vector<pair<double,double>> out_vtx = MCxy -> MacroVTXSquare(4,10);
+    cout<<" "<<endl;
     cout<<"The best vertex throughout the scan: "<<out_vtx[0].first<<" "<<out_vtx[0].second<<endl;
     cout<<"The origin during that scan: "<<out_vtx[1].first<<" "<<out_vtx[1].second<<endl;
+    cout<<"Fit error, DCA and angle diff: "<<out_vtx[2].first<<" "<<out_vtx[2].second<<endl;
+    cout<<"fit pol0 pos Y, DCA and angle diff: "<<out_vtx[3].first<<" "<<out_vtx[3].second<<endl;
+
+    vector<pair<double,double>> out_vtx_line = MCxy -> FillLine_FindVertex({(out_vtx[0].first + out_vtx[1].first)/2., (out_vtx[0].second + out_vtx[1].second)/2.}, 0.001);
+    cout<<" "<<endl;
+    cout<<"By fill-line method,"<<endl;
+    cout<<"Reco Run Vertex XY: "<<out_vtx_line[0].first<<" "<<out_vtx_line[0].second<<endl;
+    cout<<"Reco Run Vertex XY Error: "<<out_vtx_line[1].first<<" "<<out_vtx_line[1].second<<endl;
+
     MCxy -> EndRun();
 }
 

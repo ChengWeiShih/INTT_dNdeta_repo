@@ -150,7 +150,7 @@ void gen_INTT_cluster_BCO(string sub_folder_string, string file_name, int DAC_ru
     long long N_event = tree -> GetEntries();
     cout<<Form("N_event in file %s : %lli",file_name.c_str(), N_event)<<endl;
 
-    if (run_Nevent > N_event) run_Nevent = (N_event/1000)*1000;
+    if (run_Nevent > N_event) run_Nevent = N_event; // = (N_event/1000)*1000;
 
     int fNhits;
     int pid[100000];
@@ -273,24 +273,24 @@ void gen_INTT_cluster_BCO(string sub_folder_string, string file_name, int DAC_ru
                 int bco_diff = ( ((bco_full[i1]&0x7F) - bco[i1]) < 0 ) ? ((bco_full[i1]&0x7F) - bco[i1]) + 128 : ((bco_full[i1]&0x7F) - bco[i1]);
 
                 // todo : bco_diff cut for the run 20869
-                // bool bco_tag_3001 = (bco_diff == 21 || bco_diff == 22)                   ? true : false;
-                // bool bco_tag_3002 = (bco_diff == 21 || bco_diff == 22 || bco_diff == 23) ? true : false;
-                // bool bco_tag_3003 = (bco_diff == 81)                                     ? true : false;
-                // bool bco_tag_3004 = (bco_diff == 113)                                    ? true : false;
-                // bool bco_tag_3005 = (bco_diff == 63 || bco_diff == 64)                   ? true : false;
-                // bool bco_tag_3006 = (bco_diff == 39 || bco_diff == 40)                   ? true : false;
-                // bool bco_tag_3007 = (bco_diff == 82)                                     ? true : false;
-                // bool bco_tag_3008 = (bco_diff == 20)                                     ? true : false;
+                bool bco_tag_3001 = (bco_diff == 21 || bco_diff == 22)                   ? true : false;
+                bool bco_tag_3002 = (bco_diff == 21 || bco_diff == 22 || bco_diff == 23) ? true : false;
+                bool bco_tag_3003 = (bco_diff == 81)                                     ? true : false;
+                bool bco_tag_3004 = (bco_diff == 113)                                    ? true : false;
+                bool bco_tag_3005 = (bco_diff == 63 || bco_diff == 64)                   ? true : false;
+                bool bco_tag_3006 = (bco_diff == 39 || bco_diff == 40)                   ? true : false;
+                bool bco_tag_3007 = (bco_diff == 82)                                     ? true : false;
+                bool bco_tag_3008 = (bco_diff == 20)                                     ? true : false;
 
                 // todo : bco_diff cut for the run 20888
-                bool bco_tag_3001 = (bco_diff == 50 || bco_diff == 51 || bco_diff == 52 || bco_diff == 53)                   ? true : false;
-                bool bco_tag_3002 = (bco_diff == 48 || bco_diff == 49 || bco_diff == 50 || bco_diff == 51)                   ? true : false;
-                bool bco_tag_3003 = (bco_diff == 50 || bco_diff == 51 || bco_diff == 52 || bco_diff == 53 || bco_diff == 54) ? true : false;
-                bool bco_tag_3004 = (bco_diff == 62 || bco_diff == 63 || bco_diff == 64)                                     ? true : false;
-                bool bco_tag_3005 = (bco_diff == 114 || bco_diff == 115 || bco_diff == 116 || bco_diff == 117)               ? true : false;
-                bool bco_tag_3006 = (bco_diff == 97 || bco_diff == 98 || bco_diff == 99 || bco_diff == 100)                  ? true : false;
-                bool bco_tag_3007 = (bco_diff == 98 || bco_diff == 99 || bco_diff == 100 )                                   ? true : false;
-                bool bco_tag_3008 = (bco_diff == 87 || bco_diff == 88 || bco_diff == 89)                                     ? true : false;
+                // bool bco_tag_3001 = (bco_diff == 50 || bco_diff == 51 || bco_diff == 52 || bco_diff == 53)                   ? true : false;
+                // bool bco_tag_3002 = (bco_diff == 48 || bco_diff == 49 || bco_diff == 50 || bco_diff == 51)                   ? true : false;
+                // bool bco_tag_3003 = (bco_diff == 50 || bco_diff == 51 || bco_diff == 52 || bco_diff == 53 || bco_diff == 54) ? true : false;
+                // bool bco_tag_3004 = (bco_diff == 62 || bco_diff == 63 || bco_diff == 64)                                     ? true : false;
+                // bool bco_tag_3005 = (bco_diff == 114 || bco_diff == 115 || bco_diff == 116 || bco_diff == 117)               ? true : false;
+                // bool bco_tag_3006 = (bco_diff == 97 || bco_diff == 98 || bco_diff == 99 || bco_diff == 100)                  ? true : false;
+                // bool bco_tag_3007 = (bco_diff == 98 || bco_diff == 99 || bco_diff == 100 )                                   ? true : false;
+                // bool bco_tag_3008 = (bco_diff == 87 || bco_diff == 88 || bco_diff == 89)                                     ? true : false;
 
                 // todo : the bco_diff cut, remember to activate these lines
                 if (pid[i1] == 3001 && bco_tag_3001 == false) continue;

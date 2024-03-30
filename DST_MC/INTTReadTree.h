@@ -3,8 +3,8 @@
 
 #include "../INTTDSTchain.C"
 #include "PrivateCluReader.C"
-#include "/sphenix/user/ChengWei/INTT/INTT_commissioning/INTT_CW/INTT_commissioning/DAC_Scan/InttConversion_new.h"
-#include "/sphenix/user/ChengWei/INTT/INTT_commissioning/INTT_CW/INTT_commissioning/DAC_Scan/InttClustering.h"
+#include "../private_cluster_gen/InttConversion_new.h"
+#include "../private_cluster_gen/InttClustering.h"
 
 class INTTReadTree
 {
@@ -84,6 +84,7 @@ class INTTReadTree
         void TChainInit_MC_geo_test();
         double get_radius(double x, double y);
         pair<double,double> rotatePoint(double x, double y);
+        pair<double, double> offset_correction(map<string,pair<double,double>> input_map);
 
 };
 
@@ -155,7 +156,7 @@ void INTTReadTree::TChainInit_MC_geo_test()
 
 void INTTReadTree::TTreeInit_private()
 {
-    file_in = new TFile(Form("%s/%s.root", input_directory.c_str(), MC_list_name.c_str()),"read");
+    file_in = TFile::Open(Form("%s/%s.root", input_directory.c_str(), MC_list_name.c_str()));
     tree = (TTree *)file_in->Get(tree_name.c_str());
     inttCluData = new PrivateCluReader(tree);
     N_event = tree -> GetEntries();
@@ -222,6 +223,22 @@ vector<vector<float>> INTTReadTree::GetTrueTrackInfo() {return true_track_info;}
 unsigned long INTTReadTree::GetEvtNClusPost() 
 { 
     return temp_sPH_inner_nocolumn_vec.size() + temp_sPH_outer_nocolumn_vec.size(); 
+}
+
+pair<double, double> INTTReadTree::offset_correction(map<string,pair<double,double>> input_map)
+{
+    double N_pair = 0;
+    double sum_x = 0;
+    double sum_y = 0;
+
+    for (const auto& pair : input_map)
+    {
+        N_pair += 1;
+        sum_x += pair.second.first;
+        sum_y += pair.second.second;
+    }
+
+    return {sum_x/N_pair, sum_y/N_pair};
 }
 
 void INTTReadTree::EvtSetCluGroup()
@@ -523,6 +540,14 @@ void INTTReadTree::gen_ladder_offset()
                 // ladder_offset_map[Form("%i_%i", layer_i, phi_i)] = {100., 100.};
             }
         }
+
+        // note : it's possible that the whole system has a systematic offset, so we need to correct it
+        pair<double,double> XY_correction = offset_correction(ladder_offset_map);
+        for (const auto& pair : ladder_offset_map)
+        {
+            ladder_offset_map[pair.first] = {pair.second.first - XY_correction.first, pair.second.second - XY_correction.second};
+        }
+        
     }
     
 

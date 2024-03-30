@@ -1,21 +1,12 @@
 #ifndef INTTZvtx_h
 #define INTTZvtx_h
 
-#include "/sphenix/user/ChengWei/INTT/INTT_commissioning/INTT_CW/INTT_commissioning/DAC_Scan/InttConversion_new.h"
-#include "/sphenix/user/ChengWei/INTT/INTT_commissioning/INTT_CW/INTT_commissioning/DAC_Scan/InttClustering.h"
+#include "../private_cluster_gen/InttConversion_new.h"
+#include "../private_cluster_gen/InttClustering.h"
 #include "../sigmaEff.h"
 #include "gaus_func.h"
 #include "MegaTrackFinder.h"
 // #include "../sPhenixStyle.C"
-
-// double gaus_func(double *x, double *par)
-// {
-//     // note : par[0] : size
-//     // note : par[1] : mean
-//     // note : par[2] : width
-//     // note : par[3] : offset 
-//     return par[0] * TMath::Gaus(x[0],par[1],par[2]) + par[3];
-// }
 
 double double_gaus_func(double *x, double *par)
 {
