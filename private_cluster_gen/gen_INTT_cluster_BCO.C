@@ -1,6 +1,6 @@
 // #include "/sphenix/user/ChengWei/INTT/INTT_commissioning/INTT_CW/INTT_commissioning/DAC_Scan/DAC_Scan_ladder.h"
-#include "/sphenix/user/ChengWei/INTT/INTT_commissioning/INTT_CW/INTT_commissioning/DAC_Scan/InttConversion_new.h"
-#include "/sphenix/user/ChengWei/INTT/INTT_commissioning/INTT_CW/INTT_commissioning/DAC_Scan/InttClustering.h"
+#include "InttConversion_new.h"
+#include "InttClustering.h"
 
 // todo : the number of number is given by the adc_setting_run !!!
 // todo : also the range of the hist.
