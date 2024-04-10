@@ -40,7 +40,7 @@ class INTTXYvtxEvt : public INTTXYvtx{
         virtual void ProcessEvt(int event_i, vector<clu_info> temp_sPH_inner_nocolumn_vec, vector<clu_info> temp_sPH_outer_nocolumn_vec, vector<vector<double>> temp_sPH_nocolumn_vec, vector<vector<double>> temp_sPH_nocolumn_rz_vec, int NvtxMC, vector<double> TrigvtxMC, bool PhiCheckTag, Long64_t bco_full, pair<double,double> evt_z);
         pair<double,double> GetVtxXYEvt();
         void PrintPlots_Evt();
-        void InitTreeOut();
+        void InitTreeOut() override;
         void InitHist_Evt();
         vector<pair<double,double>> GetEvtVtxInfo();
         int GetReturnTag();

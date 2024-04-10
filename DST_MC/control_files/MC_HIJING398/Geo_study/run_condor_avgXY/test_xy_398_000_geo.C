@@ -1,11 +1,11 @@
-#include "../../../INTTReadTree.h"
-#include "../../../INTTXYvtx.h"
+#include "../../../../INTTReadTree.h"
+#include "../../../../INTTXYvtx.h"
 
 void test_xy_398_000_geo(int loop_i, int core_i)
 {
     string input_directory = "/sphenix/user/ChengWei/sPH_dNdeta/HIJING_ana398_xvtx-0p04cm_yvtx0p24cm_zvtx-20cm_dummyAlignParams";
     // string file_name = "MC_ZF_xyvtx";
-    string out_folder_directory = input_directory + "/Geo_XY_scan_trial_1";
+    string out_folder_directory = input_directory + "/Geo_XY_scan_trial_2";
     string MC_list_name = "file_list.txt";
     string tree_name = "EventTree";
 
@@ -62,6 +62,10 @@ void test_xy_398_000_geo(int loop_i, int core_i)
     double angle_diff_stddev;
     double DCA_distance_mean;
     double DCA_distance_stddev;
+    double Line_filled_X;
+    double Line_filled_Y;
+    double Line_filled_stddev_X;
+    double Line_filled_stddev_Y;
 
     tree_out -> Branch("offset_x_vec", &offset_x_vec);
     tree_out -> Branch("offset_y_vec", &offset_y_vec);
@@ -84,6 +88,10 @@ void test_xy_398_000_geo(int loop_i, int core_i)
     tree_out -> Branch("angle_diff_stddev",   &angle_diff_stddev);
     tree_out -> Branch("DCA_distance_mean",   &DCA_distance_mean);
     tree_out -> Branch("DCA_distance_stddev", &DCA_distance_stddev);
+    tree_out -> Branch("Line_filled_X", &Line_filled_X);
+    tree_out -> Branch("Line_filled_Y", &Line_filled_Y);
+    tree_out -> Branch("Line_filled_stddev_X", &Line_filled_stddev_X);
+    tree_out -> Branch("Line_filled_stddev_Y", &Line_filled_stddev_Y);
     
 
     TH2F * DCA_distance_inner_phi_peak_final;
@@ -125,6 +133,8 @@ void test_xy_398_000_geo(int loop_i, int core_i)
 
     INTTReadTree * INTTClu = new INTTReadTree(data_type, input_directory, MC_list_name, tree_name, clu_size_cut, clu_sum_adc_cut, 9999, N_ladder, offset_range, included_ladder_vec, 3);
 
+    int count_valid_event = 0;
+
     for (int trial_i = 0; trial_i < N_trial; trial_i++)
     {
         // cout<<" start trial : "<<trial_i<<"-------------------- -------------------- -------------------- --------------------"<<endl;
@@ -133,6 +143,8 @@ void test_xy_398_000_geo(int loop_i, int core_i)
         final_random_seed = trial_i + loop_i * N_trial + (N_loop * N_trial) * (core_i + 0);
         random_seed_out = final_random_seed;
         // cout<<"test-3"<<endl;
+
+        count_valid_event = 0;
 
         INTTClu -> set_random_seed(final_random_seed);
         INTTClu -> gen_ladder_offset();
@@ -156,11 +168,14 @@ void test_xy_398_000_geo(int loop_i, int core_i)
             }
         }
         INTTXYvtx    * MCxy    = new INTTXYvtx(INTTClu -> GetRunType(), out_folder_directory, beam_origin, geo_mode_id, phi_diff_cut, DCA_cut, N_clu_cutl, N_clu_cut, draw_event_display, peek, 0, 3, false);
-        cout<<"test-1"<<endl;
-        for (int event_i = 0; event_i < 2500; event_i ++)
+        // cout<<"test-1"<<endl;
+        for (int event_i = 0; event_i < 200000; event_i ++)
         {
             INTTClu -> EvtInit(event_i);
             INTTClu -> EvtSetCluGroup();
+
+            long total_Nclu = INTTClu -> temp_sPH_inner_nocolumn_vec.size() + INTTClu -> temp_sPH_outer_nocolumn_vec.size();
+            if ( total_Nclu < N_clu_cutl || total_Nclu > N_clu_cut ) {MCxy->ClearEvt(); INTTClu->EvtClear(); continue;}
 
             MCxy     -> ProcessEvt(
                 event_i, 
@@ -171,6 +186,9 @@ void test_xy_398_000_geo(int loop_i, int core_i)
 
             MCxy -> ClearEvt();
             INTTClu -> EvtClear();
+
+            count_valid_event += 1;
+            if (count_valid_event >= 2500) {break;}
         }
         // cout<<"test0"<<endl;
         vector<pair<double,double>> out_vtx = MCxy -> MacroVTXSquare(4,10,false);
@@ -205,6 +223,12 @@ void test_xy_398_000_geo(int loop_i, int core_i)
         MCxy -> TH2F_FakeClone(MCxy -> GetHistFinal().first[3], angle_diff_outer_phi_peak_final  );
         MCxy -> TH1F_FakeClone(MCxy -> GetHistFinal().second[0], angle_diff_new_bkg_remove_final);
         // cout<<"test3"<<endl;
+
+        vector<pair<double,double>> out_vtx_line = MCxy -> FillLine_FindVertex({(out_vtx[0].first + out_vtx[1].first)/2., (out_vtx[0].second + out_vtx[1].second)/2.}, 0.001, 5.0, 100, false);
+        Line_filled_X = out_vtx_line[0].first;
+        Line_filled_Y = out_vtx_line[0].second;
+        Line_filled_stddev_X = out_vtx_line[2].first;
+        Line_filled_stddev_Y = out_vtx_line[2].second;
         
         file_out -> cd();
         // tree_out->SetDirectory(file_out);
@@ -213,6 +237,8 @@ void test_xy_398_000_geo(int loop_i, int core_i)
         DCA_distance_outer_phi_peak_final -> Write(Form("DCA_distance_outer_phi_peak_final_%d", final_random_seed));
         angle_diff_outer_phi_peak_final   -> Write(Form("angle_diff_outer_phi_peak_final_%d", final_random_seed));
         angle_diff_new_bkg_remove_final   -> Write(Form("angle_diff_new_bkg_remove_final_%d", final_random_seed));
+        MCxy -> GetHistFinal().first[4]   -> Write(Form("Line_filled_%d", final_random_seed));
+        MCxy -> GetHistFinal().first[5]   -> Write(Form("Line_filled_bkg_remove_%d", final_random_seed));
         // cout<<"test4"<<endl;
         tree_out -> Fill();
         // cout<<"test5"<<endl;
@@ -239,7 +265,7 @@ void test_xy_398_000_geo(int loop_i, int core_i)
 
     
     
-    // vector<pair<double,double>> out_vtx_line = MCxy -> FillLine_FindVertex({(out_vtx[0].first + out_vtx[1].first)/2., (out_vtx[0].second + out_vtx[1].second)/2.}, 0.001);
+    
     // cout<<" "<<endl;
     // cout<<"By fill-line method,"<<endl;
     // cout<<"Reco Run Vertex XY: "<<out_vtx_line[0].first<<" "<<out_vtx_line[0].second<<endl;

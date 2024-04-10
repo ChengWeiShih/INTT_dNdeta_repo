@@ -13,7 +13,7 @@
 void SetsPhenixStyle ()
 {
   static TStyle* sphenixStyle = 0;
-  // std::cout << "sPhenixStyle: Applying nominal settings." << std::endl ;
+  std::cout << "sPhenixStyle: Applying nominal settings." << std::endl ;
   if ( sphenixStyle==0 ) sphenixStyle = sPhenixStyle();
   gROOT->SetStyle("sPHENIX");
   gROOT->ForceStyle();
@@ -97,11 +97,11 @@ TStyle* sPhenixStyle()
 
 
 #if ROOT_VERSION_CODE >= ROOT_VERSION(6,00,0)
-  // std::cout << "sPhenixStyle: ROOT6 mode" << std::endl;
+  std::cout << "sPhenixStyle: ROOT6 mode" << std::endl;
   sphenixStyle->SetLegendTextSize(tsize);
   sphenixStyle->SetPalette(kBird);
 #else
-  // std::cout << "sPhenixStyle: ROOT5 mode" << std::endl;
+  std::cout << "sPhenixStyle: ROOT5 mode" << std::endl;
   // color palette - manually define 'kBird' palette only available in ROOT 6
   Int_t alpha = 0;
   Double_t stops[9] = { 0.0000, 0.1250, 0.2500, 0.3750, 0.5000, 0.6250, 0.7500, 0.8750, 1.0000};

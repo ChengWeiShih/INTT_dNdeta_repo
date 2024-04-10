@@ -51,7 +51,7 @@ class INTTXYvtx {
         void TH1F_FakeClone(TH1F*hist_in, TH1F*hist_out);
         void TH2F_FakeClone(TH2F*hist_in, TH2F*hist_out);
         void TH2F_FakeRebin(TH2F*hist_in, TH2F*hist_out);
-        vector<pair<double,double>> FillLine_FindVertex(pair<double,double> window_center, double segmentation = 0.005, double window_width = 3.0, int N_bins = 100);
+        vector<pair<double,double>> FillLine_FindVertex(pair<double,double> window_center, double segmentation = 0.005, double window_width = 5.0, int N_bins = 100, bool draw_plot = true);
     
     protected:
         TCanvas * c1;
@@ -126,6 +126,8 @@ class INTTXYvtx {
         TH2F * DCA_distance_outer_phi_peak_final;
         TH2F * angle_diff_outer_phi_peak_final;
 
+        TH2F * xy_hist;
+        TH2F * xy_hist_bkgrm;
 
         // note : to keep the cluster pair information
         // note : this is the vector for the whole run, not event by event
@@ -165,10 +167,21 @@ class INTTXYvtx {
         int N_clu_cutl;
         int N_clu_cut;
 
+        // TFile * file_out;
+        // TTree * tree_out;
+        // double out_quadrant_corner_X;
+        // double out_quadrant_corner_Y;
+        // double out_quadrant_center_X;
+        // double out_quadrant_center_X;
+        // double out_line_filled_mean_X;
+        // double out_line_filled_mean_Y;
+        // double out_line_filled_stddev_X;
+        // double out_line_filled_stddev_Y;
+
         void Init();
         void InitHist();
         void InitCanvas();
-        void InitTreeOut();
+        virtual void InitTreeOut();
         void InitRest();    
         void InitGraph();    
 
@@ -242,9 +255,27 @@ void INTTXYvtx::Init()
 {
     InitHist();
     InitCanvas();
-    // InitTreeOut();
+    InitTreeOut();
     InitRest();
     InitGraph();
+}
+
+void INTTXYvtx::InitTreeOut()
+{
+    // file_out = new TFile(Form("%s/run_XY_tree.root",out_folder_directory.c_str()),"RECREATE");
+    // file_out -> cd();
+
+    // tree_out = new TTree("tree", "tree avg VtxXY");
+    // tree_out -> Branch("quadrant_corner_X",&out_quadrant_corner_X);
+    // tree_out -> Branch("quadrant_corner_Y",&out_quadrant_corner_Y);
+    // tree_out -> Branch("quadrant_center_X",&out_quadrant_center_X);
+    // tree_out -> Branch("quadrant_center_X",&out_quadrant_center_X);
+    // tree_out -> Branch("line_filled_mean_X",&out_line_filled_mean_X);
+    // tree_out -> Branch("line_filled_mean_Y",&out_line_filled_mean_Y);
+    // tree_out -> Branch("line_filled_stddev_X",&out_line_filled_stddev_X);
+    // tree_out -> Branch("line_filled_stddev_Y",&out_line_filled_stddev_Y);
+
+    return;
 }
 
 void INTTXYvtx::InitGraph()
@@ -604,7 +635,7 @@ void INTTXYvtx::ClearEvt()
 pair<vector<TH2F *>, vector<TH1F*>> INTTXYvtx::GetHistFinal()
 {
     return {
-        {DCA_distance_inner_phi_peak_final, angle_diff_inner_phi_peak_final, DCA_distance_outer_phi_peak_final, angle_diff_outer_phi_peak_final},
+        {DCA_distance_inner_phi_peak_final, angle_diff_inner_phi_peak_final, DCA_distance_outer_phi_peak_final, angle_diff_outer_phi_peak_final, xy_hist, xy_hist_bkgrm},
         {angle_diff_new_bkg_remove_final}
     };
 }
@@ -1595,6 +1626,11 @@ void INTTXYvtx::EndRun()
     N_cluster_correlation -> Reset("ICESM");
     N_cluster_correlation_close -> Reset("ICESM");
 
+    // file_out -> cd();
+    // tree_out -> SetDirectory(file_out);
+    // tree_out -> Write();
+    // file_out -> Close();
+
     // c1 -> Delete();
     // ltx -> Delete();
     // draw_text -> Delete();
@@ -2187,19 +2223,23 @@ void INTTXYvtx::TH2FSampleLineFill(TH2F * hist_in, double segmentation, std::pai
     }
 }
 
-vector<pair<double,double>> INTTXYvtx::FillLine_FindVertex(pair<double,double> window_center, double segmentation, double window_width, int N_bins)
+vector<pair<double,double>> INTTXYvtx::FillLine_FindVertex(pair<double,double> window_center, double segmentation, double window_width, int N_bins, bool draw_plot)
 {
-    TH2F * xy_hist = new TH2F("","xy_hist", N_bins, -1 * window_width / 2. + window_center.first, window_width / 2. + window_center.first, N_bins, -1 * window_width / 2. + window_center.second, window_width / 2. + window_center.second);
+    xy_hist = new TH2F("","xy_hist", N_bins, -1 * window_width / 2. + window_center.first, window_width / 2. + window_center.first, N_bins, -1 * window_width / 2. + window_center.second, window_width / 2. + window_center.second);
     xy_hist -> SetStats(0);
     xy_hist -> GetXaxis() -> SetTitle("X axis [mm]");
     xy_hist -> GetYaxis() -> SetTitle("Y axis [mm]");
     xy_hist -> GetXaxis() -> SetNdivisions(505);
 
-    TH2F * xy_hist_bkgrm = new TH2F("","xy_hist_bkgrm", N_bins, -1 * window_width / 2. + window_center.first, window_width / 2. + window_center.first, N_bins, -1 * window_width / 2. + window_center.second, window_width / 2. + window_center.second);
+    xy_hist_bkgrm = new TH2F("","xy_hist_bkgrm", N_bins, -1 * window_width / 2. + window_center.first, window_width / 2. + window_center.first, N_bins, -1 * window_width / 2. + window_center.second, window_width / 2. + window_center.second);
     xy_hist_bkgrm -> SetStats(0);
     xy_hist_bkgrm -> GetXaxis() -> SetTitle("X axis [mm]");
     xy_hist_bkgrm -> GetYaxis() -> SetTitle("Y axis [mm]");
     xy_hist_bkgrm -> GetXaxis() -> SetNdivisions(505);
+
+    // cout<<"test test size and bin of the hist xy_hist : "<<xy_hist -> GetNbinsX()<<" "<<xy_hist -> GetNbinsY()<<endl;
+    // cout<<"test test bin width of the hist xy_hist : "<<xy_hist -> GetXaxis() -> GetBinWidth(1)<<" "<<xy_hist -> GetYaxis() -> GetBinWidth(1)<<endl;
+    // cout<<"draw_plot status : "<<draw_plot<<endl;
 
     
     for (int i = 0; i < cluster_pair_vec.size(); i++)
@@ -2242,33 +2282,39 @@ vector<pair<double,double>> INTTXYvtx::FillLine_FindVertex(pair<double,double> w
     double reco_vtx_x = xy_hist_bkgrm->GetMean(1); // + xy_hist_bkgrm -> GetXaxis() -> GetBinWidth(1) / 2.; // note : the TH2F calculate the GetMean based on the bin center, no need to apply additional offset
     double reco_vtx_y = xy_hist_bkgrm->GetMean(2); // + xy_hist_bkgrm -> GetYaxis() -> GetBinWidth(1) / 2.; // note : the TH2F calculate the GetMean based on the bin center, no need to apply additional offset
 
-    TGraph * reco_vertex_gr = new TGraph(); 
-    reco_vertex_gr -> SetMarkerStyle(50);
-    reco_vertex_gr -> SetMarkerColor(2);
-    reco_vertex_gr -> SetMarkerSize(1);
-    reco_vertex_gr -> SetPoint(reco_vertex_gr -> GetN(), reco_vtx_x, reco_vtx_y);
+    // cout<<"test : in the line filled, the process is almost done"<<endl;
+
+    if (draw_plot)
+    {
+        TGraph * reco_vertex_gr = new TGraph(); 
+        reco_vertex_gr -> SetMarkerStyle(50);
+        reco_vertex_gr -> SetMarkerColor(2);
+        reco_vertex_gr -> SetMarkerSize(1);
+        reco_vertex_gr -> SetPoint(reco_vertex_gr -> GetN(), reco_vtx_x, reco_vtx_y);
 
 
-    // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
-    xy_hist -> Draw("colz0");
-    // draw_text -> DrawLatex(0.21, 0.71+0.13, Form("Vertex of the Run: %.3f mm, %.3f mm", reco_vtx_x, reco_vtx_y));
-    // draw_text -> DrawLatex(0.21, 0.67+0.13, Form("Vertex error: %.3f mm, %.3f mm", xy_hist_bkgrm->GetMeanError(1), xy_hist_bkgrm->GetMeanError(2)));
-    // reco_vertex_gr -> Draw("p same");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
-    c1 -> Print(Form("%s/Run_xy_hist.pdf",out_folder_directory.c_str()));
-    c1 -> Clear();
+        // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+        xy_hist -> Draw("colz0");
+        // draw_text -> DrawLatex(0.21, 0.71+0.13, Form("Vertex of the Run: %.3f mm, %.3f mm", reco_vtx_x, reco_vtx_y));
+        // draw_text -> DrawLatex(0.21, 0.67+0.13, Form("Vertex error: %.3f mm, %.3f mm", xy_hist_bkgrm->GetMeanError(1), xy_hist_bkgrm->GetMeanError(2)));
+        // reco_vertex_gr -> Draw("p same");
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+        c1 -> Print(Form("%s/Run_xy_hist.pdf",out_folder_directory.c_str()));
+        c1 -> Clear();
 
-    // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
-    xy_hist_bkgrm -> Draw("colz0");
-    draw_text -> DrawLatex(0.21, 0.71+0.13, Form("Vertex of the Run: %.4f mm, %.4f mm", reco_vtx_x, reco_vtx_y));
-    draw_text -> DrawLatex(0.21, 0.67+0.13, Form("Vertex error: %.4f mm, %.4f mm", xy_hist_bkgrm->GetMeanError(1), xy_hist_bkgrm->GetMeanError(2)));
-    reco_vertex_gr -> Draw("p same");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
-    c1 -> Print(Form("%s/Run_xy_hist_bkgrm.pdf",out_folder_directory.c_str()));
-    c1 -> Clear();
+        // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+        xy_hist_bkgrm -> Draw("colz0");
+        draw_text -> DrawLatex(0.21, 0.71+0.13, Form("Vertex of the Run: %.4f mm, %.4f mm", reco_vtx_x, reco_vtx_y));
+        draw_text -> DrawLatex(0.21, 0.67+0.13, Form("Vertex error: %.4f mm, %.4f mm", xy_hist_bkgrm->GetMeanError(1), xy_hist_bkgrm->GetMeanError(2)));
+        reco_vertex_gr -> Draw("p same");
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+        c1 -> Print(Form("%s/Run_xy_hist_bkgrm.pdf",out_folder_directory.c_str()));
+        c1 -> Clear();
 
-    return {{reco_vtx_x,reco_vtx_y},{xy_hist_bkgrm->GetMeanError(1), xy_hist_bkgrm->GetMeanError(2)}};
-    
+        // cout<<"test : hello, can you see me ?"<<endl;
+    }
+
+    return {{reco_vtx_x,reco_vtx_y},{xy_hist_bkgrm->GetMeanError(1), xy_hist_bkgrm->GetMeanError(2)}, {xy_hist_bkgrm->GetStdDev(1), xy_hist_bkgrm->GetStdDev(2)}};   
 }
 
 #endif

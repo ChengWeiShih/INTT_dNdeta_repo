@@ -34,6 +34,7 @@ class INTTReadTree
         void gen_ladder_offset();
         void clear_ladder_offset_map() {ladder_offset_map.clear();}
         void set_random_seed(int random_seed_in) {random_seed = random_seed_in;}
+        void set_ladder_offset(map<string, pair<double,double>> input_map) {ladder_offset_map = input_map;}
 
     private : 
         string data_type_list[6] = {"MC","data_DST","data_private", "data_private_geo1", "MC_geo_test", "MC_inner_phi_rotation"};
@@ -130,9 +131,9 @@ INTTReadTree::INTTReadTree(int data_type, string input_directory, string MC_list
     else if (data_type_list[data_type] == "MC_geo_test")
     {
         run_type_out = "MC";
-        std::cout<<"--- INTTReadTree -> input data type: MC geometry test ---"<<std::endl;
+        // std::cout<<"--- INTTReadTree -> input data type: MC geometry test ---"<<std::endl; // note : was used
         TChainInit_MC_geo_test();
-        std::cout<<"--- INTTReadTree -> Initialization done ---"<<std::endl;
+        // std::cout<<"--- INTTReadTree -> Initialization done ---"<<std::endl; // note : was used
     }
 
 }
@@ -142,7 +143,7 @@ void INTTReadTree::TChainInit_MC()
     chain_in = new TChain(tree_name.c_str());
     inttDSTMC = new INTTDSTchain(chain_in, input_directory, MC_list_name);
     N_event = chain_in->GetEntries();
-    std::printf("inttDSTMC N event : %lli \n", N_event);
+    // std::printf("inttDSTMC N event : %lli \n", N_event); // note : was used
 }
 
 void INTTReadTree::TChainInit_MC_geo_test()
@@ -150,7 +151,7 @@ void INTTReadTree::TChainInit_MC_geo_test()
     chain_in = new TChain(tree_name.c_str());
     inttDSTMC = new INTTDSTchain(chain_in, input_directory, MC_list_name);
     N_event = chain_in->GetEntries();
-    std::printf("inttDSTMC N event : %lli \n", N_event);
+    // std::printf("inttDSTMC N event : %lli \n", N_event); // note : was used
     // gen_ladder_offset();
 }
 
@@ -160,7 +161,7 @@ void INTTReadTree::TTreeInit_private()
     tree = (TTree *)file_in->Get(tree_name.c_str());
     inttCluData = new PrivateCluReader(tree);
     N_event = tree -> GetEntries();
-    std::printf("private gen tree, N event : %lli \n", N_event);
+    // std::printf("private gen tree, N event : %lli \n", N_event); // note : was used
 
 }
 
@@ -171,7 +172,7 @@ void INTTReadTree::TTreeInit_private_geo1()
     tree = (TTree *)file_in->Get(tree_name.c_str());
     inttCluData = new PrivateCluReader(tree);
     N_event = tree -> GetEntries();
-    std::printf("private gen tree, N event : %lli \n", N_event);
+    // std::printf("private gen tree, N event : %lli \n", N_event); // note : was used
     inttConv = new InttConversion();
 
     if (N_ladder != included_ladder_vec.size()) {cout<<"In INTTReadTree, there is an error in ladder offset generation"<<endl; exit(1);}    

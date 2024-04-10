@@ -28,7 +28,7 @@ double double_gaus_func(double *x, double *par)
 class INTTZvtx
 {
     public : 
-        INTTZvtx(string run_type, string out_folder_directory, pair<double,double> beam_origin, int geo_mode_id, double phi_diff_cut = 0.11, pair<double, double> DCA_cut = {-1,1}, int N_clu_cutl = 20, int N_clu_cut = 10000, int zvtx_cal_require = 15, pair<double,double> zvtx_QA_width = {39.62, 65.36}, double zvtx_QA_ratio = 0.00001, bool draw_event_display = true, double peek = 3.32405);
+        INTTZvtx(string run_type, string out_folder_directory, pair<double,double> beam_origin, int geo_mode_id, double phi_diff_cut = 0.11, pair<double, double> DCA_cut = {-1,1}, int N_clu_cutl = 20, int N_clu_cut = 10000, int zvtx_cal_require = 15, pair<double,double> zvtx_QA_width = {39.62, 65.36}, double zvtx_QA_ratio = 0.00001, bool draw_event_display = true, double peek = 3.32405, bool print_message_opt = true);
         void ProcessEvt(int event_i, vector<clu_info> temp_sPH_inner_nocolumn_vec, vector<clu_info> temp_sPH_outer_nocolumn_vec, vector<vector<double>> temp_sPH_nocolumn_vec, vector<vector<double>> temp_sPH_nocolumn_rz_vec, int NvtxMC, double TrigZvtxMC, bool PhiCheckTag, Long64_t bco_full, int centrality_bin);
         void ClearEvt();
         void PrintPlots();
@@ -124,6 +124,7 @@ class INTTZvtx
         double Clus_InnerPhi_Offset; // note : the vertex in XY is not at zero, so the "offset" moves the offset back to the orign which is (0,0)
         double Clus_OuterPhi_Offset; // note : the vertex in XY is not at zero, so the "offset" moves the offset back to the orign which is (0,0)
         bool draw_event_display;
+        bool print_message_opt;
         int zvtx_cal_require;         // note : if (> zvtx_cal_require)  -> pass
         int geo_mode_id;
         int N_clu_cut;                // note : if (> N_clu_cut)         -> continue  unit number
@@ -230,8 +231,8 @@ class INTTZvtx
 
 
 
-INTTZvtx::INTTZvtx(string run_type, string out_folder_directory, pair<double,double> beam_origin, int geo_mode_id, double phi_diff_cut, pair<double,double> DCA_cut, int N_clu_cutl, int N_clu_cut, int zvtx_cal_require, pair<double,double> zvtx_QA_width, double zvtx_QA_ratio, bool draw_event_display, double peek)
-:run_type(run_type), out_folder_directory(out_folder_directory), beam_origin(beam_origin), geo_mode_id(geo_mode_id), peek(peek), N_clu_cut(N_clu_cut), N_clu_cutl(N_clu_cutl), phi_diff_cut(phi_diff_cut), DCA_cut(DCA_cut), zvtx_cal_require(zvtx_cal_require), zvtx_QA_width(zvtx_QA_width), zvtx_QA_ratio(zvtx_QA_ratio), draw_event_display(draw_event_display)
+INTTZvtx::INTTZvtx(string run_type, string out_folder_directory, pair<double,double> beam_origin, int geo_mode_id, double phi_diff_cut, pair<double,double> DCA_cut, int N_clu_cutl, int N_clu_cut, int zvtx_cal_require, pair<double,double> zvtx_QA_width, double zvtx_QA_ratio, bool draw_event_display, double peek, bool print_message_opt)
+:run_type(run_type), out_folder_directory(out_folder_directory), beam_origin(beam_origin), geo_mode_id(geo_mode_id), peek(peek), N_clu_cut(N_clu_cut), N_clu_cutl(N_clu_cutl), phi_diff_cut(phi_diff_cut), DCA_cut(DCA_cut), zvtx_cal_require(zvtx_cal_require), zvtx_QA_width(zvtx_QA_width), zvtx_QA_ratio(zvtx_QA_ratio), draw_event_display(draw_event_display), print_message_opt(print_message_opt)
 {
     SetsPhenixStyle();
     system(Form("mkdir %s",out_folder_directory.c_str()));
@@ -383,7 +384,7 @@ void INTTZvtx::InitHist()
     line_breakdown_hist -> SetLineWidth(1);
     line_breakdown_hist -> GetXaxis() -> SetTitle("Z [mm]");
     line_breakdown_hist -> GetYaxis() -> SetTitle("Entry");
-    cout<<"class INTTZvtx, Line brakdown hist, range : "<<line_breakdown_hist->GetXaxis()->GetXmin()<<" "<<line_breakdown_hist->GetXaxis()->GetXmax()<<" "<<line_breakdown_hist->GetBinWidth(1)<<endl;
+    if (print_message_opt == true) {cout<<"class INTTZvtx, Line brakdown hist, range : "<<line_breakdown_hist->GetXaxis()->GetXmin()<<" "<<line_breakdown_hist->GetXaxis()->GetXmax()<<" "<<line_breakdown_hist->GetBinWidth(1)<<endl;}
 
     line_breakdown_gaus_ratio_hist = new TH1F("","line_breakdown_gaus_ratio_hist",200,0,0.0005);
     line_breakdown_gaus_ratio_hist -> GetXaxis() -> SetTitle("(Norm. size) / width");
@@ -670,20 +671,20 @@ void INTTZvtx::ProcessEvt(
 
 
 
-    if (event_i%1000 == 0) {cout<<"In INTTZvtx class, running event : "<<event_i<<endl;}
+    if (event_i%1000 == 0 && print_message_opt == true) {cout<<"In INTTZvtx class, running event : "<<event_i<<endl;}
 
     total_NClus = temp_sPH_inner_nocolumn_vec.size() + temp_sPH_outer_nocolumn_vec.size();
 
     if (total_NClus < zvtx_cal_require) {tree_out -> Fill(); return; cout<<"return confirmation"<<endl;}   
     
-    if (run_type == "MC" && NvtxMC != 1) {cout<<"In INTTZvtx class, event : "<<event_i<<" Nvtx : "<<NvtxMC<<" Nvtx more than one "<<endl; tree_out -> Fill(); return;}
-    if (PhiCheckTag == false)            {cout<<"In INTTZvtx class, event : "<<event_i<<" Nvtx : "<<NvtxMC<<" Not full phi has hits "<<endl; tree_out -> Fill(); return;}
+    if (run_type == "MC" && NvtxMC != 1) {tree_out -> Fill(); return; cout<<"In INTTZvtx class, event : "<<event_i<<" Nvtx : "<<NvtxMC<<" Nvtx more than one "<<endl; }
+    if (PhiCheckTag == false)            {tree_out -> Fill(); return; cout<<"In INTTZvtx class, event : "<<event_i<<" Nvtx : "<<NvtxMC<<" Not full phi has hits "<<endl;}
     
     if (temp_sPH_inner_nocolumn_vec.size() < 10 || temp_sPH_outer_nocolumn_vec.size() < 10 || total_NClus > N_clu_cut || total_NClus < N_clu_cutl)
     {
-        printf("In INTTZvtx class, event : %i, low clu continue, NClus : %lu \n", event_i, total_NClus); 
         tree_out -> Fill(); 
         return;
+        printf("In INTTZvtx class, event : %i, low clu continue, NClus : %lu \n", event_i, total_NClus); 
     }
 
     // note : put the cluster into the phi map, the first bool is for the cluster usage.
