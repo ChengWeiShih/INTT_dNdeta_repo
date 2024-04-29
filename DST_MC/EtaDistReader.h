@@ -11,11 +11,12 @@ class EtaDistReader : public INTTEta
         EtaDistReader(string run_type, string out_folder_directory, vector<pair<int,vector<int>>> included_eta_z_map, string input_file_directory, bool centrality_Z_map_bool = 0) : 
         INTTEta(run_type, out_folder_directory), included_eta_z_map(included_eta_z_map), input_file_directory(input_file_directory), centrality_Z_map_bool(centrality_Z_map_bool)
         {
+            gErrorIgnoreLevel = kError;
+
             cout<<"In EtaDistReader, centrality region size : "<<centrality_region.size()<<endl;    
             cout<<"In EtaDistReader, plot_text: "<<plot_text<<endl;
             cout<<"In EtaDistReader, signal_region: "<<signal_region<<endl;
 
-            gErrorIgnoreLevel=kInfo;
 
             file_in = TFile::Open(input_file_directory.c_str());
 
@@ -37,10 +38,14 @@ class EtaDistReader : public INTTEta
 
             DeltaPhi_Multi_Stack_hist_out.clear();
 
+            legend = new TLegend(0.45,0.8,0.70,0.9);
+            // legend -> SetMargin(0);
+            legend->SetTextSize(0.03);
+
             ReadFileHist();
             InitHist();
             MainPreparation();
-            FinaldNdEta();
+            // FinaldNdEta();
 
 
             return;
@@ -51,6 +56,9 @@ class EtaDistReader : public INTTEta
         vector<TH1F *> GetdNdeta_1D_reco_single();
         vector<TH1F *> GetdNdeta_1D_reco_multi();
         vector<string> Get_centrality_region() {return centrality_region;};
+        vector<TH2F *> Get_alpha_corr_map() {return {eta_Mbin_correction_loose, eta_Mbin_correction_tight};};
+        void Set_alpha_corr_map(TH2F * hist_in_loose, TH2F * hist_in_tight);
+        void FinaldNdEta();
 
         ~EtaDistReader()
         {
@@ -78,6 +86,13 @@ class EtaDistReader : public INTTEta
         TH2F * centrality_Z_map_MC;
         TH2F * eta_z_ref;
 
+        TH2F * eta_Mbin_correction_tight;
+        TH2F * eta_Mbin_correction_loose;
+        TH2F * eta_Mbin_correction_loose_noUPC; // note : no ultra peripheral collision bin
+        TH2F * input_eta_Mbin_correction_tight;
+        TH2F * input_eta_Mbin_correction_loose;
+
+
         vector<TH1F *> dNdeta_1D_MC;
         vector<TH1F *> dNdeta_1D_reco_single;
         vector<TH1F *> dNdeta_1D_reco_multi;
@@ -89,14 +104,27 @@ class EtaDistReader : public INTTEta
         vector<vector<int>> N_event_counting;
         vector<vector<int>> N_event_counting_MC;
 
+        TLegend * legend;
+
         TH1F * temp_hist;
 
         void ReadFileHist();
         void InitHist();
         void MainPreparation();
-        void FinaldNdEta();
+        
 
 };
+
+void EtaDistReader::Set_alpha_corr_map(TH2F * hist_in_loose, TH2F * hist_in_tight)
+{
+    input_eta_Mbin_correction_loose = hist_in_loose;
+    input_eta_Mbin_correction_tight = hist_in_tight;
+
+    std::cout<<"in EtaDistReader, input map loose check "<<input_eta_Mbin_correction_loose -> GetBinContent(3,3)<<endl;
+    std::cout<<"in EtaDistReader, input map tight check "<<input_eta_Mbin_correction_tight -> GetBinContent(3,3)<<endl;
+
+    return;
+}
 
 void EtaDistReader::ReadFileHist()
 {
@@ -105,7 +133,10 @@ void EtaDistReader::ReadFileHist()
     // note : the 1D vector is for different centrality bins
     for (int Mbin = 0; Mbin < N_centrality_bin; Mbin++)
     {
+        // note : the entries with the deltaphi within 1 degree, which means the background entries are also included. 
+        // note : the loose method
         SignalNTrack_eta_z_Multi_2D.push_back((TH2F *) file_in -> Get(Form("Reco_SignalNTracklet_Multi_MBin%i",Mbin)));
+        // note : the tight method
         SignalNTrack_eta_z_Single_2D.push_back((TH2F *) file_in -> Get(Form("Reco_SignalNTracklet_Single_MBin%i",Mbin)));
     }
 
@@ -197,6 +228,42 @@ void EtaDistReader::InitHist()
         dNdeta_1D_reco_multi[i] -> GetYaxis() -> CenterTitle(true);
     }
 
+    eta_Mbin_correction_tight = new TH2F(
+        "",
+        "eta_Mbin_correction_tight;#eta;Mbin;#alpha factor",
+        included_eta_z_map.size(), 
+        eta_z_ref -> GetXaxis() ->GetBinLowEdge(included_eta_z_map[0].first), 
+        eta_z_ref -> GetXaxis() ->GetBinCenter(included_eta_z_map[included_eta_z_map.size() - 1].first) + eta_z_ref -> GetXaxis() ->GetBinWidth(included_eta_z_map[included_eta_z_map.size() - 1].first) / 2.,
+        N_centrality_bin,
+        0, 
+        N_centrality_bin
+    );
+
+    eta_Mbin_correction_loose = new TH2F(
+        "",
+        "eta_Mbin_correction_loose;#eta;Mbin;#alpha factor",
+        included_eta_z_map.size(), 
+        eta_z_ref -> GetXaxis() ->GetBinLowEdge(included_eta_z_map[0].first), 
+        eta_z_ref -> GetXaxis() ->GetBinCenter(included_eta_z_map[included_eta_z_map.size() - 1].first) + eta_z_ref -> GetXaxis() ->GetBinWidth(included_eta_z_map[included_eta_z_map.size() - 1].first) / 2.,
+        N_centrality_bin,
+        0, 
+        N_centrality_bin
+    );
+
+    eta_Mbin_correction_loose_noUPC = new TH2F(
+        "",
+        "eta_Mbin_correction_loose_noUPC;#eta;Mbin;#alpha factor",
+        included_eta_z_map.size(), 
+        eta_z_ref -> GetXaxis() ->GetBinLowEdge(included_eta_z_map[0].first), 
+        eta_z_ref -> GetXaxis() ->GetBinCenter(included_eta_z_map[included_eta_z_map.size() - 1].first) + eta_z_ref -> GetXaxis() ->GetBinWidth(included_eta_z_map[included_eta_z_map.size() - 1].first) / 2.,
+        N_centrality_bin,
+        0, 
+        N_centrality_bin
+    );
+
+    input_eta_Mbin_correction_tight = nullptr;
+    input_eta_Mbin_correction_loose = nullptr;
+
     cout<<"InitHist done"<<endl;
 }
 
@@ -270,8 +337,9 @@ void EtaDistReader::MainPreparation()
                 eta_z_ref -> GetXaxis() -> GetBinCenter(eta_z.first) + eta_z_ref -> GetXaxis() -> GetBinWidth(eta_z.first)/2.)
             );
             
-            draw_text -> DrawLatex(0.21, 0.85, Form("MBin: %i, #eta bin: %i", Mbin, eta_z.first));
-            draw_text -> DrawLatex(0.21, 0.80, Form("pol2: %.2f + %.2f(x-%.2f) + %.2f(x-%.2f)^{2}", bkg_fit_pol2 -> GetParameter(0), bkg_fit_pol2 -> GetParameter(1), bkg_fit_pol2 -> GetParameter(3), bkg_fit_pol2 -> GetParameter(2), bkg_fit_pol2 -> GetParameter(3)));
+            draw_text -> DrawLatex(0.21, 0.86, Form("MBin: %i, #eta_bin: %i, #Delta#Phi_bin width: %.2f", Mbin, eta_z.first, temp_hist -> GetBinWidth(1)));
+            draw_text -> DrawLatex(0.21, 0.82, Form("pol2: %.2f + %.2f(x-%.2f) + %.2f(x-%.2f)^{2}", bkg_fit_pol2 -> GetParameter(0), bkg_fit_pol2 -> GetParameter(1), bkg_fit_pol2 -> GetParameter(3), bkg_fit_pol2 -> GetParameter(2), bkg_fit_pol2 -> GetParameter(3)));
+            draw_text -> DrawLatex(0.21, 0.78, Form("Signal size: %i, pol2 bkg size: %.2f", SignalNTrack_Multi[Form("%i_%i",Mbin,eta_z.first)], pol2_bkg_integral));
 
             c1 -> Print(Form("%s/Reco_DeltaPhi_Multi_Stack.pdf", out_folder_directory.c_str()));
             c1 -> Clear();
@@ -286,6 +354,10 @@ void EtaDistReader::MainPreparation()
 
 void EtaDistReader::FinaldNdEta()
 {
+    double MC_hist_counting = 0;
+    double data_tight_counting = 0;
+    double data_loose_counting = 0;
+
     c1 -> cd();
     c1 -> Print(Form("%s/dNdeta_combine_final_no_correction.pdf(", out_folder_directory.c_str()));
     for (int Mbin = 0; Mbin < N_centrality_bin; Mbin++)
@@ -297,9 +369,11 @@ void EtaDistReader::FinaldNdEta()
         //     cout<<"1MBin: "<<Mbin<<" eta bin: "<<i<<" MC: "<<dNdeta_1D_MC[Mbin] -> GetBinError(i+1) / dNdeta_1D_MC[Mbin] -> GetBinContent(i+1)<<" reco_single: "<<dNdeta_1D_reco_single[Mbin] -> GetBinError(i+1) / dNdeta_1D_reco_single[Mbin] -> GetBinContent(i+1)<<" reco_multi: "<<dNdeta_1D_reco_multi[Mbin] -> GetBinError(i+1) / dNdeta_1D_reco_multi[Mbin] -> GetBinContent(i+1)<<endl;
         // }
 
-        dNdeta_1D_MC[Mbin] -> Scale(1./double(dNdeta_1D_MC[Mbin] -> GetBinWidth(1) ));
+        std::cout<<" "<<std::endl;
+
+        dNdeta_1D_MC[Mbin]          -> Scale(1./double(dNdeta_1D_MC[Mbin]          -> GetBinWidth(1) ));
         dNdeta_1D_reco_single[Mbin] -> Scale(1./double(dNdeta_1D_reco_single[Mbin] -> GetBinWidth(1) ));
-        dNdeta_1D_reco_multi[Mbin] -> Scale(1./double(dNdeta_1D_reco_multi[Mbin] -> GetBinWidth(1) ));
+        dNdeta_1D_reco_multi[Mbin]  -> Scale(1./double(dNdeta_1D_reco_multi[Mbin]  -> GetBinWidth(1) ));
 
         // // note : check the ratio of the bin error to the bin content of the three histograms
         // for (int i = 0; i < included_eta_z_map.size(); i++)
@@ -318,29 +392,44 @@ void EtaDistReader::FinaldNdEta()
 
             dNdeta_1D_reco_multi[Mbin]  -> SetBinContent(i+1, dNdeta_1D_reco_multi[Mbin] -> GetBinContent(i+1) / double(N_event_counting[Mbin][i]));
             dNdeta_1D_reco_multi[Mbin]  -> SetBinError(i+1, dNdeta_1D_reco_multi[Mbin] -> GetBinError(i+1) / double(N_event_counting[Mbin][i]));
+        
+            if (input_eta_Mbin_correction_loose != nullptr)
+            {
+                dNdeta_1D_reco_multi[Mbin] -> SetBinContent(i+1, dNdeta_1D_reco_multi[Mbin] -> GetBinContent(i+1) / input_eta_Mbin_correction_loose -> GetBinContent(i+1, Mbin+1));
+                dNdeta_1D_reco_multi[Mbin] -> SetBinError(i+1, dNdeta_1D_reco_multi[Mbin] -> GetBinError(i+1) /     input_eta_Mbin_correction_loose -> GetBinContent(i+1, Mbin+1));
+            }
+
+            if (input_eta_Mbin_correction_tight != nullptr)
+            {
+                dNdeta_1D_reco_single[Mbin] -> SetBinContent(i+1, dNdeta_1D_reco_single[Mbin] -> GetBinContent(i+1) / input_eta_Mbin_correction_tight -> GetBinContent(i+1, Mbin+1));
+                dNdeta_1D_reco_single[Mbin] -> SetBinError(i+1,   dNdeta_1D_reco_single[Mbin] -> GetBinError(i+1)   / input_eta_Mbin_correction_tight -> GetBinContent(i+1, Mbin+1));
+            }
+
         }
         
         cout<<"----------- for the case of method tight ----------------" <<endl;
-        for (int i = 0; i < included_eta_z_map.size(); i++)
-        {
-            // note : to print the ratio between reco track and MC track
-            std::cout << "centrality bin : "<<Mbin<<", ";
-            for (int bin_i = 0; bin_i < dNdeta_1D_MC[Mbin] -> GetNbinsX(); bin_i++) {
-                std::cout <<"--"<<dNdeta_1D_reco_single[Mbin] -> GetBinContent(bin_i+1) <<", "<< dNdeta_1D_MC[Mbin] -> GetBinContent(bin_i+1)<< ", " << Form("%.3f",dNdeta_1D_reco_single[Mbin] -> GetBinContent(bin_i+1) / dNdeta_1D_MC[Mbin] -> GetBinContent(bin_i+1)) <<"--, ";
-            }
-            std::cout << std::endl;
+        // note : to print the ratio between reco track and MC track
+        std::cout << "centrality bin : "<<Mbin<<", ";
+        for (int bin_i = 0; bin_i < dNdeta_1D_MC[Mbin] -> GetNbinsX(); bin_i++) {
+            MC_hist_counting += dNdeta_1D_MC[Mbin] -> GetBinContent(bin_i+1);
+            data_tight_counting += dNdeta_1D_reco_single[Mbin] -> GetBinContent(bin_i+1);
+            std::cout <<"~~"<<dNdeta_1D_reco_single[Mbin] -> GetBinContent(bin_i+1) <<", "<< dNdeta_1D_MC[Mbin] -> GetBinContent(bin_i+1)<< ", " << Form("%.3f",dNdeta_1D_reco_single[Mbin] -> GetBinContent(bin_i+1) / dNdeta_1D_MC[Mbin] -> GetBinContent(bin_i+1)) <<"~~, ";
+
+            eta_Mbin_correction_tight -> SetBinContent(bin_i + 1, Mbin+1, dNdeta_1D_reco_single[Mbin] -> GetBinContent(bin_i+1) / dNdeta_1D_MC[Mbin] -> GetBinContent(bin_i+1));
         }
+        std::cout << std::endl;
 
         cout<<"----------- for the case of method inclusive ----------------" <<endl;
-        for (int i = 0; i < included_eta_z_map.size(); i++)
-        {
-            // note : to print the ratio between reco track and MC track
-            std::cout << "centrality bin : "<<Mbin<<", ";
-            for (int bin_i = 0; bin_i < dNdeta_1D_MC[Mbin] -> GetNbinsX(); bin_i++) {
-                std::cout <<"--"<<dNdeta_1D_reco_multi[Mbin] -> GetBinContent(bin_i+1) <<", "<< dNdeta_1D_MC[Mbin] -> GetBinContent(bin_i+1)<< ", " << Form( "%.3f", dNdeta_1D_reco_multi[Mbin] -> GetBinContent(bin_i+1) / dNdeta_1D_MC[Mbin] -> GetBinContent(bin_i+1)) <<"--, ";
-            }
-            std::cout << std::endl;
+        // note : to print the ratio between reco track and MC track
+        std::cout << "centrality bin : "<<Mbin<<", ";
+        for (int bin_i = 0; bin_i < dNdeta_1D_MC[Mbin] -> GetNbinsX(); bin_i++) {
+            data_loose_counting += dNdeta_1D_reco_multi[Mbin] -> GetBinContent(bin_i+1);
+            std::cout <<"~~"<<dNdeta_1D_reco_multi[Mbin] -> GetBinContent(bin_i+1) <<", "<< dNdeta_1D_MC[Mbin] -> GetBinContent(bin_i+1)<< ", " << Form( "%.3f", dNdeta_1D_reco_multi[Mbin] -> GetBinContent(bin_i+1) / dNdeta_1D_MC[Mbin] -> GetBinContent(bin_i+1)) <<"~~, ";
+
+            eta_Mbin_correction_loose       -> SetBinContent(bin_i + 1, Mbin + 1, dNdeta_1D_reco_multi[Mbin] -> GetBinContent(bin_i+1) / dNdeta_1D_MC[Mbin] -> GetBinContent(bin_i+1));
+            eta_Mbin_correction_loose_noUPC -> SetBinContent(bin_i + 1, Mbin + 1, dNdeta_1D_reco_multi[Mbin] -> GetBinContent(bin_i+1) / dNdeta_1D_MC[Mbin] -> GetBinContent(bin_i+1));
         }
+        std::cout << std::endl;
 
         // note : check the bin content of the three histograms
         // note : and check the bin error of the three histograms
@@ -358,19 +447,60 @@ void EtaDistReader::FinaldNdEta()
         //     cout<<"3MBin: "<<Mbin<<" eta bin: "<<i<<" MC: "<<dNdeta_1D_MC[Mbin] -> GetBinError(i+1) / dNdeta_1D_MC[Mbin] -> GetBinContent(i+1)<<" reco_single: "<<dNdeta_1D_reco_single[Mbin] -> GetBinError(i+1) / dNdeta_1D_reco_single[Mbin] -> GetBinContent(i+1)<<" reco_multi: "<<dNdeta_1D_reco_multi[Mbin] -> GetBinError(i+1) / dNdeta_1D_reco_multi[Mbin] -> GetBinContent(i+1)<<endl;
         // }
 
+        if (Mbin == 0)
+        {
+            legend -> AddEntry(dNdeta_1D_MC[Mbin], "MC","f");
+            legend -> AddEntry(dNdeta_1D_reco_single[Mbin], "Reco. Method tight","lep");
+            legend -> AddEntry(dNdeta_1D_reco_multi[Mbin], "Reco. Method loose","lep");
+        }
+
+
         dNdeta_1D_MC[Mbin] -> GetYaxis() -> SetRangeUser(0, dNdeta_1D_MC[Mbin] -> GetMaximum() * 1.5);
 
         dNdeta_1D_MC[Mbin] -> Draw("hist");
         dNdeta_1D_reco_single[Mbin] -> Draw("p same");
         dNdeta_1D_reco_multi[Mbin]  -> Draw("p same");
 
+        legend -> Draw("same");
+
         ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
         draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s",centrality_region[Mbin].c_str()));
        
         c1 -> Print(Form("%s/dNdeta_combine_final_no_correction.pdf", out_folder_directory.c_str()));
         c1 -> Clear();
+
+        cout<<"Mbin : "<<Mbin<<" MC_hist_counting: "<<MC_hist_counting<<" data_tight_counting: "<<data_tight_counting<<" data_loose_counting: "<<data_loose_counting<<endl;
+
+        MC_hist_counting = 0;
+        data_tight_counting = 0;
+        data_loose_counting = 0;
     }
     c1 -> Print(Form("%s/dNdeta_combine_final_no_correction.pdf)", out_folder_directory.c_str()));
+    c1 -> Clear();
+
+    gStyle->SetPaintTextFormat("1.3f");
+
+    c1 -> cd();
+    eta_Mbin_correction_loose -> Draw("colz0");
+    eta_Mbin_correction_loose -> SetMarkerSize(0.7);
+    eta_Mbin_correction_loose -> Draw("HIST TEXT45 SAME");
+    c1 -> Print(Form("%s/eta_Mbin_correction_loose.pdf", out_folder_directory.c_str()));
+    c1 -> Clear();
+
+    c1 -> cd();
+    for (int i = 0; i < eta_Mbin_correction_loose_noUPC -> GetNbinsX(); i++) {eta_Mbin_correction_loose_noUPC -> SetBinContent(i+1, eta_Mbin_correction_loose_noUPC -> GetNbinsY()-1, 0);}
+    eta_Mbin_correction_loose_noUPC -> Draw("colz0");
+    eta_Mbin_correction_loose_noUPC -> SetMarkerSize(0.7);
+    eta_Mbin_correction_loose_noUPC -> Draw("HIST TEXT45 SAME");
+    c1 -> Print(Form("%s/eta_Mbin_correction_loose_noUPC.pdf", out_folder_directory.c_str()));
+    c1 -> Clear();
+
+    c1 -> cd();
+    eta_Mbin_correction_tight -> Draw("colz0");
+    eta_Mbin_correction_tight -> SetMarkerSize(0.7);
+    eta_Mbin_correction_tight -> Draw("HIST TEXT45 SAME");
+    c1 -> Print(Form("%s/eta_Mbin_correction_tight.pdf", out_folder_directory.c_str()));
+    c1 -> Clear();
 
     cout<<"FinaldNdEta done"<<endl;
     return;

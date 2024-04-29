@@ -52,6 +52,7 @@ class INTTXYvtx {
         void TH2F_FakeClone(TH2F*hist_in, TH2F*hist_out);
         void TH2F_FakeRebin(TH2F*hist_in, TH2F*hist_out);
         vector<pair<double,double>> FillLine_FindVertex(pair<double,double> window_center, double segmentation = 0.005, double window_width = 5.0, int N_bins = 100, bool draw_plot = true);
+        vector<double> LineFill_bkgrm_Get_covariance() {return Get_covariance_TH2(xy_hist_bkgrm);};
     
     protected:
         TCanvas * c1;
@@ -213,7 +214,7 @@ class INTTXYvtx {
         virtual void subMacroPlotWorking(bool phi_correction, double cos_fit_rangel, double cos_fit_ranger, double guas_fit_range);
         pair<double,double> Get_possible_zvtx(double rvtx, vector<double> p0, vector<double> p1);
         int find_quadrant(pair<double,double> Origin, pair<double,double> check_point);
-        
+        vector<double> Get_covariance_TH2(TH2F * hist_in);        
 
         // note : from the INTTXYvtxEvt.h
         void TH2FSampleLineFill(TH2F * hist_in, double segmentation, std::pair<double,double> inner_clu, std::pair<double,double> outer_clu);
@@ -2315,6 +2316,32 @@ vector<pair<double,double>> INTTXYvtx::FillLine_FindVertex(pair<double,double> w
     }
 
     return {{reco_vtx_x,reco_vtx_y},{xy_hist_bkgrm->GetMeanError(1), xy_hist_bkgrm->GetMeanError(2)}, {xy_hist_bkgrm->GetStdDev(1), xy_hist_bkgrm->GetStdDev(2)}};   
+}
+
+vector<double> INTTXYvtx::Get_covariance_TH2(TH2F * hist_in)
+{
+    double X_mean = hist_in -> GetMean(1);
+    double Y_mean = hist_in -> GetMean(2);
+
+    double denominator = 0;
+    double variance_x  = 0; 
+    double variance_y  = 0;
+    double covariance = 0;
+
+    for (int xi = 0; xi < hist_in -> GetNbinsX(); xi++){
+        for (int yi = 0; yi < hist_in -> GetNbinsY(); yi++){
+            double cell_weight = hist_in -> GetBinContent(xi+1, yi+1);
+            double cell_x = hist_in -> GetXaxis() -> GetBinCenter(xi+1);
+            double cell_y = hist_in -> GetYaxis() -> GetBinCenter(yi+1);
+
+            denominator += pow(cell_weight, 2);
+            variance_x  += pow(cell_x - X_mean, 2) * pow(cell_weight,2);
+            variance_y  += pow(cell_y - Y_mean, 2) * pow(cell_weight,2);
+            covariance  += (cell_x - X_mean) * (cell_y - Y_mean) * pow(cell_weight,2);
+        }
+    }
+
+    return {X_mean, Y_mean, variance_x/denominator, variance_y/denominator, covariance/denominator};
 }
 
 #endif

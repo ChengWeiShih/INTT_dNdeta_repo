@@ -216,6 +216,8 @@ class INTTEta : public INTTXYvtxEvt
         double Clus_OuterPhi_Offset_1;
         double Clus_OuterPhi_Offset_2;
 
+        double N_reco_cluster_short = 0;
+
 
         TH2F * track_cluster_ratio_multiplicity_2D; // note : x : NClus / NTracks, y : ratio
         TH2F * track_cluster_ratio_multiplicity_2D_MC; // note : x : NClus / NTracks, y : ratio
@@ -359,6 +361,7 @@ class INTTEta : public INTTXYvtxEvt
         pair<int,int> GetTH2BinXY(int histNbinsX, int histNbinsY, int binglobal);
         double GetTH2Index1D(pair<int,int> XY_index, int histNbinsX);
         void DrawEtaZGrid();
+        double get_TH1F_Entries(TH1F * hist_in);
 };
 
 void INTTEta::InitHist()
@@ -1062,6 +1065,7 @@ void INTTEta::ProcessEvt(int event_i, vector<clu_info> temp_sPH_inner_nocolumn_v
     // if (-220 > evt_z.first + evt_z.second || -180 < evt_z.first - evt_z.second) {return;}
     // if (-100 > evt_z.first + evt_z.second || 100 < evt_z.first - evt_z.second) {return;}
     
+    // note : for data, the denominator
     MBin_Z_evt_hist_2D -> Fill(centrality_map[centrality_bin], evt_z.first);
     MBin_Z_evt_hist_2D -> Fill(MBin_Z_evt_hist_2D -> GetNbinsX()-1, evt_z.first);
     
@@ -1088,7 +1092,7 @@ void INTTEta::ProcessEvt(int event_i, vector<clu_info> temp_sPH_inner_nocolumn_v
 
             if (true_track_info[track_i][0] > INTT_eta_acceptance_l && true_track_info[track_i][0] < INTT_eta_acceptance_r)
             {
-                // note : 1D, fine binning for a detailed check
+                // note : 1D, fine binning for a detailed check, full zvtx range 
                 dNdeta_1D_MC[centrality_map[centrality_bin]] -> Fill(true_track_info[track_i][0]);
                 dNdeta_1D_MC[dNdeta_1D_MC.size() - 1]        -> Fill(true_track_info[track_i][0]);
 
@@ -1186,10 +1190,12 @@ void INTTEta::ProcessEvt(int event_i, vector<clu_info> temp_sPH_inner_nocolumn_v
                     double outer_clu_eta = get_clu_eta({beam_origin.first, beam_origin.second, evt_z.first},{outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.x, outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.y, outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.z});
                     double delta_eta = inner_clu_eta - outer_clu_eta;
 
-                    track_delta_eta_1D[centrality_map[centrality_bin]] -> Fill( delta_eta ); // note : all zvtx range and all eta region
+                    // note : all zvtx range and all eta region
+                    track_delta_eta_1D[centrality_map[centrality_bin]] -> Fill( delta_eta ); 
                     track_delta_eta_1D[track_delta_eta_1D.size() - 1]  -> Fill( delta_eta );
 
-                    track_DeltaPhi_DeltaEta_2D[centrality_map[centrality_bin]]        -> Fill(delta_phi, delta_eta); // note : all zvtx range and all eta region 
+                    // note : all zvtx range and all eta region 
+                    track_DeltaPhi_DeltaEta_2D[centrality_map[centrality_bin]]        -> Fill(delta_phi, delta_eta); 
                     track_DeltaPhi_DeltaEta_2D[track_DeltaPhi_DeltaEta_2D.size() - 1] -> Fill(delta_phi, delta_eta);
 
                     pair<double,double> z_range_info = Get_possible_zvtx( 
@@ -1474,6 +1480,7 @@ void INTTEta::ProcessEvt(int event_i, vector<clu_info> temp_sPH_inner_nocolumn_v
     // cout<<"test_8"<<endl;
     if (run_type == "MC")
     {
+        N_reco_cluster_short += (evt_NTrack_MC - evt_NTrack);
         track_correlation_2D -> Fill(evt_NTrack_MC, evt_NTrack);
         track_ratio_2D -> Fill(evt_NTrack_MC, double(evt_NTrack)/double(evt_NTrack_MC));
         track_ratio_1D[centrality_map[centrality_bin]] -> Fill( double(evt_NTrack) / double(evt_NTrack_MC) );
@@ -1666,7 +1673,9 @@ void INTTEta::PrintPlots()
         dNdeta_1D[i] -> Draw("ep");
         dNdeta_1D_MC[i] -> Draw("hist same");
         ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
-        draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s",centrality_region[i].c_str()));
+        draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s, inclusive Zvtx",centrality_region[i].c_str()));
+        draw_text -> DrawLatex(0.21, 0.86, Form("Nevt MC = Nevt reco: %.1f", N_correction_evt));
+        draw_text -> DrawLatex(0.21, 0.82, Form("MC entry : %.2f, tight entry : %.2f", dNdeta_1D_MC[i] -> Integral(), dNdeta_1D[i] -> Integral()));
         c1 -> Print(Form("%s/dNdeta_1D.pdf", out_folder_directory.c_str()));
         c1 -> Clear();    
     }
@@ -1976,6 +1985,8 @@ void INTTEta::PrintPlots()
         final_dNdeta_multi_1D[i] -> Draw("ep same");
         ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
         draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s, Z: %.2f ~ %.2f",centrality_region[i].c_str(), coarse_eta_z_map -> GetYaxis() -> GetBinCenter(tight_zvtx_bin) - coarse_eta_z_map -> GetYaxis() -> GetBinWidth(tight_zvtx_bin)/2., coarse_eta_z_map -> GetYaxis() -> GetBinCenter(tight_zvtx_bin) + coarse_eta_z_map -> GetYaxis() -> GetBinWidth(tight_zvtx_bin)/2.));
+        draw_text -> DrawLatex(0.21, 0.86, Form("Nevt MC : %.1f, Nevt reco : %.1f",N_correction_evt_MC, N_correction_evt));
+        draw_text -> DrawLatex(0.21, 0.82, Form("MC entry : %.2f, tight entry : %.2f, loose entry : %.2f", final_dNdeta_1D_MC[i] -> Integral(), final_dNdeta_1D[i] -> Integral(), final_dNdeta_multi_1D[i] -> Integral()));
         c1 -> Print(Form("%s/final_dNdeta_1D.pdf", out_folder_directory.c_str()));
         c1 -> Clear();    
     }
@@ -2299,6 +2310,8 @@ void INTTEta::EndRun()
 
     out_file -> Close();
 
+    std::cout<<"in N event : "<<N_GoodEvent<<"the total N reco tracks is short in : "<<N_reco_cluster_short<<std::endl;
+
     return;
 }
 
@@ -2463,6 +2476,14 @@ void INTTEta::DrawEtaZGrid()
 
     // note : draw the horizontal line, to segment the z region
     for (int i = 0; i < z_region.size(); i++) { coord_line -> DrawLine(eta_region[0], z_region[i], eta_region[eta_region.size() - 1], z_region[i]); }
+}
+
+double INTTEta::get_TH1F_Entries(TH1F * hist_in)
+{
+    double entry_counting = 0; 
+    for (int i = 0; i < hist_in -> GetNbinsX(); i++) {entry_counting += hist_in -> GetBinContent(i+1);}
+
+    return entry_counting;
 }
 
 #endif

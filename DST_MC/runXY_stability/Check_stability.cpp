@@ -59,6 +59,9 @@ int main()
     double in_line_filled_mean_Y;
     double in_line_filled_stddev_X;
     double in_line_filled_stddev_Y;
+    double in_line_filled_variance_X;
+    double in_line_filled_variance_Y;
+    double in_line_filled_covariance;
 
     chain_in -> SetBranchAddress("start_evt",&in_start_evt);
     chain_in -> SetBranchAddress("end_evt",&in_end_evt);
@@ -70,6 +73,9 @@ int main()
     chain_in -> SetBranchAddress("line_filled_mean_Y",&in_line_filled_mean_Y);
     chain_in -> SetBranchAddress("line_filled_stddev_X",&in_line_filled_stddev_X);
     chain_in -> SetBranchAddress("line_filled_stddev_Y",&in_line_filled_stddev_Y);
+    chain_in -> SetBranchAddress("line_filled_variance_X",&in_line_filled_variance_X);
+    chain_in -> SetBranchAddress("line_filled_variance_Y",&in_line_filled_variance_Y);
+    chain_in -> SetBranchAddress("line_filled_covariance",&in_line_filled_covariance);
 
     double X_range_l = -1.;
     double X_range_r = 0.5;
@@ -80,6 +86,15 @@ int main()
     TH1F * quadrant_VtxY_1D = new TH1F("quadrant_VtxY","quadrant_VtxY;Y axis [mm];Entry",100,Y_range_l,Y_range_r);
     TH1F * line_filled_mean_X_1D = new TH1F("line_filled_mean_X","line_filled_mean_X;X axis [mm];Entry",100,X_range_l,X_range_r);
     TH1F * line_filled_mean_Y_1D = new TH1F("line_filled_mean_Y","line_filled_mean_Y;Y axis [mm];Entry",100,Y_range_l,Y_range_r);
+    
+    TH1F * line_filled_stddev_X_1D = new TH1F("line_filled_stddev_X_1D","line_filled_stddev_X_1D;StdDev, X axis [mm];Entry",100,0,1);
+    TH1F * line_filled_stddev_Y_1D = new TH1F("line_filled_stddev_Y_1D","line_filled_stddev_Y_1D;StdDev, Y axis [mm];Entry",100,0,1);
+    
+    TH1F * line_filled_variance_X_1D = new TH1F("line_filled_variance_X_1D","line_filled_variance_X_1D;Variance, X axis [mm];Entry",100,0,1);    
+    TH1F * line_filled_variance_Y_1D = new TH1F("line_filled_variance_Y_1D","line_filled_variance_Y_1D;Variance, Y axis [mm];Entry",100,0,1);
+    
+    TH1F * line_filled_covariance_1D = new TH1F("line_filled_covariance_1D","line_filled_covariance_1D;Covariance [mm];Entry",100,0,0.12);
+
 
     vector<double> evt_index_vec; evt_index_vec.clear();
     vector<double> evt_index_range_vec; evt_index_range_vec.clear();
@@ -123,6 +138,12 @@ int main()
         quadrant_VtxY_1D -> Fill(quadrant_VtxY);
         line_filled_mean_X_1D -> Fill(line_filled_mean_X);
         line_filled_mean_Y_1D -> Fill(line_filled_mean_Y);
+
+        line_filled_stddev_X_1D -> Fill(in_line_filled_stddev_X);
+        line_filled_stddev_Y_1D -> Fill(in_line_filled_stddev_Y);
+        line_filled_variance_X_1D -> Fill(in_line_filled_variance_X);
+        line_filled_variance_Y_1D -> Fill(in_line_filled_variance_Y);
+        line_filled_covariance_1D -> Fill(in_line_filled_covariance);
     }
 
     TGraphErrors * g_quadrant_VtxX_index = new TGraphErrors(chain_in -> GetEntries(), &evt_index_vec[0], &quadrant_VtxX_vec[0], &evt_index_range_vec[0], &zero_vec[0]);
@@ -215,5 +236,58 @@ int main()
     draw_text -> DrawLatex(0.2, 0.76, Form("StdDev: %.4f", line_filled_mean_Y_1D->GetStdDev()));
     c1 -> Print((output_directory + "/line_filled_mean_Y_1D.pdf").c_str());
     c1 -> Clear();
+    
 
+    c1 -> cd();
+    line_filled_stddev_X_1D -> Draw("hist");
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} Work-in-progress"));
+    draw_text -> DrawLatex(0.2, 0.84, Form("Entry: %.0f", line_filled_stddev_X_1D->GetEntries()));
+    draw_text -> DrawLatex(0.2, 0.80, Form("Mean: %.4f", line_filled_stddev_X_1D->GetMean()));
+    draw_text -> DrawLatex(0.2, 0.76, Form("StdDev: %.4f", line_filled_stddev_X_1D->GetStdDev()));
+    c1 -> Print((output_directory + "/line_filled_stddev_X_1D.pdf").c_str());
+    c1 -> Clear();
+
+    c1 -> cd();
+    line_filled_stddev_Y_1D -> Draw("hist");
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} Work-in-progress"));
+    draw_text -> DrawLatex(0.2, 0.84, Form("Entry: %.0f", line_filled_stddev_Y_1D->GetEntries()));
+    draw_text -> DrawLatex(0.2, 0.80, Form("Mean: %.4f", line_filled_stddev_Y_1D->GetMean()));
+    draw_text -> DrawLatex(0.2, 0.76, Form("StdDev: %.4f", line_filled_stddev_Y_1D->GetStdDev()));
+    c1 -> Print((output_directory + "/line_filled_stddev_Y_1D.pdf").c_str());
+    c1 -> Clear();
+
+    c1 -> cd();
+    line_filled_variance_X_1D -> Draw("hist");
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} Work-in-progress"));
+    draw_text -> DrawLatex(0.55, 0.84, Form("Entry: %.0f", line_filled_variance_X_1D->GetEntries()));
+    draw_text -> DrawLatex(0.55, 0.80, Form("Mean: %.4f", line_filled_variance_X_1D->GetMean()));
+    draw_text -> DrawLatex(0.55, 0.76, Form("StdDev: %.4f", line_filled_variance_X_1D->GetStdDev()));
+    c1 -> Print((output_directory + "/line_filled_variance_X_1D.pdf").c_str());
+    c1 -> Clear();
+
+    c1 -> cd();
+    line_filled_variance_Y_1D -> Draw("hist");
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} Work-in-progress"));
+    draw_text -> DrawLatex(0.55, 0.84, Form("Entry: %.0f", line_filled_variance_Y_1D->GetEntries()));
+    draw_text -> DrawLatex(0.55, 0.80, Form("Mean: %.4f", line_filled_variance_Y_1D->GetMean()));
+    draw_text -> DrawLatex(0.55, 0.76, Form("StdDev: %.4f", line_filled_variance_Y_1D->GetStdDev()));
+    c1 -> Print((output_directory + "/line_filled_variance_Y_1D.pdf").c_str());
+    c1 -> Clear();
+    
+    c1 -> cd();
+    line_filled_covariance_1D -> Draw("hist");
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} Work-in-progress"));
+    draw_text -> DrawLatex(0.2, 0.84, Form("Entry: %.0f", line_filled_covariance_1D->GetEntries()));
+    draw_text -> DrawLatex(0.2, 0.80, Form("Mean: %.4f", line_filled_covariance_1D->GetMean()));
+    draw_text -> DrawLatex(0.2, 0.76, Form("StdDev: %.4f", line_filled_covariance_1D->GetStdDev()));
+    c1 -> Print((output_directory + "/line_filled_covariance_1D.pdf").c_str());
+    c1 -> Clear();
+
+    cout<<"line filled covariance info : "<<line_filled_covariance_1D->GetMean()<<" "<<line_filled_covariance_1D->GetStdDev()<<endl;
+    cout<<"line filled vairance X info : "<<line_filled_variance_X_1D->GetMean()<<" "<<line_filled_variance_X_1D->GetStdDev()<<endl;
+    cout<<"line filled vairance Y info : "<<line_filled_variance_Y_1D->GetMean()<<" "<<line_filled_variance_Y_1D->GetStdDev()<<endl;
+    cout<<"line filled stdDev X   info : " <<line_filled_stddev_X_1D->GetMean()<<" "<<line_filled_stddev_X_1D->GetStdDev()<<endl;
+    cout<<"line filled stdDev Y   info : " <<line_filled_stddev_Y_1D->GetMean()<<" "<<line_filled_stddev_Y_1D->GetStdDev()<<endl;
+
+    return 0;
 }

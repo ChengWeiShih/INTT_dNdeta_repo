@@ -1,15 +1,17 @@
 #!/bin/bash                                                                                                                                                                                                                                                                   
-source /opt/sphenix/core/bin/sphenix_setup.sh -n ana.388
+source /opt/sphenix/core/bin/sphenix_setup.sh -n ana.410
 # source /opt/sphenix/core/bin/setup_local.sh /sphenix/user/ChengWei/sPH_dNdeta/build_folder/build_HR_ntuple/install
 
 core_i=the_file_number
 
-for i in {0..4999};
-do
-    # root -l -b -q /sphenix/user/ChengWei/INTT/INTT_dNdeta_repo/DST_MC/data20869_xy_geo1.C\(${i},${core_i}\)
-    root -l -b -q /sphenix/user/ChengWei/INTT/INTT_dNdeta_repo/DST_MC/control_files/MC_HIJING398/Geo_study/run_condor_evtZ/evt_z_398_mother.C\(${core_i},${i}\)
-    sleep 1
-done
+root -l -b -q /sphenix/user/ChengWei/INTT/INTT_dNdeta_repo/DST_MC/control_files/MC_HIJING398/zvtx_cut_scan/evt_z_398_mother.C\(${core_i}\)
+
+# for i in {0..4999};
+# do
+#     # root -l -b -q /sphenix/user/ChengWei/INTT/INTT_dNdeta_repo/DST_MC/data20869_xy_geo1.C\(${i},${core_i}\)
+#     root -l -b -q /sphenix/user/ChengWei/INTT/INTT_dNdeta_repo/DST_MC/control_files/MC_HIJING398/Geo_study/run_condor_evtZ/evt_z_398_mother.C\(${core_i},${i}\)
+#     sleep 1
+# done
 
 # i=the_file_number
 

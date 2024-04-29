@@ -1,7 +1,7 @@
 #include "../../../../INTTReadTree.h"
 #include "../../../../INTTZvtx.h"
 
-void evt_z_398_mother(int core_i, int loop_i)
+void evt_z_398_mother_test(int core_i, int loop_i)
 {
     string input_directory = "/sphenix/user/ChengWei/sPH_dNdeta/HIJING_ana398_xvtx-0p04cm_yvtx0p24cm_zvtx-20cm_dummyAlignParams";
     string file_name = "MC_ZF_zvtx";
@@ -48,7 +48,7 @@ void evt_z_398_mother(int core_i, int loop_i)
     // cout<<"test 3"<<endl;
 
     // cout<<"total offset X : "<<in_total_offset_x<<" total offset Y : "<<in_total_offset_y<<endl;
-    string out_folder_directory = input_directory + "/Geo_Z_scan_trial_3"+"/random_seed_"+to_string(in_random_seed);
+    string out_folder_directory = "/sphenix/user/ChengWei/sPH_dNdeta/HIJING_ana398_xvtx-0p04cm_yvtx0p24cm_zvtx-20cm_dummyAlignParams/Geo_Z_scan_trial_2/complete_file/folder_0/test_RandSeed_0";
 
     // cout<<"test 4"<<endl;
 
@@ -91,20 +91,6 @@ void evt_z_398_mother(int core_i, int loop_i)
 
     // cout<<"Total event : "<<INTTClu -> GetNEvt()<<endl;
 
-    double out_dist_mean;
-    double out_dist_width;
-    double out_vtxX;
-    double out_vtxY;
-    TFile * file_out = new TFile(Form("%s/zvtx_dist_info_%i.root",out_folder_directory.c_str(),in_random_seed), "RECREATE");
-    TTree * tree_out = new TTree("tree","info. of zvtx dist");
-    tree_out -> Branch("reco_avgX", &out_vtxX);
-    tree_out -> Branch("reco_avgY", &out_vtxY);
-    tree_out -> Branch("zvtx_dist_mean", &out_dist_mean);
-    tree_out -> Branch("zvtx_dist_width", &out_dist_width);
-
-    out_vtxX = beam_origin.first;
-    out_vtxY = beam_origin.second;
-
     for (int event_i = 0; event_i < 20000; event_i ++)
     {
         INTTClu -> EvtInit(event_i);
@@ -121,22 +107,12 @@ void evt_z_398_mother(int core_i, int loop_i)
         INTTClu -> EvtClear();
     }
 
-    // MCz -> PrintPlots();
+    MCz -> PrintPlots();
     MCz -> EndRun();
 
-    out_dist_mean  = MCz -> GetZdiffPeakMC();
-    out_dist_width = MCz -> GetZdiffWidthMC();
-
-    tree_out -> Fill();
-
-    file_out -> cd();
-    tree_out -> Write();
-    file_out -> Close();
-
-    system(Form("mv %s/INTT_zvtx.root %s/INTT_zvtx_%i.root", out_folder_directory.c_str(), out_folder_directory.c_str(), in_random_seed));
-    system(Form("mv %s/INTT_zvtx_%i.root %s", out_folder_directory.c_str(), in_random_seed, (input_directory + "/Geo_Z_scan_trial_3/complete_file/folder_"+to_string(core_i)).c_str()));
-    system(Form("mv %s/zvtx_dist_info_%i.root %s", out_folder_directory.c_str(), in_random_seed, (input_directory + "/Geo_Z_scan_trial_3/complete_file/folder_"+to_string(core_i)).c_str()));
-    system(Form("rm -r %s", out_folder_directory.c_str()));
+    // system(Form("mv %s/INTT_zvtx.root %s/INTT_zvtx_%i.root", out_folder_directory.c_str(), out_folder_directory.c_str(), in_random_seed));
+    // system(Form("mv %s/INTT_zvtx_%i.root %s", out_folder_directory.c_str(), in_random_seed, (input_directory + "/Geo_Z_scan_trial_2/complete_file/folder_"+to_string(core_i)).c_str()));
+    // system(Form("rm -r %s", out_folder_directory.c_str()));
     
     // system(Form("mv %s %s", out_folder_directory.c_str(), (input_directory + "/Geo_Z_scan_trial_1/complete_file/folder_"+to_string(core_i)).c_str()));
 

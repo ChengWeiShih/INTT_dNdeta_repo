@@ -448,7 +448,7 @@ void INTTReadTree::EvtSetCluGroup()
     else if (data_type_list[data_type] == "MC_geo_test"){
         for (int clu_i = 0; clu_i < evt_length; clu_i++)
         {
-            if (inttDSTMC -> ClusLadderZId -> at(clu_i) != 0) continue; // note : only the south-side sensor B is included in the study
+            // if (inttDSTMC -> ClusLadderZId -> at(clu_i) != 0) continue; // note : only the south-side sensor B is included in the study
             if (int(inttDSTMC -> ClusPhiSize -> at(clu_i)) > clu_size_cut) continue; 
             if (int(inttDSTMC -> ClusAdc -> at(clu_i)) < clu_sum_adc_cut) continue;
 

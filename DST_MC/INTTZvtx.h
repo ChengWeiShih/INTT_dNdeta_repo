@@ -28,7 +28,22 @@ double double_gaus_func(double *x, double *par)
 class INTTZvtx
 {
     public : 
-        INTTZvtx(string run_type, string out_folder_directory, pair<double,double> beam_origin, int geo_mode_id, double phi_diff_cut = 0.11, pair<double, double> DCA_cut = {-1,1}, int N_clu_cutl = 20, int N_clu_cut = 10000, int zvtx_cal_require = 15, pair<double,double> zvtx_QA_width = {39.62, 65.36}, double zvtx_QA_ratio = 0.00001, bool draw_event_display = true, double peek = 3.32405, bool print_message_opt = true);
+        INTTZvtx(
+            string run_type, 
+            string out_folder_directory, 
+            pair<double,double> beam_origin, 
+            int geo_mode_id, 
+            double phi_diff_cut = 0.11, 
+            pair<double, double> DCA_cut = {-1,1}, 
+            int N_clu_cutl = 20, 
+            int N_clu_cut = 10000, 
+            int zvtx_cal_require = 15, 
+            pair<double,double> zvtx_QA_width = {39.62, 65.36}, 
+            double zvtx_QA_ratio = 0.00001, 
+            bool draw_event_display = true, 
+            double peek = 3.32405, 
+            bool print_message_opt = true
+        );
         void ProcessEvt(int event_i, vector<clu_info> temp_sPH_inner_nocolumn_vec, vector<clu_info> temp_sPH_outer_nocolumn_vec, vector<vector<double>> temp_sPH_nocolumn_vec, vector<vector<double>> temp_sPH_nocolumn_rz_vec, int NvtxMC, double TrigZvtxMC, bool PhiCheckTag, Long64_t bco_full, int centrality_bin);
         void ClearEvt();
         void PrintPlots();
@@ -675,13 +690,14 @@ void INTTZvtx::ProcessEvt(
 
     total_NClus = temp_sPH_inner_nocolumn_vec.size() + temp_sPH_outer_nocolumn_vec.size();
 
-    if (total_NClus < zvtx_cal_require) {tree_out -> Fill(); return; cout<<"return confirmation"<<endl;}   
+    if (total_NClus < zvtx_cal_require)  {N_cluster_inner_out = -1; tree_out -> Fill(); return; cout<<"return confirmation"<<endl;}   
     
-    if (run_type == "MC" && NvtxMC != 1) {tree_out -> Fill(); return; cout<<"In INTTZvtx class, event : "<<event_i<<" Nvtx : "<<NvtxMC<<" Nvtx more than one "<<endl; }
-    if (PhiCheckTag == false)            {tree_out -> Fill(); return; cout<<"In INTTZvtx class, event : "<<event_i<<" Nvtx : "<<NvtxMC<<" Not full phi has hits "<<endl;}
+    if (run_type == "MC" && NvtxMC != 1) {N_cluster_inner_out = -2; tree_out -> Fill(); return; cout<<"In INTTZvtx class, event : "<<event_i<<" Nvtx : "<<NvtxMC<<" Nvtx more than one "<<endl; }
+    if (PhiCheckTag == false)            {N_cluster_inner_out = -3; tree_out -> Fill(); return; cout<<"In INTTZvtx class, event : "<<event_i<<" Nvtx : "<<NvtxMC<<" Not full phi has hits "<<endl;}
     
     if (temp_sPH_inner_nocolumn_vec.size() < 10 || temp_sPH_outer_nocolumn_vec.size() < 10 || total_NClus > N_clu_cut || total_NClus < N_clu_cutl)
     {
+        N_cluster_inner_out = -4;
         tree_out -> Fill(); 
         return;
         printf("In INTTZvtx class, event : %i, low clu continue, NClus : %lu \n", event_i, total_NClus); 
@@ -707,7 +723,7 @@ void INTTZvtx::ProcessEvt(
     }
 
     // note : for the mega cluster finder, the 3/4-cluster tracklet that happens at the overlap region
-    mega_track_finder -> FindMegaTracks(inner_clu_phi_map, outer_clu_phi_map, {MC_true_zvtx,0.5}, centrality_map[centrality_bin]);    
+    // mega_track_finder -> FindMegaTracks(inner_clu_phi_map, outer_clu_phi_map, {MC_true_zvtx,0.5}, centrality_map[centrality_bin]);    
 
     double good_pair_count = 0;    
 
@@ -722,7 +738,8 @@ void INTTZvtx::ProcessEvt(
 
             // todo: change the outer phi scan range
             // note : the outer phi index, -1, 0, 1
-            for (int scan_i = -1; scan_i < 2; scan_i++)
+            // note : the outer phi index, -2, -1, 0, 1, 2, for the scan test
+            for (int scan_i = -2; scan_i < 3; scan_i++)
             {
                 int true_scan_i = ((inner_phi_i + scan_i) < 0) ? 360 + (inner_phi_i + scan_i) : ((inner_phi_i + scan_i) > 359) ? (inner_phi_i + scan_i)-360 : inner_phi_i + scan_i;
 
@@ -1050,7 +1067,7 @@ void INTTZvtx::ProcessEvt(
         out_LB_refitE = -1; // note : not in the out tree
 
     } // note : if N good tracks in xy found > certain value
-    else {tree_out -> Fill();} 
+    else {N_cluster_inner_out = -5; tree_out -> Fill();} 
 
     if (N_comb.size() > zvtx_cal_require && draw_event_display == true)
     {   
@@ -1506,6 +1523,19 @@ void INTTZvtx::PrintPlots()
 
 void INTTZvtx::EndRun()
 {   
+
+    if (run_type == "MC")
+    {
+        gaus_fit_2 -> SetParameters(Z_resolution -> GetBinContent( Z_resolution -> GetMaximumBin() ), Z_resolution -> GetBinCenter( Z_resolution -> GetMaximumBin() ), 3, 0);
+        gaus_fit_2 -> SetParLimits(0,0,100000);  // note : size 
+        gaus_fit_2 -> SetParLimits(2,0,10000);   // note : Width
+        gaus_fit_2 -> SetParLimits(3,0,10000);   // note : offset
+        Z_resolution -> Fit(gaus_fit_2, "NQ", "", Z_resolution -> GetBinCenter( Z_resolution -> GetMaximumBin() ) - (2 * Z_resolution -> GetStdDev() ), Z_resolution -> GetBinCenter( Z_resolution -> GetMaximumBin() ) + (2 * Z_resolution -> GetStdDev() ) );
+
+        MC_z_diff_peak = gaus_fit_2 -> GetParameter(1);
+        MC_z_diff_width = fabs(gaus_fit_2 -> GetParameter(2));
+    }
+
     out_file -> cd();
     tree_out -> SetDirectory(out_file);
     tree_out -> Write("", TObject::kOverwrite);
@@ -1515,26 +1545,42 @@ void INTTZvtx::EndRun()
 
 double INTTZvtx::GetZdiffPeakMC()
 {
-    if (run_type == "MC" && MC_z_diff_peak != -777.)
+    if (run_type == "MC" || run_type == "MC_geo_test")
     {
-        return MC_z_diff_peak;
+        if (MC_z_diff_peak != -777.)
+        {
+            return MC_z_diff_peak;
+        }
+        else 
+        {
+            cout<<"In INTTZvtx. Are you playing with data? The MC_z_diff_peak wasn't assigned, the value is still -777. Pleak check1"<<endl;
+            return -777.;
+        }
     }
     else 
     {
-        cout<<"In INTTZvtx. Are you playing with data? The MC_z_diff_peak wasn't assigned, the value is still -777. Pleak check"<<endl;
+        cout<<"In INTTZvtx. Are you playing with data? The MC_z_diff_peak wasn't assigned, the value is still -777. Pleak check2"<<endl;
         return -777.;
     }
 }
 
 double INTTZvtx::GetZdiffWidthMC()
 {
-    if (run_type == "MC" && MC_z_diff_width != -777.)
+    if (run_type == "MC" || run_type == "MC_geo_test")
     {
-        return MC_z_diff_width;
+        if (MC_z_diff_width != -777.)
+        {
+            return MC_z_diff_width;
+        }
+        else 
+        {
+            cout<<"In INTTZvtx. Are you playing with data? The MC_z_diff_width wasn't assigned, the value is still -777. Pleak check1"<<endl;
+            return -777.;
+        }
     }
     else 
     {
-        cout<<"In INTTZvtx. Are you playing with data? The MC_z_diff_width wasn't assigned, the value is still -777. Pleak check"<<endl;
+        cout<<"In INTTZvtx. Are you playing with data? The MC_z_diff_width wasn't assigned, the value is still -777. Pleak check2"<<endl;
         return -777.;
     }
 }

@@ -23,8 +23,8 @@ vector<string> read_list (string MC_directory, string MC_list_name)
 
 void sanity_check()
 {
-    string folder_direction = "/sphenix/user/ChengWei/sPH_dNdeta/dNdEta_INTT_MC_388_000";
-    string MC_list_name = "dst_INTT_dNdEta_388_000.list";
+    string folder_direction = "/sphenix/user/ChengWei/sPH_dNdeta/HIJING_ana398_xvtx-0p04cm_yvtx0p24cm_zvtx-20cm_dummyAlignParams";
+    string MC_list_name = "file_list.txt";
     vector <string> file_list = read_list(folder_direction,MC_list_name);
 
     TChain * chain_in = new TChain("EventTree");
@@ -120,41 +120,41 @@ void sanity_check()
 
         if (inttDSTMC.NTruthVtx == 1){
 
-            for (int track_i = 0; track_i < inttDSTMC.UniqueAncG4P_TrackID -> size(); track_i++){
-                if (fabs(inttDSTMC.UniqueAncG4P_Eta -> at(track_i)) <= 1.){
-                    eta_one_track_counter_evt += 1;
-                }
+            // for (int track_i = 0; track_i < inttDSTMC.UniqueAncG4P_TrackID -> size(); track_i++){
+            //     if (fabs(inttDSTMC.UniqueAncG4P_Eta -> at(track_i)) <= 1.){
+            //         eta_one_track_counter_evt += 1;
+            //     }
 
-                if (fabs(inttDSTMC.UniqueAncG4P_Eta -> at(track_i)) <= 2.){
-                    eta_two_track_counter_evt += 1;
-                }
+            //     if (fabs(inttDSTMC.UniqueAncG4P_Eta -> at(track_i)) <= 2.){
+            //         eta_two_track_counter_evt += 1;
+            //     }
 
-            }
+            // }
             MC_NClu_Zvtx -> Fill(inttDSTMC.NClus, (inttDSTMC.TruthPV_trig_z) * 10.);
-            MC_Ntrack_1D   -> Fill(inttDSTMC.UniqueAncG4P_TrackID -> size());
+            // MC_Ntrack_1D   -> Fill(inttDSTMC.UniqueAncG4P_TrackID -> size());
             MC_Ntrack_NClu -> Fill(inttDSTMC.NClus, eta_two_track_counter_evt);
             eta_one_track_counter_evt = 0;
             eta_two_track_counter_evt = 0;
             
-            if (0/*good_evt_counter*/ == 0) {
-                if (inttDSTMC.NClus > 4813){
-                    good_evt_counter += 1;
-                    // cout<<"test : "<<inttDSTMC.UniqueAncG4P_TrackID -> size()<<" "<<inttDSTMC.NClus<<endl;
-                    for (int track_i = 0; track_i < inttDSTMC.UniqueAncG4P_TrackID -> size(); track_i++){
-                        MC_true_track_eta -> Fill(inttDSTMC.UniqueAncG4P_Eta -> at(track_i));
-                        if (fabs(inttDSTMC.UniqueAncG4P_Eta -> at(track_i)) <= 1.){
-                            eta_one_track_counter += 1;
-                        }
-                    }
-                }
-            }
+            // if (0/*good_evt_counter*/ == 0) {
+            //     if (inttDSTMC.NClus > 4813){
+            //         good_evt_counter += 1;
+            //         // cout<<"test : "<<inttDSTMC.UniqueAncG4P_TrackID -> size()<<" "<<inttDSTMC.NClus<<endl;
+            //         for (int track_i = 0; track_i < inttDSTMC.UniqueAncG4P_TrackID -> size(); track_i++){
+            //             MC_true_track_eta -> Fill(inttDSTMC.UniqueAncG4P_Eta -> at(track_i));
+            //             if (fabs(inttDSTMC.UniqueAncG4P_Eta -> at(track_i)) <= 1.){
+            //                 eta_one_track_counter += 1;
+            //             }
+            //         }
+            //     }
+            // }
             
             
             // cout<<i<<" z vertex : "<<inttDSTMC.TruthPV_trig_z<<endl;
             MC_vtx_xy -> Fill(inttDSTMC.TruthPV_trig_x, inttDSTMC.TruthPV_trig_y);
             MC_vtx_z  -> Fill( inttDSTMC.TruthPV_trig_z );
             MC_vtx_Npart -> Fill( inttDSTMC.TruthPV_trig_Npart );
-            MC_Npart_Ntrack -> Fill(inttDSTMC.TruthPV_trig_Npart, inttDSTMC.UniqueAncG4P_TrackID -> size());
+            // MC_Npart_Ntrack -> Fill(inttDSTMC.TruthPV_trig_Npart, inttDSTMC.UniqueAncG4P_TrackID -> size());
             
             
             MC_INTT_multiplicity -> Fill( inttDSTMC.ClusX -> size() );
