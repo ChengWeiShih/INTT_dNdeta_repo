@@ -5,6 +5,7 @@
 #include "PrivateCluReader.C"
 #include "../private_cluster_gen/InttConversion_new.h"
 #include "../private_cluster_gen/InttClustering.h"
+#include "ReadMCselfgen/MCSelfGenReader.C"
 
 class INTTReadTree
 {
@@ -37,7 +38,7 @@ class INTTReadTree
         void set_ladder_offset(map<string, pair<double,double>> input_map) {ladder_offset_map = input_map;}
 
     private : 
-        string data_type_list[6] = {"MC","data_DST","data_private", "data_private_geo1", "MC_geo_test", "MC_inner_phi_rotation"};
+        string data_type_list[7] = {"MC","data_DST","data_private", "data_private_geo1", "MC_geo_test", "MC_inner_phi_rotation", "MC_selfgen"};
         long long N_event;
 
         string input_directory; 
@@ -67,8 +68,11 @@ class INTTReadTree
         PrivateCluReader * inttCluData; // note : the class to read the private gen cluster file
         INTTDSTchain * inttDSTMC; // note : the class to read the MC sample with TChain
         InttConversion * inttConv; // note : the class to conver the server_module into ladder name
+        MCSelfGenReader * inttMCselfgen; // note : the class to read the self generated MC sample
         TFile * file_in = nullptr;
         TTree * tree;
+
+        vector<int> MBin_NClus_cut_vec;
 
         string run_type_out;
 
@@ -83,9 +87,12 @@ class INTTReadTree
         void TTreeInit_private();
         void TTreeInit_private_geo1();
         void TChainInit_MC_geo_test();
+        void TTreeInit_MC_selfgen();
         double get_radius(double x, double y);
         pair<double,double> rotatePoint(double x, double y);
         pair<double, double> offset_correction(map<string,pair<double,double>> input_map);
+        void read_centrality_cut();
+        int get_centrality_bin(int NClus);
 
 };
 
@@ -104,6 +111,8 @@ INTTReadTree::INTTReadTree(int data_type, string input_directory, string MC_list
     ladder_offset_map.clear();
 
     true_track_info.clear();
+
+    MBin_NClus_cut_vec.clear();
 
     if (data_type_list[data_type] == "MC" || data_type_list[data_type] == "MC_inner_phi_rotation") 
     {
@@ -135,7 +144,48 @@ INTTReadTree::INTTReadTree(int data_type, string input_directory, string MC_list
         TChainInit_MC_geo_test();
         // std::cout<<"--- INTTReadTree -> Initialization done ---"<<std::endl; // note : was used
     }
+    else if (data_type_list[data_type] == "MC_selfgen")
+    {
+        run_type_out = "MC";
+        read_centrality_cut();
+        TTreeInit_MC_selfgen();
+    }
 
+}
+
+void INTTReadTree::read_centrality_cut()
+{
+    TFile * file_MBin_cut = TFile::Open(Form("%s/MBin_NClus_cut.root", input_directory.c_str()));
+    TTree * tree_MBin_cut = (TTree*)file_MBin_cut->Get("tree");
+    vector<int> *MBinCut_vec; MBinCut_vec = 0;
+    tree_MBin_cut -> SetBranchAddress("MBinCut", &MBinCut_vec);
+    tree_MBin_cut -> GetEntry(0);
+    cout<<"check MBinCut_vec size : "<<MBinCut_vec->size()<<endl;
+    for (int i = 0; i < MBinCut_vec->size(); i++) {MBin_NClus_cut_vec.push_back(MBinCut_vec->at(i));}
+
+    file_MBin_cut -> Close();
+    return;
+}
+
+int INTTReadTree::get_centrality_bin(int NClus)
+{
+    int MBin_id = -1;
+    for (int i = 0; i < MBin_NClus_cut_vec.size(); i++)
+    {
+        if (NClus > MBin_NClus_cut_vec[i]) {MBin_id = i; break;}
+    }
+
+    if (MBin_id == -1) { MBin_id = MBin_NClus_cut_vec.size(); }
+
+    return MBin_id;
+}
+
+void INTTReadTree::TTreeInit_MC_selfgen()
+{
+    file_in = TFile::Open(Form("%s/%s.root", input_directory.c_str(), MC_list_name.c_str()));
+    tree = (TTree *)file_in->Get(tree_name.c_str());   
+    N_event = tree -> GetEntries();
+    inttMCselfgen = new MCSelfGenReader(tree);
 }
 
 void INTTReadTree::TChainInit_MC()
@@ -207,6 +257,30 @@ void INTTReadTree::EvtInit(long long event_i)
         TrigXvtxMC = -1000.;
         TrigYvtxMC = -1000.;
         TrigZvtxMC = -1000.;
+    }
+    else if (data_type_list[data_type] == "MC_selfgen")
+    {
+        inttMCselfgen->LoadTree(event_i);
+        inttMCselfgen->GetEntry(event_i);
+
+        evt_length = inttMCselfgen->NClus;
+        bco_full   = -1;
+        NvtxMC     = 1;
+        TrigXvtxMC = inttMCselfgen->TruthPV_x;
+        TrigYvtxMC = inttMCselfgen->TruthPV_y;
+        TrigZvtxMC = inttMCselfgen->TruthPV_z;
+        Centrality_bimp = get_centrality_bin(inttMCselfgen->NClus);
+        Centrality_mbd = get_centrality_bin(inttMCselfgen->NClus);
+
+        // cout<<"inttMCselfgen->NClus : "<<inttMCselfgen->NClus<<" Centrality_bimp : "<<Centrality_bimp<<endl;
+        
+        for (int track_i = 0; track_i < inttMCselfgen->PrimaryG4P_Eta->size(); track_i++) {
+            true_track_info.push_back({
+                inttMCselfgen->PrimaryG4P_Eta->at(track_i),
+                inttMCselfgen->PrimaryG4P_Phi->at(track_i),
+                float(inttMCselfgen->PrimaryG4P_PID->at(track_i))
+            });
+        }
     }
 }
 
@@ -495,6 +569,62 @@ void INTTReadTree::EvtSetCluGroup()
                     clu_y, 
                     clu_z, 
                     clu_layer, 
+                    clu_phi
+                });            
+            }        
+        }
+    }
+
+    else if (data_type_list[data_type] == "MC_selfgen"){
+        for (int clu_i = 0; clu_i < evt_length; clu_i++)
+        {
+            if (int(inttMCselfgen -> phi_size -> at(clu_i)) > clu_size_cut) continue; 
+            if (int(inttMCselfgen -> adc -> at(clu_i)) < clu_sum_adc_cut) continue;
+
+            // double clu_x = inttMCselfgen -> X -> at(clu_i) * 10; // note : change the unit from cm to mm
+            // double clu_y = inttMCselfgen -> Y -> at(clu_i) * 10;
+
+            int    clu_layer = (inttMCselfgen -> layer -> at(clu_i) == 3 || inttMCselfgen -> layer -> at(clu_i) == 4) ? 0 : 1;
+            // note : this is for rotating the clusters in the inner barrel by 180 degrees.
+            double clu_x = inttMCselfgen -> X -> at(clu_i) * 10; // note : change the unit from cm to mm
+            double clu_y = inttMCselfgen -> Y -> at(clu_i) * 10;
+            double clu_z = inttMCselfgen -> Z -> at(clu_i) * 10;
+            double clu_phi = (clu_y < 0) ? atan2(clu_y,clu_x) * (180./TMath::Pi()) + 360 : atan2(clu_y,clu_x) * (180./TMath::Pi());
+            double clu_radius = get_radius(clu_x, clu_y);
+
+            temp_sPH_nocolumn_vec[0].push_back( clu_x );
+            temp_sPH_nocolumn_vec[1].push_back( clu_y );
+            
+            temp_sPH_nocolumn_rz_vec[0].push_back( clu_z );
+            temp_sPH_nocolumn_rz_vec[1].push_back( ( clu_phi > 180 ) ? clu_radius * -1 : clu_radius );
+            
+
+            if (clu_layer == 0) {// note : inner
+                temp_sPH_inner_nocolumn_vec.push_back({
+                    -1, 
+                    -1, 
+                    int(inttMCselfgen -> adc -> at(clu_i)), 
+                    int(inttMCselfgen -> adc -> at(clu_i)), 
+                    int(inttMCselfgen -> phi_size -> at(clu_i)), 
+                    clu_x, 
+                    clu_y, 
+                    clu_z, 
+                    inttMCselfgen -> layer -> at(clu_i), // note : should be 3 or 4, for the inner layer, this is for the mega cluster search
+                    clu_phi
+                });
+            }
+            
+            if (clu_layer == 1) {// note : outer
+                temp_sPH_outer_nocolumn_vec.push_back({
+                    -1, 
+                    -1, 
+                    int(inttMCselfgen -> adc -> at(clu_i)), 
+                    int(inttMCselfgen -> adc -> at(clu_i)), 
+                    int(inttMCselfgen -> phi_size -> at(clu_i)), 
+                    clu_x, 
+                    clu_y, 
+                    clu_z, 
+                    inttMCselfgen -> layer -> at(clu_i), // note : should be 5 or 6, for the outer layer, this is for the mega cluster search
                     clu_phi
                 });            
             }        

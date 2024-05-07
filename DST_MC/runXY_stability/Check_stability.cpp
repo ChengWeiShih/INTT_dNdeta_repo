@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <numeric>
 using namespace std;
 
 #include <TFile.h>
@@ -14,6 +15,25 @@ using namespace std;
 #include <TLegend.h>
 
 #include "sPhenixStyle.h"
+
+double  vector_average (vector <double> input_vector) {
+	return accumulate( input_vector.begin(), input_vector.end(), 0.0 ) / double(input_vector.size());
+}
+
+double vector_stddev (vector <double> input_vector){
+	
+	double sum_subt = 0;
+	double average  = accumulate( input_vector.begin(), input_vector.end(), 0.0 ) / double(input_vector.size());
+	
+	// cout<<"average is : "<<average<<endl;
+
+	for (int i=0; i<input_vector.size(); i++){ sum_subt += pow((input_vector[i] - average),2); }
+
+	//cout<<"sum_subt : "<<sum_subt<<endl;
+	// cout<<"print from the function, average : "<<average<<" std : "<<stddev<<endl;
+
+	return sqrt( sum_subt / double(input_vector.size()-1) );
+}
 
 vector<string> read_list(string folder_direction, string MC_list_name)
 {
@@ -40,7 +60,7 @@ vector<string> read_list(string folder_direction, string MC_list_name)
 
 int main()
 {
-    string input_folder = "/sphenix/user/ChengWei/INTT/INTT_commissioning/ZeroField/20869/condor_runXY_folder";
+    string input_folder = "/sphenix/user/ChengWei/sPH_dNdeta/self_gen_singleMu_v2/complete_file/avg_vtxXY";
     string file_list_name = "file_list.txt";
     string output_directory = input_folder + "/" + "merged_result";
     
@@ -79,8 +99,8 @@ int main()
 
     double X_range_l = -1.;
     double X_range_r = 0.5;
-    double Y_range_l = 1.7;
-    double Y_range_r = 3.2;
+    double Y_range_l = -3.2;
+    double Y_range_r = -1.7;
 
     TH1F * quadrant_VtxX_1D = new TH1F("quadrant_VtxX","quadrant_VtxX;X axis [mm];Entry",100,X_range_l,X_range_r);
     TH1F * quadrant_VtxY_1D = new TH1F("quadrant_VtxY","quadrant_VtxY;Y axis [mm];Entry",100,Y_range_l,Y_range_r);
@@ -125,6 +145,7 @@ int main()
         double quadrant_VtxY = (in_quadrant_corner_Y + in_quadrant_center_Y)/2.;
         double line_filled_mean_X = in_line_filled_mean_X;
         double line_filled_mean_Y = in_line_filled_mean_Y;
+        cout<<"index : "<<i<<" quadrant_VtxX : "<<quadrant_VtxX<<" quadrant_VtxY : "<<quadrant_VtxY<<" line_filled_mean_X : "<<line_filled_mean_X<<" line_filled_mean_Y : "<<line_filled_mean_Y<<endl;
 
         evt_index_vec.push_back((in_start_evt + in_end_evt)/2.);
         evt_index_range_vec.push_back((in_end_evt - in_start_evt)/2.);
@@ -288,6 +309,13 @@ int main()
     cout<<"line filled vairance Y info : "<<line_filled_variance_Y_1D->GetMean()<<" "<<line_filled_variance_Y_1D->GetStdDev()<<endl;
     cout<<"line filled stdDev X   info : " <<line_filled_stddev_X_1D->GetMean()<<" "<<line_filled_stddev_X_1D->GetStdDev()<<endl;
     cout<<"line filled stdDev Y   info : " <<line_filled_stddev_Y_1D->GetMean()<<" "<<line_filled_stddev_Y_1D->GetStdDev()<<endl;
+    cout<<endl;
+    cout<<"final average vertex XY should be used : "<<endl;
+    cout<<"line filled X : "<<vector_average(line_filled_mean_X_vec)<<" +/- "<<vector_stddev(line_filled_mean_X_vec)<<endl;
+    cout<<"line filled Y : "<<vector_average(line_filled_mean_Y_vec)<<" +/- "<<vector_stddev(line_filled_mean_Y_vec)<<endl;
+    cout<<"quadrant X : "<<vector_average(quadrant_VtxX_vec)<<" +/- "<<vector_stddev(quadrant_VtxX_vec)<<endl;
+    cout<<"quadrant Y : "<<vector_average(quadrant_VtxY_vec)<<" +/- "<<vector_stddev(quadrant_VtxY_vec)<<endl;
+    cout<<"avg: {"<<( vector_average(line_filled_mean_X_vec) + vector_average(quadrant_VtxX_vec) )/2.<<", "<<( vector_average(line_filled_mean_Y_vec) + vector_average(quadrant_VtxY_vec) )/2.<<"}"<<endl;
 
     return 0;
 }

@@ -1,12 +1,12 @@
 #include <iostream>
 using namespace std;
 
-#include "TFile.h"
-#include "TTree.h"
-#include "TH1.h"
-#include "TH2.h"
-#include "TLatex.h"
-#include "TCanvas.h"
+#include <TFile.h>
+#include <TTree.h>
+#include <TH1.h>
+#include <TH2.h>
+#include <TLatex.h>
+#include <TCanvas.h>
 #include "sPhenixStyle.h"
 
 int main()

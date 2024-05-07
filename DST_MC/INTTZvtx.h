@@ -6,6 +6,7 @@
 #include "../sigmaEff.h"
 #include "gaus_func.h"
 #include "MegaTrackFinder.h"
+#include "ana_map_folder/ana_map_v1.h"
 // #include "../sPhenixStyle.C"
 
 double double_gaus_func(double *x, double *par)
@@ -200,18 +201,10 @@ class INTTZvtx
 
         // note : the class that handles the 3/4-cluster tracklet finder
         MegaTrackFinder * mega_track_finder; 
-        map<int,int> centrality_map = {
-            {5, 0},
-            {15, 1},
-            {25, 2},
-            {35, 3},
-            {45, 4},
-            {55, 5},
-            {65, 6},
-            {75, 7},
-            {85, 8},
-            {95, 9}
-        };
+
+        // todo : if the centrality bin or the eta and z regions are changed, modify the "ana_map_v1.h" first,
+        // todo : and change the following "namespace" name
+        map<int,int> centrality_map = ANA_MAP_V1::centrality_map;
 
 
         TGraphErrors * z_range_gr;

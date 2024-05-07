@@ -3,6 +3,7 @@
 
 #include "INTTXYvtxEvt.h"
 #include "MegaTrackFinder.h"
+#include "ana_map_folder/ana_map_v1.h"
 
 class INTTEta : public INTTXYvtxEvt
 {
@@ -241,85 +242,24 @@ class INTTEta : public INTTXYvtxEvt
         vector<int> out_track_eta_i;
         vector<double> out_track_delta_phi_d;
 
-        // todo : if the centrality bin is changed, the following map and vector should be updated
-        map<int,int> centrality_map = {
-            {5, 0},
-            {15, 1},
-            {25, 2},
-            {35, 3},
-            {45, 4},
-            {55, 5},
-            {65, 6},
-            {75, 7},
-            {85, 8},
-            {95, 9}
-        };
+        // todo : if the centrality bin or the eta and z regions are changed, modify the "ana_map_v1.h" first,
+        // todo : and change the following "namespace" name
+        map<int,int> centrality_map = ANA_MAP_V2::centrality_map;
         
         TH1F * eta_region_hist;
-        vector<string> centrality_region = {
-            "0-5%",
-            "5-15%",
-            "15-25%",
-            "25-35%",
-            "35-45%",
-            "45-55%",
-            "55-65%",
-            "65-75%",
-            "75-85%",
-            "85-95%",
-            "0-95%"
-        };
-
+        // todo : if the centrality bin or the eta and z regions are changed, modify the "ana_map_v1.h" first,
+        // todo : and change the following "namespace" name
+        vector<string> centrality_region = ANA_MAP_V2::centrality_region;
+        
+        // todo : if the centrality bin or the eta and z regions are changed, modify the "ana_map_v1.h" first,
+        // todo : and change the following "namespace" name
         // note : the following two vectors tell the region of the eta and z, including the edges in both sides.
         // note : so when talking about the number of bins, we have to do size() - 1
-        vector<double> eta_region = { // todo: if the eta region is changed, the following vector should be updated
-            -3.0,
-            -2.8,
-            -2.6,
-            -2.4,
-            -2.2,
-            -2,
-            -1.8,
-            -1.6,
-            -1.4,
-            -1.2,
-            -1,
-            -0.8,
-            -0.6,
-            -0.4,
-            -0.2,
-            0,
-            0.2,
-            0.4,
-            0.6,
-            0.8,
-            1,
-            1.2,
-            1.4,
-            1.6,
-            1.8,
-            2,
-            2.2,
-            2.4,
-            2.6,
-            2.8,
-            3
-        };
+        vector<double> eta_region = ANA_MAP_V2::eta_region;
 
-        vector<double> z_region = { // todo: if the z region is changed, the following vector should be updated
-            -420, // note unit : mm
-            -380,
-            -340,
-            -300,
-            -260,
-            -220, // note : this part is the peak region
-            -180, // note : this part is the peak region
-            -140,
-            -100,
-            -60,
-            -20,
-            20
-        };
+        // todo : if the centrality bin or the eta and z regions are changed, modify the "ana_map_v1.h" first,
+        // todo : and change the following "namespace" name
+        vector<double> z_region = ANA_MAP_V2::z_region;
 
         // note : when filling in a z-eta pair, TH2F returns a int, we have a function to convert that number into the index position in X and Y
         // note : Once we have the position index in X and Y, we then convert the X and Y into the index for 1D array
@@ -1804,7 +1744,7 @@ void INTTEta::PrintPlots()
         {   
             double hist_offset = get_dist_offset(final_track_delta_phi_1D[i][i1], 15);
             gaus_pol1_fit->SetParameters( final_track_delta_phi_1D[i][i1] -> GetBinContent(final_track_delta_phi_1D[i][i1] -> GetMaximumBin()) - hist_offset, 0, final_track_delta_phi_1D[i][i1]->GetStdDev()/2., hist_offset, 0);
-            final_track_delta_phi_1D[i][i1] -> Fit(gaus_pol1_fit,"NQ");
+            if (final_track_delta_phi_1D[i][i1] -> GetEntries() > 0) {final_track_delta_phi_1D[i][i1] -> Fit(gaus_pol1_fit,"NQ");}
 
             // note : par[0] : size
             // note : par[1] : ratio of the two gaussians
@@ -1818,7 +1758,7 @@ void INTTEta::PrintPlots()
             d_gaus_pol1_fit -> SetParLimits(1, 0, 0.5);  // note : the first gaussian is  the main distribution, So it should contain more than 50% of the total distribution
             d_gaus_pol1_fit -> SetParLimits(3, 0, 1000); // note : the width of the gaussian should be positive
             d_gaus_pol1_fit -> SetParLimits(4, 0, 1000); // note : the width of the gaussian should be positive
-            final_track_delta_phi_1D[i][i1] -> Fit(d_gaus_pol1_fit,"NQ");
+            if (final_track_delta_phi_1D[i][i1] -> GetEntries() > 0) {final_track_delta_phi_1D[i][i1] -> Fit(d_gaus_pol1_fit,"NQ");}
             // note : extract the signal region
             draw_d_gaus -> SetParameters(d_gaus_pol1_fit->GetParameter(0), d_gaus_pol1_fit->GetParameter(1), d_gaus_pol1_fit->GetParameter(2), d_gaus_pol1_fit->GetParameter(3), d_gaus_pol1_fit->GetParameter(4));
             // note : extract the part of pol1 background
@@ -1829,7 +1769,7 @@ void INTTEta::PrintPlots()
             bkg_fit_pol2 -> SetParameters(hist_offset, 0, -0.2, 0, signal_region);
             bkg_fit_pol2 -> FixParameter(4, signal_region);
             bkg_fit_pol2 -> SetParLimits(2, -100, 0);
-            final_track_delta_phi_1D[i][i1] -> Fit(bkg_fit_pol2,"NQ");
+            if (final_track_delta_phi_1D[i][i1] -> GetEntries() > 0) {final_track_delta_phi_1D[i][i1] -> Fit(bkg_fit_pol2,"NQ");}
             // note : extract the background region (which includes the signal region also)
             draw_pol2_line -> SetParameters(bkg_fit_pol2 -> GetParameter(0), bkg_fit_pol2 -> GetParameter(1), bkg_fit_pol2 -> GetParameter(2), bkg_fit_pol2 -> GetParameter(3));
 
@@ -1888,7 +1828,7 @@ void INTTEta::PrintPlots()
         {   
             double hist_offset = get_dist_offset(final_track_multi_delta_phi_1D[i][i1], 15);
             gaus_pol1_fit->SetParameters( final_track_multi_delta_phi_1D[i][i1] -> GetBinContent(final_track_multi_delta_phi_1D[i][i1] -> GetMaximumBin()) - hist_offset, 0, final_track_multi_delta_phi_1D[i][i1]->GetStdDev()/2., hist_offset, 0);
-            final_track_multi_delta_phi_1D[i][i1] -> Fit(gaus_pol1_fit,"NQ");
+            if (final_track_multi_delta_phi_1D[i][i1] -> GetEntries() > 0) {final_track_multi_delta_phi_1D[i][i1] -> Fit(gaus_pol1_fit,"NQ");}
 
             // note : par[0] : size
             // note : par[1] : ratio of the two gaussians
@@ -1902,7 +1842,7 @@ void INTTEta::PrintPlots()
             d_gaus_pol1_fit -> SetParLimits(1, 0, 0.5);  // note : the first gaussian is  the main distribution, So it should contain more than 50% of the total distribution
             d_gaus_pol1_fit -> SetParLimits(3, 0, 1000); // note : the width of the gaussian should be positive
             d_gaus_pol1_fit -> SetParLimits(4, 0, 1000); // note : the width of the gaussian should be positive
-            final_track_multi_delta_phi_1D[i][i1] -> Fit(d_gaus_pol1_fit,"NQ");
+            if (final_track_multi_delta_phi_1D[i][i1] -> GetEntries() > 0) {final_track_multi_delta_phi_1D[i][i1] -> Fit(d_gaus_pol1_fit,"NQ");}
             // note : extract the signal region
             draw_d_gaus -> SetParameters(d_gaus_pol1_fit->GetParameter(0), d_gaus_pol1_fit->GetParameter(1), d_gaus_pol1_fit->GetParameter(2), d_gaus_pol1_fit->GetParameter(3), d_gaus_pol1_fit->GetParameter(4));
             // note : extract the part of pol1 background
@@ -1913,7 +1853,7 @@ void INTTEta::PrintPlots()
             bkg_fit_pol2 -> SetParameters(hist_offset, 0, -0.2, 0, signal_region);
             bkg_fit_pol2 -> FixParameter(4, signal_region);
             bkg_fit_pol2 -> SetParLimits(2, -100, 0);
-            final_track_multi_delta_phi_1D[i][i1] -> Fit(bkg_fit_pol2,"NQ");
+            if (final_track_multi_delta_phi_1D[i][i1] -> GetEntries() > 0) {final_track_multi_delta_phi_1D[i][i1] -> Fit(bkg_fit_pol2,"NQ");}
             // note : extract the background region (which includes the signal region also)
             draw_pol2_line -> SetParameters(bkg_fit_pol2 -> GetParameter(0), bkg_fit_pol2 -> GetParameter(1), bkg_fit_pol2 -> GetParameter(2), bkg_fit_pol2 -> GetParameter(3));
 

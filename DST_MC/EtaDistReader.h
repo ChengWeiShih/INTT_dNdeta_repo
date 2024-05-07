@@ -3,7 +3,10 @@
 
 #include "INTTEta.h"
 
-// todo : the signal_region and centrality_region is hard_written in the INTTEta.h
+
+// note : the code works with the histograms, so the centrality bins are already defined in the histograms, ranging from 0 to something big number
+// todo : the signal_region and centrality_region is hard_written in the INTTEta.h, which is written in the "ana_map_v1.h", so modify there
+
 
 class EtaDistReader : public INTTEta
 {
@@ -37,6 +40,13 @@ class EtaDistReader : public INTTEta
             N_event_counting_MC = vector<vector<int>>(N_centrality_bin, vector<int>(included_eta_z_map.size(),0));
 
             DeltaPhi_Multi_Stack_hist_out.clear();
+            
+            solid_line = new TLine();
+            solid_line -> SetLineWidth(1);
+            solid_line -> SetLineColor(2);
+            solid_line -> SetLineStyle(1);
+
+            // file_out = new TFile(Form("%s/alpha_correction_map.root",out_folder_directory.c_str()),"RECREATE");
 
             legend = new TLegend(0.45,0.8,0.70,0.9);
             // legend -> SetMargin(0);
@@ -57,8 +67,10 @@ class EtaDistReader : public INTTEta
         vector<TH1F *> GetdNdeta_1D_reco_multi();
         vector<string> Get_centrality_region() {return centrality_region;};
         vector<TH2F *> Get_alpha_corr_map() {return {eta_Mbin_correction_loose, eta_Mbin_correction_tight};};
+        void FindCoveredRegion();
         void Set_alpha_corr_map(TH2F * hist_in_loose, TH2F * hist_in_tight);
         void FinaldNdEta();
+        void EndRun();
 
         ~EtaDistReader()
         {
@@ -85,6 +97,7 @@ class EtaDistReader : public INTTEta
         TH2F * centrality_Z_map;
         TH2F * centrality_Z_map_MC;
         TH2F * eta_z_ref;
+        TH2F * eta_z_ref_used_check;
 
         TH2F * eta_Mbin_correction_tight;
         TH2F * eta_Mbin_correction_loose;
@@ -105,15 +118,77 @@ class EtaDistReader : public INTTEta
         vector<vector<int>> N_event_counting_MC;
 
         TLegend * legend;
-
+        TLine * solid_line;
         TH1F * temp_hist;
+
+        // TFile * file_out; 
 
         void ReadFileHist();
         void InitHist();
         void MainPreparation();
+        void DrawCoordLine(TH2F * hist_in);
+        void DrawEtaCoverBox(TH2F * hist_in);
         
 
 };
+
+void EtaDistReader::DrawCoordLine(TH2F * hist_in)
+{
+    // note : draw the vertical line, to segment the eta region
+    for (int i = 0; i < hist_in -> GetNbinsX(); i++) { 
+        coord_line -> DrawLine(
+            hist_in->GetXaxis()->GetBinLowEdge(i+1), 
+            hist_in->GetYaxis()->GetBinLowEdge(1), 
+            hist_in->GetXaxis()->GetBinLowEdge(i+1), 
+            hist_in->GetYaxis()->GetBinLowEdge(hist_in -> GetNbinsY()) + hist_in->GetYaxis()->GetBinWidth(hist_in -> GetNbinsY())
+        ); 
+    }
+    coord_line -> DrawLine(
+        hist_in->GetXaxis()->GetBinLowEdge(hist_in->GetNbinsX()) + hist_in->GetXaxis()->GetBinWidth(hist_in->GetNbinsX()), 
+        hist_in->GetYaxis()->GetBinLowEdge(1), 
+        hist_in->GetXaxis()->GetBinLowEdge(hist_in->GetNbinsX()) + hist_in->GetXaxis()->GetBinWidth(hist_in->GetNbinsX()), 
+        hist_in->GetYaxis()->GetBinLowEdge(hist_in -> GetNbinsY()) + hist_in->GetYaxis()->GetBinWidth(hist_in -> GetNbinsY())
+    );
+
+    // note : draw the horizontal line, to segment the z region
+    for (int i = 0; i < hist_in -> GetNbinsY(); i++) { 
+        coord_line -> DrawLine(
+            hist_in->GetXaxis()->GetBinLowEdge(1), 
+            hist_in->GetYaxis()->GetBinLowEdge(i+1), 
+            hist_in->GetXaxis()->GetBinLowEdge(hist_in->GetNbinsX()) + hist_in->GetXaxis()->GetBinWidth(hist_in->GetNbinsX()), 
+            hist_in->GetYaxis()->GetBinLowEdge(i+1)
+        ); 
+    }
+    coord_line -> DrawLine(
+        hist_in->GetXaxis()->GetBinLowEdge(1), 
+        hist_in->GetYaxis()->GetBinLowEdge(hist_in -> GetNbinsY()) + hist_in->GetYaxis()->GetBinWidth(hist_in -> GetNbinsY()), 
+        hist_in->GetXaxis()->GetBinLowEdge(hist_in->GetNbinsX()) + hist_in->GetXaxis()->GetBinWidth(hist_in->GetNbinsX()), 
+        hist_in->GetYaxis()->GetBinLowEdge(hist_in -> GetNbinsY()) + hist_in->GetYaxis()->GetBinWidth(hist_in -> GetNbinsY())
+    ); 
+}
+
+void EtaDistReader::DrawEtaCoverBox(TH2F * hist_in)
+{
+    double INTT_layer_R[4] = {71.88, 77.32, 96.8, 102.62}; // note : the radii of the INTT layers
+
+    // note : low  Z edge for left  eta
+    // note : high Z edge for right eta
+    for (int i = 0; i < hist_in -> GetNbinsY(); i++)
+    {
+        double bin_low_zvtx  = hist_in->GetYaxis()->GetBinLowEdge(i+1);
+        double bin_high_zvtx = hist_in->GetYaxis()->GetBinLowEdge(i+1) + hist_in->GetYaxis()->GetBinWidth(i+1);
+
+        double INTT_eta_acceptance_l = -0.5 * TMath::Log((sqrt(pow(-230.-bin_low_zvtx,2)+pow(INTT_layer_R[0],2))-(-230.-bin_low_zvtx)) / (sqrt(pow(-230.-bin_low_zvtx,2)+pow(INTT_layer_R[0],2))+(-230.-bin_low_zvtx))); // note : left
+        double INTT_eta_acceptance_r = -0.5 * TMath::Log((sqrt(pow(230.-bin_high_zvtx,2)+pow(INTT_layer_R[3],2))-(230.-bin_high_zvtx)) / (sqrt(pow(230.-bin_high_zvtx,2)+pow(INTT_layer_R[3],2))+(230.-bin_high_zvtx))); // note : right
+        
+        solid_line -> DrawLine(INTT_eta_acceptance_l, bin_low_zvtx, INTT_eta_acceptance_l, bin_high_zvtx); // note : vertical
+        solid_line -> DrawLine(INTT_eta_acceptance_r, bin_low_zvtx, INTT_eta_acceptance_r, bin_high_zvtx); // note : vertical
+        solid_line -> DrawLine(INTT_eta_acceptance_l, bin_low_zvtx, INTT_eta_acceptance_r, bin_low_zvtx); // note : horizontal
+        solid_line -> DrawLine(INTT_eta_acceptance_l, bin_high_zvtx, INTT_eta_acceptance_r, bin_high_zvtx); // note : horizontal
+        
+        cout<<"bin Yaxis ID: "<< i+1 <<" low_edge "<<bin_low_zvtx<<" high edge: "<<bin_high_zvtx<<" eta region: "<<INTT_eta_acceptance_l<<"~"<<INTT_eta_acceptance_r<<endl;   
+    }
+}
 
 void EtaDistReader::Set_alpha_corr_map(TH2F * hist_in_loose, TH2F * hist_in_tight)
 {
@@ -168,10 +243,37 @@ void EtaDistReader::ReadFileHist()
 
     // note : the reference map of Eta-Z 2D histogram
     eta_z_ref = (TH2F *) file_in -> Get("Eta_Z_reference");
+
+    eta_z_ref_used_check = (TH2F*) eta_z_ref -> Clone("eta_z_ref_used_check");
     
     cout<<"ReadFileHist done"<<endl;
 
     return;
+
+}
+
+void EtaDistReader::FindCoveredRegion()
+{
+    c1 -> cd();
+    eta_z_ref -> Draw("colz0");
+    DrawCoordLine(eta_z_ref);    
+    DrawEtaCoverBox(eta_z_ref);
+    c1 -> Print(Form("%s/eta_z_ref.pdf",out_folder_directory.c_str()));
+    c1 -> Clear();
+
+    // note : for the used bins check
+    c1 -> cd();
+    double eta_z_ref_used_check_max_entry = eta_z_ref_used_check->GetMaximum();
+    for (auto eta_z : included_eta_z_map){
+        for (auto zbin : eta_z.second){
+            eta_z_ref_used_check -> SetBinContent(eta_z.first, zbin, eta_z_ref_used_check_max_entry * 1000);        
+        }
+    }
+    eta_z_ref_used_check -> Draw("colz0");
+    DrawCoordLine(eta_z_ref_used_check);    
+    DrawEtaCoverBox(eta_z_ref_used_check);
+    c1 -> Print(Form("%s/eta_z_ref_used_check.pdf",out_folder_directory.c_str()));
+    c1 -> Clear();
 
 }
 
@@ -504,6 +606,17 @@ void EtaDistReader::FinaldNdEta()
 
     cout<<"FinaldNdEta done"<<endl;
     return;
+}
+
+void EtaDistReader::EndRun()
+{
+    TFile * file_out = new TFile(Form("%s/alpha_correction_map.root",out_folder_directory.c_str()),"RECREATE");
+    // file_out -> cd();
+    eta_Mbin_correction_loose -> Write("eta_Mbin_correction_loose");
+    eta_Mbin_correction_loose_noUPC -> Write("eta_Mbin_correction_loose_noUPC");
+    eta_Mbin_correction_tight -> Write("eta_Mbin_correction_tight");
+
+    file_out -> Close();
 }
 
 vector<TH1F *> EtaDistReader::GetDeltaPhi_Multi_stack_1D()

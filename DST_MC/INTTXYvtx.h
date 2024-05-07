@@ -1580,7 +1580,8 @@ void INTTXYvtx::PrintPlotsVTXxy(string sub_out_folder_name, int print_option)
     angle_diff_outer_phi_peak -> Draw("colz0");
     angle_diff_outer_phi_peak_profile -> Draw("same");
     horizontal_fit_angle_diff_outer -> Draw("l same");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s, peak : %f", plot_text.c_str(), peek));
+    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s, peak : %f", plot_text.c_str(), peek));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
     draw_text -> DrawLatex(0.25, 0.84, Form("#color[2]{Assumed vertex: %.3f mm, %.3f mm}", current_vtxX, current_vtxY));
     c1 -> Print(Form("%s/angle_diff_outer_phi_peak.pdf", sub_out_folder_name.c_str()));
     c1 -> Clear(); 
