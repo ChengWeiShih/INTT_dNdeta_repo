@@ -37,7 +37,18 @@ class INTTXYvtxEvt : public INTTXYvtx{
         };
 
         // note : the function that new created for this class
-        virtual void ProcessEvt(int event_i, vector<clu_info> temp_sPH_inner_nocolumn_vec, vector<clu_info> temp_sPH_outer_nocolumn_vec, vector<vector<double>> temp_sPH_nocolumn_vec, vector<vector<double>> temp_sPH_nocolumn_rz_vec, int NvtxMC, vector<double> TrigvtxMC, bool PhiCheckTag, Long64_t bco_full, pair<double,double> evt_z);
+        virtual void ProcessEvt(
+            int event_i, 
+            vector<clu_info> temp_sPH_inner_nocolumn_vec, 
+            vector<clu_info> temp_sPH_outer_nocolumn_vec, 
+            vector<vector<double>> temp_sPH_nocolumn_vec, 
+            vector<vector<double>> temp_sPH_nocolumn_rz_vec, 
+            int NvtxMC, 
+            vector<double> TrigvtxMC, 
+            bool PhiCheckTag, 
+            Long64_t bco_full, 
+            pair<double,double> evt_z
+        );
         pair<double,double> GetVtxXYEvt();
         void PrintPlots_Evt();
         void InitTreeOut() override;
@@ -419,7 +430,7 @@ void INTTXYvtxEvt::PrintPlots_Evt()
     correlation_fit_MC -> Draw("l same");
     draw_text -> DrawLatex(0.21, 0.75, Form("INTT NClus > %d", N_clu_cutl));
     draw_text -> DrawLatex(0.21, 0.71, Form("y = %.4f * X +  %.4f",correlation_fit_MC -> GetParameter(1), correlation_fit_MC -> GetParameter(0)));
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/VTXx_correlation.pdf",out_folder_directory.c_str()));
     c1 -> Clear();
 
@@ -429,7 +440,7 @@ void INTTXYvtxEvt::PrintPlots_Evt()
     correlation_fit_MC -> Draw("l same");
     draw_text -> DrawLatex(0.21, 0.75, Form("INTT NClus > %d", N_clu_cutl));
     draw_text -> DrawLatex(0.21, 0.71, Form("y = %.4f * X +  %.4f",correlation_fit_MC -> GetParameter(1), correlation_fit_MC -> GetParameter(0)));
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/VTXy_correlation.pdf",out_folder_directory.c_str()));
     c1 -> Clear();
 
@@ -445,7 +456,7 @@ void INTTXYvtxEvt::PrintPlots_Evt()
     draw_text -> DrawLatex(0.21, 0.75, Form("INTT NClus > %d", N_clu_cutl));
     draw_text -> DrawLatex(0.21, 0.71, Form("Gaus mean  : %.4f mm",gaus_fit_MC -> GetParameter(1)));
     draw_text -> DrawLatex(0.21, 0.67, Form("Gaus width : %.4f mm",fabs(gaus_fit_MC -> GetParameter(2))));
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/VTXx_diff_1D.pdf",out_folder_directory.c_str()));
     c1 -> Clear();
 
@@ -461,25 +472,25 @@ void INTTXYvtxEvt::PrintPlots_Evt()
     draw_text -> DrawLatex(0.21, 0.75, Form("INTT NClus > %d", N_clu_cutl));
     draw_text -> DrawLatex(0.21, 0.71, Form("Gaus mean  : %.4f mm",gaus_fit_MC -> GetParameter(1)));
     draw_text -> DrawLatex(0.21, 0.67, Form("Gaus width : %.4f mm",fabs(gaus_fit_MC -> GetParameter(2))));
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/VTXy_diff_1D.pdf",out_folder_directory.c_str()));
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     VTXx_diff_Nclus -> Draw("colz0");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/VTXx_diff_Nclus.pdf",out_folder_directory.c_str()));
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     VTXy_diff_Nclus -> Draw("colz0");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/VTXy_diff_Nclus.pdf",out_folder_directory.c_str()));
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     Reco_VTXxy_2D -> Draw("colz0");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     draw_text -> DrawLatex(0.21, 0.88, Form("Entries: %.0f", Reco_VTXxy_2D -> GetEntries()));
     c1 -> Print(Form("%s/Reco_VTXxy_2D.pdf",out_folder_directory.c_str()));
     c1 -> Clear();
@@ -487,7 +498,7 @@ void INTTXYvtxEvt::PrintPlots_Evt()
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     c1 -> cd();
     VTXx_1D -> Draw("hist");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
 
     gaus_fit_MC -> SetParameters(VTXx_1D -> GetBinContent( VTXx_1D -> GetMaximumBin() ), VTXx_1D -> GetBinCenter( VTXx_1D -> GetMaximumBin() ), 0.05, 0);
     gaus_fit_MC -> SetParLimits(0,0,100000);  // note : size 
@@ -505,7 +516,7 @@ void INTTXYvtxEvt::PrintPlots_Evt()
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     c1 -> cd();
     VTXy_1D -> Draw("hist");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
 
     gaus_fit_MC -> SetParameters(VTXy_1D -> GetBinContent( VTXy_1D -> GetMaximumBin() ), VTXy_1D -> GetBinCenter( VTXy_1D -> GetMaximumBin() ), 0.05, 0);
     gaus_fit_MC -> SetParLimits(0,0,100000);  // note : size 
@@ -1425,7 +1436,6 @@ void INTTXYvtxEvt::temp_bkg(TPad * c1, double peek, pair<double,double> beam_ori
     
     ladder_line -> Draw("l same");
 }
-
 
 bool INTTXYvtxEvt::isPointInsideSquare(const std::pair<double, double> point, const std::pair<double, double> square_center, double length) {
     // Calculate half-length of the square

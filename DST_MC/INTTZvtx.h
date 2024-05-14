@@ -6,8 +6,9 @@
 #include "../sigmaEff.h"
 #include "gaus_func.h"
 #include "MegaTrackFinder.h"
-#include "ana_map_folder/ana_map_v1.h"
 // #include "../sPhenixStyle.C"
+
+// note : the centrality is still float here.
 
 double double_gaus_func(double *x, double *par)
 {
@@ -45,7 +46,23 @@ class INTTZvtx
             double peek = 3.32405, 
             bool print_message_opt = true
         );
-        void ProcessEvt(int event_i, vector<clu_info> temp_sPH_inner_nocolumn_vec, vector<clu_info> temp_sPH_outer_nocolumn_vec, vector<vector<double>> temp_sPH_nocolumn_vec, vector<vector<double>> temp_sPH_nocolumn_rz_vec, int NvtxMC, double TrigZvtxMC, bool PhiCheckTag, Long64_t bco_full, int centrality_bin);
+        void ProcessEvt(
+            int event_i, 
+            vector<clu_info> temp_sPH_inner_nocolumn_vec, 
+            vector<clu_info> temp_sPH_outer_nocolumn_vec, 
+            vector<vector<double>> temp_sPH_nocolumn_vec, 
+            vector<vector<double>> temp_sPH_nocolumn_rz_vec, 
+            int NvtxMC, 
+            double TrigZvtxMC, 
+            bool PhiCheckTag, 
+            Long64_t bco_full, 
+            float centrality_float,
+            double MBD_reco_z,
+            int is_min_bias,
+            int is_min_bias_wozdc,
+            double MBD_north_charge_sum,
+            double MBD_south_charge_sum
+        );
         void ClearEvt();
         void PrintPlots();
         void EndRun();
@@ -155,8 +172,12 @@ class INTTZvtx
         double out_LB_Gaus_Width_width, out_LB_Gaus_Width_size_width, out_LB_Gaus_Width_offset, out_LB_geo_mean;
         double out_LB_refit, out_LB_refitE; // note : not used in the out tree
         double out_mid_cut_peak_width, out_mid_cut_peak_ratio, out_LB_cut_peak_width, out_LB_cut_peak_ratio;
+        double out_MBD_reco_z;
+        int    out_is_min_bias, out_is_min_bias_wozdc;
+        double out_MBD_south_charge_sum, out_MBD_north_charge_sum;
+        float out_centrality_float;
         bool out_good_zvtx_tag;
-        int out_eID, N_cluster_outer_out, N_cluster_inner_out, out_ES_N_good, out_mid_cut_Ngroup, out_LB_cut_Ngroup, out_centrality_bin;
+        int out_eID, N_cluster_outer_out, N_cluster_inner_out, out_ES_N_good, out_mid_cut_Ngroup, out_LB_cut_Ngroup;
         int out_N_cluster_north, out_N_cluster_south;
         Long64_t bco_full_out; 
 
@@ -201,11 +222,6 @@ class INTTZvtx
 
         // note : the class that handles the 3/4-cluster tracklet finder
         MegaTrackFinder * mega_track_finder; 
-
-        // todo : if the centrality bin or the eta and z regions are changed, modify the "ana_map_v1.h" first,
-        // todo : and change the following "namespace" name
-        map<int,int> centrality_map = ANA_MAP_V1::centrality_map;
-
 
         TGraphErrors * z_range_gr;
         TGraphErrors * z_range_gr_draw;
@@ -279,7 +295,7 @@ INTTZvtx::INTTZvtx(string run_type, string out_folder_directory, pair<double,dou
 
     plot_text = (run_type == "MC") ? "Simulation" : "Work-in-progress";
     
-    mega_track_finder = new MegaTrackFinder(run_type, out_folder_directory, centrality_map.size(), beam_origin);
+    // mega_track_finder = new MegaTrackFinder(run_type, out_folder_directory, centrality_map.size(), beam_origin);
 
     if (draw_event_display) {c2 -> Print(Form("%s/temp_event_display.pdf(",out_folder_directory.c_str()));}
 }
@@ -560,7 +576,12 @@ void INTTZvtx::InitTreeOut()
     tree_out -> Branch("LB_cut_peak_width", &out_LB_cut_peak_width);     // note : LB cut peak width
     tree_out -> Branch("LB_cut_peak_ratio", &out_LB_cut_peak_ratio);     // note : LB cut peak ratio
     tree_out -> Branch("MC_true_zvtx",&MC_true_zvtx);
-    tree_out -> Branch("Centrality_bin",&out_centrality_bin);
+    tree_out -> Branch("Centrality_float",&out_centrality_float);
+    tree_out -> Branch("MBD_reco_z", &out_MBD_reco_z);
+    tree_out -> Branch("is_min_bias", &out_is_min_bias);
+    tree_out -> Branch("is_min_bias_wozdc", &out_is_min_bias_wozdc);
+    tree_out -> Branch("MBD_north_charge_sum", &out_MBD_north_charge_sum);
+    tree_out -> Branch("MBD_south_charge_sum", &out_MBD_south_charge_sum);
 }
 
 void INTTZvtx::InitRest()
@@ -628,7 +649,12 @@ void INTTZvtx::ProcessEvt(
     double TrigZvtxMC,
     bool PhiCheckTag,
     Long64_t bco_full,
-    int centrality_bin
+    float centrality_float,
+    double MBD_reco_z,
+    int is_min_bias,
+    int is_min_bias_wozdc,
+    double MBD_north_charge_sum,
+    double MBD_south_charge_sum
 )
 {
     out_eID = event_i;
@@ -672,7 +698,12 @@ void INTTZvtx::ProcessEvt(
     loose_offset_peak = -999; // note : unit [mm]
     loose_offset_peakE = -999; // note : unit [mm]
 
-    out_centrality_bin = -1;
+    out_centrality_float = centrality_float;
+    out_MBD_reco_z = MBD_reco_z;
+    out_is_min_bias = is_min_bias;
+    out_is_min_bias_wozdc = is_min_bias_wozdc;
+    out_MBD_north_charge_sum = MBD_north_charge_sum;
+    out_MBD_south_charge_sum = MBD_south_charge_sum;
 
     out_N_cluster_north = 0;
     out_N_cluster_south = 0;
@@ -716,7 +747,7 @@ void INTTZvtx::ProcessEvt(
     }
 
     // note : for the mega cluster finder, the 3/4-cluster tracklet that happens at the overlap region
-    // mega_track_finder -> FindMegaTracks(inner_clu_phi_map, outer_clu_phi_map, {MC_true_zvtx,0.5}, centrality_map[centrality_bin]);    
+    // mega_track_finder -> FindMegaTracks(inner_clu_phi_map, outer_clu_phi_map, {MC_true_zvtx,0.5}, centrality_map[centrality_float]);    
 
     double good_pair_count = 0;    
 
@@ -1048,7 +1079,12 @@ void INTTZvtx::ProcessEvt(
         out_LB_cut_peak_ratio = N_group_info_detail[1];
         out_LB_cut_peak_width = fabs(N_group_info_detail[3] - N_group_info_detail[2]) / 2.;
 
-        out_centrality_bin = centrality_bin;
+        out_centrality_float = centrality_float;
+        out_MBD_reco_z = MBD_reco_z;
+        out_is_min_bias = is_min_bias;
+        out_is_min_bias_wozdc = is_min_bias_wozdc;
+        out_MBD_north_charge_sum = MBD_north_charge_sum;
+        out_MBD_south_charge_sum = MBD_south_charge_sum;
 
         out_LB_geo_mean = LB_geo_mean(line_breakdown_hist, { (tight_offset_peak - tight_offset_width), (tight_offset_peak + tight_offset_width) }, event_i);
         out_good_zvtx_tag = good_zvtx_tag;
@@ -1163,6 +1199,7 @@ void INTTZvtx::ProcessEvt(
         }
 
         if (run_type == "MC") {draw_text -> DrawLatex(0.2, 0.54, Form("True MCz : %.3f mm",  TrigZvtxMC * 10.));}
+        draw_text -> DrawLatex(0.2, 0.5, Form("INTTz: %.3f, MBDz: %.3f, diff: %.3f",final_zvtx, MBD_reco_z, final_zvtx - MBD_reco_z));
         
         // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
         pad_phi_diff -> cd();
@@ -1194,6 +1231,7 @@ void INTTZvtx::ProcessEvt(
         // else if(good_zvtx_tag == false){c2 -> Print(Form("%s/temp_event_display.pdf",out_folder_directory.c_str()));}
         else if(draw_event_display && (final_zvtx > 0 || final_zvtx < -450)) {cout<<"In INTTZvtx class, event :"<<event_i<<" weird zvtx "<<endl; c2 -> Print(Form("%s/temp_event_display.pdf",out_folder_directory.c_str()));}
         // else if(total_NClus > 5000) {cout<<"In INTTZvtx class, event :"<<event_i<<" high Nclus "<<endl; c2 -> Print(Form("%s/temp_event_display.pdf",out_folder_directory.c_str()));}
+        else if ( draw_event_display && ( (final_zvtx - MBD_reco_z) < -45 || (final_zvtx - MBD_reco_z) > 30 ) && total_NClus > 1500 ) { cout<<"In INTTZvtx class, event :"<<event_i<<" High NClus, poor INTTrecoZ with MBDrecoZ, diff : "<< final_zvtx - MBD_reco_z <<endl; c2 -> Print(Form("%s/temp_event_display.pdf",out_folder_directory.c_str())); }
         else if ( draw_event_display && run_type == "MC" && fabs(final_zvtx - (TrigZvtxMC * 10.)) > 2. && total_NClus > 3000) { cout<<"In INTTZvtx class, event :"<<event_i<<" High NClus, poor Z : "<< fabs(final_zvtx - (TrigZvtxMC * 10.)) <<endl; c2 -> Print(Form("%s/temp_event_display.pdf",out_folder_directory.c_str())); }
         else if ( draw_event_display && run_type == "MC" && fabs(final_zvtx - (TrigZvtxMC * 10.)) > 2.) { cout<<"In INTTZvtx class, event :"<<event_i<<" low NClus, poor Z : "<< fabs(final_zvtx - (TrigZvtxMC * 10.)) <<endl; c2 -> Print(Form("%s/temp_event_display.pdf",out_folder_directory.c_str())); }
 
@@ -1271,7 +1309,7 @@ void INTTZvtx::ClearEvt()
     inner_clu_phi_map = vector<vector<pair<bool,clu_info>>>(360);
     outer_clu_phi_map = vector<vector<pair<bool,clu_info>>>(360);
 
-    mega_track_finder -> ClearEvt();
+    // mega_track_finder -> ClearEvt();
 
     // note : this is the distribution for full run
     // line_breakdown_gaus_ratio_hist -> Reset("ICESM");

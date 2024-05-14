@@ -18,7 +18,7 @@
 class CheckEvtXY
 {
     public:
-        CheckEvtXY(string mother_folder_directory, string input_file_list, string out_folder_directory, std::pair<double, double> beam_origin);
+        CheckEvtXY(string mother_folder_directory, string input_file_list, string out_folder_directory, std::pair<double, double> beam_origin, int NClus_cut_label);
         // virtual ~CheckEvtXY();
         
         void Prepare_info();
@@ -45,6 +45,7 @@ class CheckEvtXY
         string input_file_list;
         string out_folder_directory;
         ReadEvtXY_Chain * data_in;
+        int NClus_cut_label;
 
         void Init(); 
 };

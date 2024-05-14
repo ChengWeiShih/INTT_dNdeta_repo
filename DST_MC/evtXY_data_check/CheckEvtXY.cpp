@@ -1,7 +1,7 @@
 #include "CheckEvtXY.h"
 
-CheckEvtXY::CheckEvtXY(string mother_folder_directory, string input_file_list, string out_folder_directory, std::pair<double, double> beam_origin)
-: mother_folder_directory(mother_folder_directory), input_file_list(input_file_list), out_folder_directory(out_folder_directory), beam_origin(beam_origin)
+CheckEvtXY::CheckEvtXY(string mother_folder_directory, string input_file_list, string out_folder_directory, std::pair<double, double> beam_origin, int NClus_cut_label)
+: mother_folder_directory(mother_folder_directory), input_file_list(input_file_list), out_folder_directory(out_folder_directory), beam_origin(beam_origin), NClus_cut_label(NClus_cut_label)
 {
     SetsPhenixStyle();
     Init();
@@ -44,8 +44,13 @@ void CheckEvtXY::Init()
     vtxXY_2D -> GetXaxis() -> SetTitle("X axis [mm]");
     vtxXY_2D -> GetYaxis() -> SetTitle("Y axis [mm]");
     
-    vtxX_bco_graph = new TGraph(); vtxX_bco_graph -> Set(0);
-    vtxY_bco_graph = new TGraph(); vtxY_bco_graph -> Set(0);
+    vtxX_bco_graph = new TGraph(); 
+    vtxX_bco_graph -> Set(0);
+    vtxX_bco_graph -> GetXaxis() -> SetNdivisions(505);
+
+    vtxY_bco_graph = new TGraph(); 
+    vtxY_bco_graph -> Set(0);
+    vtxY_bco_graph -> GetXaxis() -> SetNdivisions(505);
 
     ltx = new TLatex();
     ltx->SetNDC();
@@ -99,7 +104,7 @@ void CheckEvtXY::Print_plots()
     c1 -> cd();
     vtxX_1D -> Draw("hist");
     ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} Work-in-progress"));
-    ltx_warning->DrawLatex(0.95, 0.88, Form("#color[2]{The data used in the plot is not produced by F4A, will be replaced in two weeks}"));
+    // ltx_warning->DrawLatex(0.95, 0.88, Form("#color[2]{The data used in the plot is not produced by F4A, will be replaced in two weeks}"));
 
     gaus_fit_MC -> SetParameters(vtxX_1D -> GetBinContent( vtxX_1D -> GetMaximumBin() ), vtxX_1D -> GetBinCenter( vtxX_1D -> GetMaximumBin() ), 0.05, 0);
     gaus_fit_MC -> SetParLimits(0,0,100000);  // note : size 
@@ -109,7 +114,7 @@ void CheckEvtXY::Print_plots()
     gaus_fit_MC -> SetRange( gaus_fit_MC->GetParameter(1) - double(gaus_fit_MC->GetParameter(2)) * 2.5, gaus_fit_MC->GetParameter(1) + double(gaus_fit_MC->GetParameter(2)) * 2.5 ); 
     gaus_fit_MC -> Draw("lsame");
 
-    draw_text -> DrawLatex(0.21, 0.84, Form("INTT NClus > 3000"));
+    draw_text -> DrawLatex(0.21, 0.84, Form("INTT NClus > %i", NClus_cut_label));
     draw_text -> DrawLatex(0.21, 0.71, Form("Gaus mean  : %.4f mm",gaus_fit_MC -> GetParameter(1)));
     draw_text -> DrawLatex(0.21, 0.67, Form("Gaus width : %.4f mm",fabs(gaus_fit_MC -> GetParameter(2))));
     c1 -> Print(Form("%s/vtxX_1D.pdf",out_folder_directory.c_str()));
@@ -119,7 +124,7 @@ void CheckEvtXY::Print_plots()
     c1 -> cd();
     vtxY_1D -> Draw("hist");
     ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} Work-in-progress"));
-    ltx_warning->DrawLatex(0.95, 0.88, Form("#color[2]{The data used in the plot is not produced by F4A, will be replaced in two weeks}"));
+    // ltx_warning->DrawLatex(0.95, 0.88, Form("#color[2]{The data used in the plot is not produced by F4A, will be replaced in two weeks}"));
 
     gaus_fit_MC -> SetParameters(vtxY_1D -> GetBinContent( vtxY_1D -> GetMaximumBin() ), vtxY_1D -> GetBinCenter( vtxY_1D -> GetMaximumBin() ), 0.05, 0);
     gaus_fit_MC -> SetParLimits(0,0,100000);  // note : size 
@@ -129,7 +134,7 @@ void CheckEvtXY::Print_plots()
     gaus_fit_MC -> SetRange( gaus_fit_MC->GetParameter(1) - double(gaus_fit_MC->GetParameter(2)) * 2.5, gaus_fit_MC->GetParameter(1) + double(gaus_fit_MC->GetParameter(2)) * 2.5 ); 
     gaus_fit_MC -> Draw("lsame");
     
-    draw_text -> DrawLatex(0.21, 0.84, Form("INTT NClus > 3000"));
+    draw_text -> DrawLatex(0.21, 0.84, Form("INTT NClus > %i", NClus_cut_label));
     draw_text -> DrawLatex(0.21, 0.71, Form("Gaus mean  : %.4f mm",gaus_fit_MC -> GetParameter(1)));
     draw_text -> DrawLatex(0.21, 0.67, Form("Gaus width : %.4f mm",fabs(gaus_fit_MC -> GetParameter(2))));
     c1 -> Print(Form("%s/vtxY_1D.pdf",out_folder_directory.c_str()));
@@ -139,8 +144,8 @@ void CheckEvtXY::Print_plots()
     c1 -> cd();
     vtxXY_2D -> Draw("colz");
     ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} Work-in-progress"));
-    ltx_warning->DrawLatex(0.95, 0.88, Form("#color[2]{The data used in the plot is not produced by F4A, will be replaced in two weeks}"));
-    draw_text -> DrawLatex(0.21, 0.84, Form("INTT NClus > 3000"));
+    // ltx_warning->DrawLatex(0.95, 0.88, Form("#color[2]{The data used in the plot is not produced by F4A, will be replaced in two weeks}"));
+    draw_text -> DrawLatex(0.21, 0.84, Form("INTT NClus > %i", NClus_cut_label));
     c1 -> Print(Form("%s/vtxXY_2D.pdf",out_folder_directory.c_str()));
     c1 -> Clear();
 
@@ -148,8 +153,8 @@ void CheckEvtXY::Print_plots()
     c1 -> cd();
     vtxX_eID_2D -> Draw("colz");
     ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} Work-in-progress"));
-    ltx_warning->DrawLatex(0.95, 0.88, Form("#color[2]{The data used in the plot is not produced by F4A, will be replaced in two weeks}"));
-    draw_text -> DrawLatex(0.21, 0.84, Form("INTT NClus > 3000"));
+    // ltx_warning->DrawLatex(0.95, 0.88, Form("#color[2]{The data used in the plot is not produced by F4A, will be replaced in two weeks}"));
+    draw_text -> DrawLatex(0.21, 0.84, Form("INTT NClus > %i", NClus_cut_label));
     c1 -> Print(Form("%s/vtxX_eID_2D.pdf",out_folder_directory.c_str()));
     c1 -> Clear();
 
@@ -157,36 +162,36 @@ void CheckEvtXY::Print_plots()
     c1 -> cd();
     vtxY_eID_2D -> Draw("colz");
     ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} Work-in-progress"));
-    ltx_warning->DrawLatex(0.95, 0.88, Form("#color[2]{The data used in the plot is not produced by F4A, will be replaced in two weeks}"));
-    draw_text -> DrawLatex(0.21, 0.84, Form("INTT NClus > 3000"));
+    // ltx_warning->DrawLatex(0.95, 0.88, Form("#color[2]{The data used in the plot is not produced by F4A, will be replaced in two weeks}"));
+    draw_text -> DrawLatex(0.21, 0.84, Form("INTT NClus > %i", NClus_cut_label));
     c1 -> Print(Form("%s/vtxY_eID_2D.pdf",out_folder_directory.c_str()));
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     c1 -> cd();
-    vtxY_bco_graph -> SetMarkerStyle(20);
-    vtxY_bco_graph -> SetMarkerSize(0.01);
+    vtxX_bco_graph -> SetMarkerStyle(20);
+    vtxX_bco_graph -> SetMarkerSize(0.1);
     vtxX_bco_graph -> Draw("AP");
     vtxX_bco_graph -> GetXaxis() -> SetTitle("bco_full");
     vtxX_bco_graph -> GetYaxis() -> SetTitle("vtxX [mm]");
     vtxX_bco_graph -> GetYaxis() -> SetRangeUser(vtxX_1D->GetXaxis()->GetXmin(), vtxX_1D->GetXaxis()->GetXmax());
     ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} Work-in-progress"));
-    ltx_warning->DrawLatex(0.95, 0.88, Form("#color[2]{The data used in the plot is not produced by F4A, will be replaced in two weeks}"));
-    draw_text -> DrawLatex(0.21, 0.84, Form("INTT NClus > 3000"));
+    // ltx_warning->DrawLatex(0.95, 0.88, Form("#color[2]{The data used in the plot is not produced by F4A, will be replaced in two weeks}"));
+    draw_text -> DrawLatex(0.21, 0.84, Form("INTT NClus > %i", NClus_cut_label));
     c1 -> Print(Form("%s/vtxX_bco_graph.pdf",out_folder_directory.c_str()));
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     c1 -> cd();
     vtxY_bco_graph -> SetMarkerStyle(20);
-    vtxY_bco_graph -> SetMarkerSize(0.01);
+    vtxY_bco_graph -> SetMarkerSize(0.1);
     vtxY_bco_graph -> Draw("AP");
     vtxY_bco_graph -> GetXaxis() -> SetTitle("bco_full");
     vtxY_bco_graph -> GetYaxis() -> SetTitle("vtxY [mm]");
     vtxY_bco_graph -> GetYaxis() -> SetRangeUser(vtxY_1D->GetXaxis()->GetXmin(), vtxY_1D->GetXaxis()->GetXmax());
     ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} Work-in-progress"));
-    ltx_warning->DrawLatex(0.95, 0.88, Form("#color[2]{The data used in the plot is not produced by F4A, will be replaced in two weeks}"));
-    draw_text -> DrawLatex(0.21, 0.84, Form("INTT NClus > 3000"));
+    // ltx_warning->DrawLatex(0.95, 0.88, Form("#color[2]{The data used in the plot is not produced by F4A, will be replaced in two weeks}"));
+    draw_text -> DrawLatex(0.21, 0.84, Form("INTT NClus > %i", NClus_cut_label));
     c1 -> Print(Form("%s/vtxY_bco_graph.pdf",out_folder_directory.c_str()));
     c1 -> Clear();
 

@@ -37,7 +37,19 @@ class INTTXYvtx {
     public:
         INTTXYvtx(string run_type, string out_folder_directory, pair<double,double> beam_origin, int geo_mode_id, double phi_diff_cut = 0.11, pair<double, double> DCA_cut = {-1,1}, int N_clu_cutl = 20, int N_clu_cut = 10000, bool draw_event_display = true, double peek = 3.32405, double angle_diff_new_l = 0.0, double angle_diff_new_r = 3, bool print_message_opt = true);
         INTTXYvtx(string run_type, string out_folder_directory);
-        void ProcessEvt(int event_i, vector<clu_info> temp_sPH_inner_nocolumn_vec, vector<clu_info> temp_sPH_outer_nocolumn_vec, vector<vector<double>> temp_sPH_nocolumn_vec, vector<vector<double>> temp_sPH_nocolumn_rz_vec, int NvtxMC, double TrigZvtxMC, bool PhiCheckTag, Long64_t bco_full);
+        void ProcessEvt(
+            int event_i, 
+            vector<clu_info> temp_sPH_inner_nocolumn_vec, 
+            vector<clu_info> temp_sPH_outer_nocolumn_vec, 
+            vector<vector<double>> temp_sPH_nocolumn_vec, 
+            vector<vector<double>> temp_sPH_nocolumn_rz_vec, 
+            int NvtxMC, 
+            double TrigZvtxMC, 
+            bool PhiCheckTag, 
+            Long64_t bco_full,
+            int is_min_bias, // note : for data and MC
+            int is_min_bias_wozdc // note : for data only 
+        );
         virtual void ClearEvt();
         virtual void PrintPlots();
         virtual void EndRun();
@@ -570,7 +582,9 @@ void INTTXYvtx::ProcessEvt(
     int NvtxMC,
     double TrigZvtxMC,
     bool PhiCheckTag,
-    Long64_t bco_full
+    Long64_t bco_full,
+    int is_min_bias,
+    int is_min_bias_wozdc
 )
 {
     if (event_i%10000 == 0) {cout<<"In INTTXYvtx class, running event : "<<event_i<<endl;}
@@ -580,6 +594,10 @@ void INTTXYvtx::ProcessEvt(
     // note : the Move these two in the beginning of the function, in order to avoid those event-reject cuts
     N_cluster_correlation -> Fill(temp_sPH_inner_nocolumn_vec.size(),temp_sPH_outer_nocolumn_vec.size());
     N_cluster_correlation_close -> Fill(temp_sPH_inner_nocolumn_vec.size(),temp_sPH_outer_nocolumn_vec.size());
+
+    // todo : for the data, the is_min_bias_wozdc is used
+    if (run_type == "MC" && is_min_bias_wozdc == 0) {return; cout<<"In INTTXYvtx class, MC, not min bias event"<<endl;}
+    if (run_type != "MC" && is_min_bias_wozdc == 0) {return; cout<<"In INTTXYvtx class, data, not min bias event"<<endl;}
 
     if (total_NClus < zvtx_cal_require) {return; cout<<"return confirmation"<<endl;}   
     
@@ -1432,60 +1450,60 @@ void INTTXYvtx::PrintPlotsVTXxy(string sub_out_folder_name, int print_option)
 {
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     angle_correlation -> Draw("colz0");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/angle_correlation.pdf", sub_out_folder_name.c_str()));
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     angle_diff_DCA_dist -> Draw("colz0");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/angle_diff_DCA_dist.pdf", sub_out_folder_name.c_str()));
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     angle_diff -> SetMinimum(0);
     angle_diff -> Draw("hist");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/angle_diff.pdf", sub_out_folder_name.c_str()));
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     angle_diff_inner_phi -> Draw("colz0");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/angle_diff_inner_phi.pdf", sub_out_folder_name.c_str()));
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     angle_diff_outer_phi -> Draw("colz0");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/angle_diff_outer_phi.pdf", sub_out_folder_name.c_str()));
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     DCA_point -> Draw("colz0");
-    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s, peak : %f", plot_text.c_str(), peek));
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s, peak : %f", plot_text.c_str(), peek));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/DCA_point.pdf", sub_out_folder_name.c_str()));
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     DCA_distance_inner_phi -> Draw("colz0");
-    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s, peak : %f", plot_text.c_str(), peek));
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s, peak : %f", plot_text.c_str(), peek));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/DCA_distance_inner_phi.pdf", sub_out_folder_name.c_str()));
     c1 -> Clear(); 
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     DCA_distance_outer_phi -> Draw("colz0");
-    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s, peak : %f", plot_text.c_str(), peek));
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s, peak : %f", plot_text.c_str(), peek));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/DCA_distance_outer_phi.pdf", sub_out_folder_name.c_str()));
     c1 -> Clear(); 
     
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     DCA_distance -> Draw("hist");
-    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s, peak : %f", plot_text.c_str(), peek));
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s, peak : %f", plot_text.c_str(), peek));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/DCA_distance.pdf", sub_out_folder_name.c_str()));
     c1 -> Clear(); 
 
@@ -1498,8 +1516,8 @@ void INTTXYvtx::PrintPlotsVTXxy(string sub_out_folder_name, int print_option)
     // cos_fit -> Draw("l same");
     // gaus_fit -> Draw("l same");
     horizontal_fit_inner -> Draw("l same");
-    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s, peak : %f", plot_text.c_str(), peek));
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s, peak : %f", plot_text.c_str(), peek));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     draw_text -> DrawLatex(0.25, 0.84, Form("#color[2]{Assumed vertex: %.3f mm, %.3f mm}", current_vtxX, current_vtxY));
     // draw_text -> DrawLatex(0.25, 0.80, Form("#color[2]{Fit: -%.2f cos(%.2f(x - %.2f)) + %.2f}", cos_fit -> GetParameter(0), cos_fit -> GetParameter(1), cos_fit -> GetParameter(2), cos_fit -> GetParameter(3)));
     draw_text -> DrawLatex(0.25, 0.80, Form("#color[2]{Pol0 fit chi2/NDF: %.3f, fit error: %.3f}", horizontal_fit_inner -> GetChisquare() / double(horizontal_fit_inner -> GetNDF()), horizontal_fit_inner->GetParError(0)));
@@ -1514,8 +1532,8 @@ void INTTXYvtx::PrintPlotsVTXxy(string sub_out_folder_name, int print_option)
     DCA_distance_outer_phi_peak -> Draw("colz0");
     DCA_distance_outer_phi_peak_profile -> Draw("same");
     horizontal_fit_outer -> Draw("l same");
-    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s, peak : %f", plot_text.c_str(), peek));
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s, peak : %f", plot_text.c_str(), peek));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     draw_text -> DrawLatex(0.25, 0.80, Form("#color[2]{Assumed vertex: %.3f mm, %.3f mm}", current_vtxX, current_vtxY));
     c1 -> Print(Form("%s/DCA_distance_outer_phi_peak.pdf", sub_out_folder_name.c_str()));
     c1 -> Clear(); 
@@ -1523,29 +1541,29 @@ void INTTXYvtx::PrintPlotsVTXxy(string sub_out_folder_name, int print_option)
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     DCA_distance_inner_X -> Draw("colz0");
-    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s, peak : %f", plot_text.c_str(), peek));
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s, peak : %f", plot_text.c_str(), peek));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/DCA_distance_inner_X.pdf", sub_out_folder_name.c_str()));
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     DCA_distance_inner_Y -> Draw("colz0");
-    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s, peak : %f", plot_text.c_str(), peek));
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s, peak : %f", plot_text.c_str(), peek));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/DCA_distance_inner_Y.pdf", sub_out_folder_name.c_str()));
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     DCA_distance_outer_X -> Draw("colz0");
-    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s, peak : %f", plot_text.c_str(), peek));
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s, peak : %f", plot_text.c_str(), peek));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/DCA_distance_outer_X.pdf", sub_out_folder_name.c_str()));
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     DCA_distance_outer_Y -> Draw("colz0");
-    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s, peak : %f", plot_text.c_str(), peek));
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s, peak : %f", plot_text.c_str(), peek));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/DCA_distance_outer_Y.pdf", sub_out_folder_name.c_str()));
     c1 -> Clear();
 
@@ -1553,8 +1571,8 @@ void INTTXYvtx::PrintPlotsVTXxy(string sub_out_folder_name, int print_option)
     angle_diff_new -> SetMinimum(0);
     angle_diff_new -> Draw("hist");
     angle_diff_new_bkg_remove -> Draw("hist same");
-    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s, peak : %f", plot_text.c_str(), peek));
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s, peak : %f", plot_text.c_str(), peek));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     draw_text -> DrawLatex(0.4, 0.80, Form("#color[2]{Dist. StdDev: %.4f}", angle_diff_new_bkg_remove->GetStdDev()));
     c1 -> Print(Form("%s/angle_diff_new.pdf", sub_out_folder_name.c_str()));
     c1 -> Clear();
@@ -1567,8 +1585,8 @@ void INTTXYvtx::PrintPlotsVTXxy(string sub_out_folder_name, int print_option)
     angle_diff_inner_phi_peak_profile -> Draw("same");
     horizontal_fit_angle_diff_inner -> Draw("l same");
     // gaus_fit_angle_diff -> Draw("lsame");
-    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s, peak : %f", plot_text.c_str(), peek));
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s, peak : %f", plot_text.c_str(), peek));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     draw_text -> DrawLatex(0.25, 0.84, Form("#color[2]{Assumed vertex: %.3f mm, %.3f mm}", current_vtxX, current_vtxY));
     c1 -> Print(Form("%s/angle_diff_inner_phi_peak.pdf", sub_out_folder_name.c_str()));
     c1 -> Clear(); 
@@ -1580,8 +1598,8 @@ void INTTXYvtx::PrintPlotsVTXxy(string sub_out_folder_name, int print_option)
     angle_diff_outer_phi_peak -> Draw("colz0");
     angle_diff_outer_phi_peak_profile -> Draw("same");
     horizontal_fit_angle_diff_outer -> Draw("l same");
-    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s, peak : %f", plot_text.c_str(), peek));
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s, peak : %f", plot_text.c_str(), peek));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     draw_text -> DrawLatex(0.25, 0.84, Form("#color[2]{Assumed vertex: %.3f mm, %.3f mm}", current_vtxX, current_vtxY));
     c1 -> Print(Form("%s/angle_diff_outer_phi_peak.pdf", sub_out_folder_name.c_str()));
     c1 -> Clear(); 
@@ -2023,7 +2041,7 @@ void INTTXYvtx::DrawTGraphErrors(vector<double> x_vec, vector<double> y_vec, vec
     if (plot_name.size() == 4){g -> Draw(plot_name[3].c_str());}
     else {g -> Draw("AP");}
 
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/%s.pdf", output_directory.c_str(), plot_name[0].c_str()));
     c1 -> Clear();
     g -> Delete();
@@ -2059,7 +2077,7 @@ void INTTXYvtx::Draw2TGraph(vector<double> x1_vec, vector<double> y1_vec, vector
     legend -> AddEntry(g1, "Tested vertex candidates", "p");
     legend -> AddEntry(g2, "Better performed candidates", "p");
     legend -> Draw("same");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/%s.pdf", output_directory.c_str(), plot_name[0].c_str()));
     c1 -> Clear();
     g1 -> Delete();
@@ -2082,7 +2100,7 @@ void INTTXYvtx::DrawTH2F(TH2F * hist_in, string output_directory, vector<string>
     hist_in -> Draw("colz0");
 
 
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/%s.pdf", output_directory.c_str(), plot_name[0].c_str()));
     c1 -> Clear();
 }
@@ -2300,7 +2318,7 @@ vector<pair<double,double>> INTTXYvtx::FillLine_FindVertex(pair<double,double> w
         // draw_text -> DrawLatex(0.21, 0.71+0.13, Form("Vertex of the Run: %.3f mm, %.3f mm", reco_vtx_x, reco_vtx_y));
         // draw_text -> DrawLatex(0.21, 0.67+0.13, Form("Vertex error: %.3f mm, %.3f mm", xy_hist_bkgrm->GetMeanError(1), xy_hist_bkgrm->GetMeanError(2)));
         // reco_vertex_gr -> Draw("p same");
-        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
         c1 -> Print(Form("%s/Run_xy_hist.pdf",out_folder_directory.c_str()));
         c1 -> Clear();
 
@@ -2309,7 +2327,7 @@ vector<pair<double,double>> INTTXYvtx::FillLine_FindVertex(pair<double,double> w
         draw_text -> DrawLatex(0.21, 0.71+0.13, Form("Vertex of the Run: %.4f mm, %.4f mm", reco_vtx_x, reco_vtx_y));
         draw_text -> DrawLatex(0.21, 0.67+0.13, Form("Vertex error: %.4f mm, %.4f mm", xy_hist_bkgrm->GetMeanError(1), xy_hist_bkgrm->GetMeanError(2)));
         reco_vertex_gr -> Draw("p same");
-        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
         c1 -> Print(Form("%s/Run_xy_hist_bkgrm.pdf",out_folder_directory.c_str()));
         c1 -> Clear();
 

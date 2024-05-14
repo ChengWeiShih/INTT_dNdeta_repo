@@ -1,5 +1,7 @@
 #include <iostream>
 #include <fstream>
+#include <filesystem>
+#include <cstdlib>
 using namespace std;
 
 #include <TFile.h>
@@ -86,10 +88,19 @@ int main(int argc, char *argv[])
 
     // string input_directory = "/sphenix/user/ChengWei/sPH_dNdeta/HIJING_ana398_xvtx-0p04cm_yvtx0p24cm_zvtx-20cm_dummyAlignParams/TrackletReco_condor";
     // string input_file_list = "file_list.txt";
-    string output_directory = input_directory + "/merged_file";
+    string output_directory = input_directory + "/merged_file_folder";
     // string output_file_name = "merged_hist.root";
 
-    system(Form("mkdir %s", output_directory.c_str()));
+    if(std::filesystem::exists(Form("%s",output_directory.c_str())) == false){
+        system(Form("mkdir %s", output_directory.c_str()));
+        cout<<"----------- check folder exists -----------"<<endl;
+        system(Form("ls %s", output_directory.c_str()));
+    }
+    else 
+    {
+        cout<<"----------- folder exists already -----------"<<endl;
+        system(Form("ls %s", output_directory.c_str()));
+    }
 
     vector<string> file_list = read_list((input_directory + "/" + input_file_list).c_str());
     map<string, TFile*> TFile_in_map; TFile_in_map.clear();

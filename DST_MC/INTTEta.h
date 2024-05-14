@@ -5,10 +5,28 @@
 #include "MegaTrackFinder.h"
 #include "ana_map_folder/ana_map_v1.h"
 
+// todo : if the centrality bin or the eta and z regions are changed, modify the "ana_map_v1.h" first,
+// todo : and change the following "namespace" name
+namespace ana_map_version = ANA_MAP_V3;
+
 class INTTEta : public INTTXYvtxEvt
 {
     public:
-        INTTEta(string run_type, string out_folder_directory, pair<double,double> beam_origin, int geo_mode_id, double phi_diff_cut = 0.11, pair<double, double> DCA_cut = {-1,1}, int N_clu_cutl = 20, int N_clu_cut = 10000, bool draw_event_display = true, double peek = 3.32405, double angle_diff_new_l = 0.0, double angle_diff_new_r = 3, bool print_message_opt = true):
+        INTTEta(
+            string run_type, 
+            string out_folder_directory, 
+            pair<double,double> beam_origin, 
+            int geo_mode_id, 
+            double phi_diff_cut = 0.11, 
+            pair<double, double> DCA_cut = {-1,1}, 
+            int N_clu_cutl = 20, 
+            int N_clu_cut = 10000, 
+            bool draw_event_display = true, 
+            double peek = 3.32405, 
+            double angle_diff_new_l = 0.0, 
+            double angle_diff_new_r = 3, 
+            bool print_message_opt = true
+        ):
         INTTXYvtxEvt(run_type, out_folder_directory, beam_origin, geo_mode_id, phi_diff_cut, DCA_cut, N_clu_cutl, N_clu_cut, draw_event_display, peek, angle_diff_new_l, angle_diff_new_r, print_message_opt, 2.5, 9)
         {
             track_cluster_ratio_1D.clear();
@@ -40,6 +58,7 @@ class INTTEta : public INTTXYvtxEvt
             outer_used_clu.clear();
 
             coarse_eta_z_2D_MC.clear();
+            coarse_eta_z_2D_fulleta_MC.clear();
             coarse_Reco_SignalNTracklet_Single_eta_z_2D.clear();
             coarse_Reco_SignalNTracklet_Multi_eta_z_2D.clear();
 
@@ -109,7 +128,20 @@ class INTTEta : public INTTXYvtxEvt
             return;
         };
         
-        void ProcessEvt(int event_i, vector<clu_info> temp_sPH_inner_nocolumn_vec, vector<clu_info> temp_sPH_outer_nocolumn_vec, vector<vector<double>> temp_sPH_nocolumn_vec, vector<vector<double>> temp_sPH_nocolumn_rz_vec, int NvtxMC, vector<double> TrigvtxMC, bool PhiCheckTag, Long64_t bco_full, pair<double,double> evt_z, int centrality_bin, vector<vector<float>> true_track_info); 
+        void ProcessEvt(
+            int event_i, 
+            vector<clu_info> temp_sPH_inner_nocolumn_vec, 
+            vector<clu_info> temp_sPH_outer_nocolumn_vec, 
+            vector<vector<double>> temp_sPH_nocolumn_vec, 
+            vector<vector<double>> temp_sPH_nocolumn_rz_vec, 
+            int NvtxMC, 
+            vector<double> TrigvtxMC, 
+            bool PhiCheckTag, 
+            Long64_t bco_full, 
+            pair<double,double> evt_z, 
+            int centrality_bin, 
+            vector<vector<float>> true_track_info
+        ); 
         // void ProcessEvtMC(int event_i, vector<float> true_track_info, vector<double> TrigvtxMC);
         void ClearEvt() override;
         void PrintPlots() override;
@@ -242,24 +274,15 @@ class INTTEta : public INTTXYvtxEvt
         vector<int> out_track_eta_i;
         vector<double> out_track_delta_phi_d;
 
-        // todo : if the centrality bin or the eta and z regions are changed, modify the "ana_map_v1.h" first,
-        // todo : and change the following "namespace" name
-        map<int,int> centrality_map = ANA_MAP_V2::centrality_map;
-        
         TH1F * eta_region_hist;
-        // todo : if the centrality bin or the eta and z regions are changed, modify the "ana_map_v1.h" first,
-        // todo : and change the following "namespace" name
-        vector<string> centrality_region = ANA_MAP_V2::centrality_region;
-        
-        // todo : if the centrality bin or the eta and z regions are changed, modify the "ana_map_v1.h" first,
-        // todo : and change the following "namespace" name
+
+        map<int,int> centrality_map = ana_map_version::centrality_map;
+        vector<string> centrality_region = ana_map_version::centrality_region;
         // note : the following two vectors tell the region of the eta and z, including the edges in both sides.
         // note : so when talking about the number of bins, we have to do size() - 1
-        vector<double> eta_region = ANA_MAP_V2::eta_region;
-
-        // todo : if the centrality bin or the eta and z regions are changed, modify the "ana_map_v1.h" first,
-        // todo : and change the following "namespace" name
-        vector<double> z_region = ANA_MAP_V2::z_region;
+        vector<double> eta_region = ana_map_version::eta_region;
+        vector<double> z_region = ana_map_version::z_region;
+        double signal_region = ana_map_version::signal_region; // note : the signal region of the delta phi distribution, unit : degree
 
         // note : when filling in a z-eta pair, TH2F returns a int, we have a function to convert that number into the index position in X and Y
         // note : Once we have the position index in X and Y, we then convert the X and Y into the index for 1D array
@@ -269,14 +292,14 @@ class INTTEta : public INTTXYvtxEvt
 
         TH2F * coarse_eta_z_map; // note : the reference of the eta and z binning setting
         vector<TH2F *> coarse_eta_z_2D_MC; // note : keep the number of true tracks in each eta and z bin, for each centrality
+        vector<TH2F *> coarse_eta_z_2D_fulleta_MC; // note : no selection on the true level tracks
         vector<TH2F *> coarse_Reco_SignalNTracklet_Single_eta_z_2D; // note : keep the counting of the N reco tracklet in the signal region for each eta, z and centrality bin. (for the single-cluster-used tracklet)
         vector<TH2F *> coarse_Reco_SignalNTracklet_Multi_eta_z_2D;  // note : // note : keep the counting of the N reco tracklet in the signal region for each eta, z and centrality bin. (for the multi-cluster-used tracklet)
         TH2F * MBin_Z_evt_hist_2D;    // note : keep the number of event as a function of the z vertex and centrality bin
         TH2F * MBin_Z_evt_hist_2D_MC; // note : keep the number of event as a function of the z vertex and centrality bin, but the zvtx info. is given by the MC, the true zvtx
         
 
-        // todo : change the single region cut here
-        double signal_region = 1.; // note : the signal region of the delta phi distribution, unit : degree
+        
         // todo : change the tight zvtx cut here 
         int tight_zvtx_bin = 6; // todo : it can be run by run dependent // note : select the bin that you want to have the quick result out
 
@@ -331,6 +354,11 @@ void INTTEta::InitHist()
         coarse_eta_z_2D_MC[i] -> GetXaxis() -> SetTitle("#eta");
         coarse_eta_z_2D_MC[i] -> GetYaxis() -> SetTitle("Z vertex [mm]");
         coarse_eta_z_2D_MC[i] -> GetXaxis() -> SetNdivisions(505);
+
+        coarse_eta_z_2D_fulleta_MC.push_back( new TH2F("","", eta_region.size() - 1, &eta_region[0], z_region.size() - 1, &z_region[0]) );
+        coarse_eta_z_2D_fulleta_MC[i] -> GetXaxis() -> SetTitle("#eta");
+        coarse_eta_z_2D_fulleta_MC[i] -> GetYaxis() -> SetTitle("Z vertex [mm]");
+        coarse_eta_z_2D_fulleta_MC[i] -> GetXaxis() -> SetNdivisions(505);
 
         coarse_Reco_SignalNTracklet_Single_eta_z_2D.push_back( new TH2F("","", eta_region.size() - 1, &eta_region[0], z_region.size() - 1, &z_region[0]) );
         coarse_Reco_SignalNTracklet_Single_eta_z_2D[i] -> GetXaxis() -> SetTitle("#eta");
@@ -979,7 +1007,21 @@ void INTTEta::print_evt_plot(int event_i, int NTrueTrack, int innerNClu, int out
 // note : this function is the new method, which means that we first put the cluster into a phi map, and then there are two for loops still, but we only check the certain range of the phi 
 // note : this function requires that one cluster can only be used once for single tracklet
 // note : so maybe there should be no background subtraction for this case
-void INTTEta::ProcessEvt(int event_i, vector<clu_info> temp_sPH_inner_nocolumn_vec, vector<clu_info> temp_sPH_outer_nocolumn_vec, vector<vector<double>> temp_sPH_nocolumn_vec, vector<vector<double>> temp_sPH_nocolumn_rz_vec, int NvtxMC, vector<double> TrigvtxMC, bool PhiCheckTag, Long64_t bco_full, pair<double,double> evt_z, int centrality_bin, vector<vector<float>> true_track_info){ // note : evt_z : {z, width}
+void INTTEta::ProcessEvt(
+    int event_i, 
+    vector<clu_info> temp_sPH_inner_nocolumn_vec, 
+    vector<clu_info> temp_sPH_outer_nocolumn_vec, 
+    vector<vector<double>> temp_sPH_nocolumn_vec, 
+    vector<vector<double>> temp_sPH_nocolumn_rz_vec, 
+    int NvtxMC, 
+    vector<double> TrigvtxMC, 
+    bool PhiCheckTag, 
+    Long64_t bco_full, 
+    pair<double,double> evt_z, 
+    int centrality_bin, 
+    vector<vector<float>> true_track_info
+)
+{ // note : evt_z : {z, width}
     return_tag = 0;
 
     if (event_i%100 == 0) {cout<<"In INTTEta class, running event : "<<event_i<<endl;}
@@ -1029,6 +1071,10 @@ void INTTEta::ProcessEvt(int event_i, vector<clu_info> temp_sPH_inner_nocolumn_v
         for (int track_i = 0; track_i < true_track_info.size(); track_i++)
         {
             if (true_track_info[track_i][2] == 111 || true_track_info[track_i][2] == 22 || abs(true_track_info[track_i][2]) == 2112){continue;}
+
+            // note : coarse eta and z binning, this is for the final dNdeta result
+            coarse_eta_z_2D_fulleta_MC[centrality_map[centrality_bin]]        -> Fill(true_track_info[track_i][0], TrigvtxMC[2]*10.);
+            coarse_eta_z_2D_fulleta_MC[coarse_eta_z_2D_fulleta_MC.size() - 1] -> Fill(true_track_info[track_i][0], TrigvtxMC[2]*10.);
 
             if (true_track_info[track_i][0] > INTT_eta_acceptance_l && true_track_info[track_i][0] < INTT_eta_acceptance_r)
             {
@@ -2198,6 +2244,12 @@ void INTTEta::EndRun()
     for (int i = 0; i < coarse_eta_z_2D_MC.size(); i++) 
     { 
         coarse_eta_z_2D_MC[i] -> Write(Form("NTrueTrack_MBin%i",i));
+    }
+
+    // note : 
+    for (int i = 0; i < coarse_eta_z_2D_fulleta_MC.size(); i++)
+    {
+        coarse_eta_z_2D_fulleta_MC[i] -> Write(Form("NTrueTrack_FullEta_MBin%i",i));
     }
 
     // note : the map for the eta-z reference
