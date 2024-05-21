@@ -35,6 +35,7 @@ class INTTEta : public INTTXYvtxEvt
             track_eta_phi_2D.clear();
             track_eta_z_2D.clear();
             dNdeta_1D_MC.clear();
+            dNdeta_1D_MC_edge_eta_cut.clear();
             final_dNdeta_1D.clear();
             final_dNdeta_1D_MC.clear();
             final_dNdeta_multi_1D.clear();
@@ -156,6 +157,7 @@ class INTTEta : public INTTXYvtxEvt
         vector<TH2F *> track_eta_z_2D; 
 
         vector<TH1F *> dNdeta_1D_MC;
+        vector<TH1F *> dNdeta_1D_MC_edge_eta_cut;
         vector<TH2F *> track_eta_z_2D_MC; 
 
         vector<TH1F *> track_delta_eta_1D;
@@ -282,6 +284,7 @@ class INTTEta : public INTTXYvtxEvt
         // note : so when talking about the number of bins, we have to do size() - 1
         vector<double> eta_region = ana_map_version::eta_region;
         vector<double> z_region = ana_map_version::z_region;
+        pair<double, double> selected_z_region_id = ana_map_version::selected_z_region_id;
         double signal_region = ana_map_version::signal_region; // note : the signal region of the delta phi distribution, unit : degree
 
         // note : when filling in a z-eta pair, TH2F returns a int, we have a function to convert that number into the index position in X and Y
@@ -386,8 +389,8 @@ void INTTEta::InitHist()
         dNdeta_1D[i] -> SetMarkerColor(TColor::GetColor("#1A3947"));
         dNdeta_1D[i] -> SetLineColor(TColor::GetColor("#1A3947"));
         dNdeta_1D[i] -> SetLineWidth(2);
-        dNdeta_1D[i] -> GetYaxis() -> SetTitle("dN_{ch}/d#eta");
-        dNdeta_1D[i] -> GetXaxis() -> SetTitle("#eta");
+        dNdeta_1D[i] -> GetYaxis() -> SetTitle("Entry");
+        dNdeta_1D[i] -> GetXaxis() -> SetTitle("N tracklet #eta");
         // dNdeta_1D[i] -> GetYaxis() -> SetRangeUser(0,50);
         dNdeta_1D[i] -> SetTitleSize(0.06, "X");
         dNdeta_1D[i] -> SetTitleSize(0.06, "Y");
@@ -402,8 +405,8 @@ void INTTEta::InitHist()
         dNdeta_1D_MC[i] -> SetMarkerColor(TColor::GetColor("#1A3947"));
         dNdeta_1D_MC[i] -> SetLineColor(TColor::GetColor("#1A3947"));
         dNdeta_1D_MC[i] -> SetLineWidth(2);
-        dNdeta_1D_MC[i] -> GetYaxis() -> SetTitle("dN_{ch}/d#eta");
-        dNdeta_1D_MC[i] -> GetXaxis() -> SetTitle("#eta");
+        dNdeta_1D_MC[i] -> GetYaxis() -> SetTitle("Entry");
+        dNdeta_1D_MC[i] -> GetXaxis() -> SetTitle("N track #eta");
         // dNdeta_1D_MC[i] -> GetYaxis() -> SetRangeUser(0,50);
         dNdeta_1D_MC[i] -> SetTitleSize(0.06, "X");
         dNdeta_1D_MC[i] -> SetTitleSize(0.06, "Y");
@@ -411,6 +414,22 @@ void INTTEta::InitHist()
         dNdeta_1D_MC[i] -> GetYaxis() -> SetTitleOffset (1.1);
         dNdeta_1D_MC[i] -> GetXaxis() -> CenterTitle(true);
         dNdeta_1D_MC[i] -> GetYaxis() -> CenterTitle(true);
+
+        dNdeta_1D_MC_edge_eta_cut.push_back(new TH1F("","",Eta_NBin, Eta_Min, Eta_Max));
+        dNdeta_1D_MC_edge_eta_cut[i] -> SetMarkerStyle(20);
+        dNdeta_1D_MC_edge_eta_cut[i] -> SetMarkerSize(0.8);
+        dNdeta_1D_MC_edge_eta_cut[i] -> SetMarkerColor(TColor::GetColor("#1A3947"));
+        dNdeta_1D_MC_edge_eta_cut[i] -> SetLineColor(TColor::GetColor("#1A3947"));
+        dNdeta_1D_MC_edge_eta_cut[i] -> SetLineWidth(2);
+        dNdeta_1D_MC_edge_eta_cut[i] -> GetYaxis() -> SetTitle("Entry");
+        dNdeta_1D_MC_edge_eta_cut[i] -> GetXaxis() -> SetTitle("N track #eta");
+        // dNdeta_1D_MC_edge_eta_cut[i] -> GetYaxis() -> SetRangeUser(0,50);
+        dNdeta_1D_MC_edge_eta_cut[i] -> SetTitleSize(0.06, "X");
+        dNdeta_1D_MC_edge_eta_cut[i] -> SetTitleSize(0.06, "Y");
+        dNdeta_1D_MC_edge_eta_cut[i] -> GetXaxis() -> SetTitleOffset (0.71);
+        dNdeta_1D_MC_edge_eta_cut[i] -> GetYaxis() -> SetTitleOffset (1.1);
+        dNdeta_1D_MC_edge_eta_cut[i] -> GetXaxis() -> CenterTitle(true);
+        dNdeta_1D_MC_edge_eta_cut[i] -> GetYaxis() -> CenterTitle(true);
 
         final_dNdeta_1D.push_back(new TH1F("","",eta_region.size() - 1, &eta_region[0]));
         final_dNdeta_1D[i] -> SetMarkerStyle(20);
@@ -687,7 +706,7 @@ void INTTEta::print_evt_plot(int event_i, int NTrueTrack, int innerNClu, int out
     evt_reco_track_gr_All -> GetXaxis() -> SetNdivisions(505);
     evt_reco_track_gr_All -> Draw("ap");
     evt_true_track_gr -> Draw("p same");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     draw_text -> DrawLatex(0.21, 0.90, Form("NTrueTrack: %i, innerNClu: %i, outerNClu: %i", NTrueTrack, innerNClu, outerNClu));
     draw_text -> DrawLatex(0.21, 0.85, Form("NReco_tracklet: %i", evt_reco_track_gr_All->GetN()));
     coord_line -> DrawLine(-3.5, 0, 3.5, 0);
@@ -702,7 +721,7 @@ void INTTEta::print_evt_plot(int event_i, int NTrueTrack, int innerNClu, int out
     evt_reco_track_gr_PhiLoose -> GetXaxis() -> SetNdivisions(505);
     evt_reco_track_gr_PhiLoose -> Draw("ap");
     evt_true_track_gr -> Draw("p same");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     draw_text -> DrawLatex(0.21, 0.90, Form("NTrueTrack: %i, innerNClu: %i, outerNClu: %i", NTrueTrack, innerNClu, outerNClu));
     draw_text -> DrawLatex(0.21, 0.85, Form("NReco_tracklet: %i", evt_reco_track_gr_PhiLoose->GetN()));
     coord_line -> DrawLine(-3.5, 0, 3.5, 0);
@@ -717,7 +736,7 @@ void INTTEta::print_evt_plot(int event_i, int NTrueTrack, int innerNClu, int out
     evt_reco_track_gr_Z -> GetXaxis() -> SetNdivisions(505);
     evt_reco_track_gr_Z -> Draw("ap");
     evt_true_track_gr -> Draw("p same");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     draw_text -> DrawLatex(0.21, 0.90, Form("NTrueTrack: %i, innerNClu: %i, outerNClu: %i", NTrueTrack, innerNClu, outerNClu));
     draw_text -> DrawLatex(0.21, 0.85, Form("NReco_tracklet: %i", evt_reco_track_gr_Z->GetN()));
     coord_line -> DrawLine(-3.5, 0, 3.5, 0);
@@ -732,7 +751,7 @@ void INTTEta::print_evt_plot(int event_i, int NTrueTrack, int innerNClu, int out
     evt_reco_track_gr_ZDCA -> GetXaxis() -> SetNdivisions(505);
     evt_reco_track_gr_ZDCA -> Draw("ap");
     evt_true_track_gr -> Draw("p same");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     draw_text -> DrawLatex(0.21, 0.90, Form("NTrueTrack: %i, innerNClu: %i, outerNClu: %i", NTrueTrack, innerNClu, outerNClu));
     draw_text -> DrawLatex(0.21, 0.85, Form("NReco_tracklet: %i", evt_reco_track_gr_ZDCA->GetN()));
     coord_line -> DrawLine(-3.5, 0, 3.5, 0);
@@ -747,7 +766,7 @@ void INTTEta::print_evt_plot(int event_i, int NTrueTrack, int innerNClu, int out
     evt_reco_track_gr_ZDCAPhi -> GetXaxis() -> SetNdivisions(505);
     evt_reco_track_gr_ZDCAPhi -> Draw("ap");
     evt_true_track_gr -> Draw("p same");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     draw_text -> DrawLatex(0.21, 0.90, Form("NTrueTrack: %i, innerNClu: %i, outerNClu: %i", NTrueTrack, innerNClu, outerNClu));
     draw_text -> DrawLatex(0.21, 0.85, Form("NReco_tracklet: %i", evt_reco_track_gr_ZDCAPhi->GetN()));
     coord_line -> DrawLine(-3.5, 0, 3.5, 0);
@@ -1076,11 +1095,21 @@ void INTTEta::ProcessEvt(
             coarse_eta_z_2D_fulleta_MC[centrality_map[centrality_bin]]        -> Fill(true_track_info[track_i][0], TrigvtxMC[2]*10.);
             coarse_eta_z_2D_fulleta_MC[coarse_eta_z_2D_fulleta_MC.size() - 1] -> Fill(true_track_info[track_i][0], TrigvtxMC[2]*10.);
 
+            if (TrigvtxMC[2]*10. > z_region[selected_z_region_id.first] && TrigvtxMC[2]*10. < z_region[selected_z_region_id.second])
+            {
+                dNdeta_1D_MC[centrality_map[centrality_bin]] -> Fill(true_track_info[track_i][0]);
+                dNdeta_1D_MC[dNdeta_1D_MC.size() - 1]        -> Fill(true_track_info[track_i][0]);
+            }
+
+
             if (true_track_info[track_i][0] > INTT_eta_acceptance_l && true_track_info[track_i][0] < INTT_eta_acceptance_r)
             {
                 // note : 1D, fine binning for a detailed check, full zvtx range 
-                dNdeta_1D_MC[centrality_map[centrality_bin]] -> Fill(true_track_info[track_i][0]);
-                dNdeta_1D_MC[dNdeta_1D_MC.size() - 1]        -> Fill(true_track_info[track_i][0]);
+                if (TrigvtxMC[2]*10. > z_region[selected_z_region_id.first] && TrigvtxMC[2]*10. < z_region[selected_z_region_id.second])
+                {
+                    dNdeta_1D_MC_edge_eta_cut[centrality_map[centrality_bin]]       -> Fill(true_track_info[track_i][0]);
+                    dNdeta_1D_MC_edge_eta_cut[dNdeta_1D_MC_edge_eta_cut.size() - 1] -> Fill(true_track_info[track_i][0]);
+                }
 
                 if (GetTH2BinXY(coarse_eta_z_map -> GetNbinsX(), coarse_eta_z_map -> GetNbinsY(), coarse_eta_z_map -> Fill(true_track_info[track_i][0], TrigvtxMC[2]*10.)).second == tight_zvtx_bin)
                 {
@@ -1382,8 +1411,12 @@ void INTTEta::ProcessEvt(
         // cout<<"test_5"<<endl;
         if (fabs(delta_phi) <= signal_region)
         {
-            dNdeta_1D[centrality_map[centrality_bin]] -> Fill(Get_eta_pair.second);
-            dNdeta_1D[dNdeta_1D.size() - 1]           -> Fill(Get_eta_pair.second);
+            if (evt_z.first > z_region[selected_z_region_id.first] && evt_z.first < z_region[selected_z_region_id.second])
+            {
+                dNdeta_1D[centrality_map[centrality_bin]] -> Fill(Get_eta_pair.second);
+                dNdeta_1D[dNdeta_1D.size() - 1]           -> Fill(Get_eta_pair.second);
+            }
+            
 
             track_eta_z_2D[centrality_map[centrality_bin]] -> Fill(Get_eta_pair.second, evt_z.first);
             track_eta_z_2D[track_eta_z_2D.size() - 1]      -> Fill(Get_eta_pair.second, evt_z.first);
@@ -1559,7 +1592,7 @@ void INTTEta::PrintPlots()
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     mega_track_finding_ratio_2D -> Draw("colz0");
     mega_track_finding_ratio_2D -> SetMinimum(0);
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print( Form("%s/mega_track_finding_ratio_2D.pdf", out_folder_directory.c_str()) );
     c1 -> Clear();
 
@@ -1567,42 +1600,42 @@ void INTTEta::PrintPlots()
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     cluster3_inner_track_eta_1D -> Draw("hist");
     cluster3_inner_track_eta_1D -> SetMinimum(0);
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print( Form("%s/cluster3_inner_track_eta_1D.pdf", out_folder_directory.c_str()) );
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     cluster3_outer_track_eta_1D -> Draw("hist");
     cluster3_outer_track_eta_1D -> SetMinimum(0);
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print( Form("%s/cluster3_outer_track_eta_1D.pdf", out_folder_directory.c_str()) );
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     mega_track_eta_1D -> Draw("hist");
     mega_track_eta_1D -> SetMinimum(0);
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print( Form("%s/mega_track_eta_1D.pdf", out_folder_directory.c_str()) );
     c1 -> Clear();
     
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     check_inner_layer_clu_phi_1D -> Draw("hist");
     check_inner_layer_clu_phi_1D -> SetMinimum(0);
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print( Form("%s/check_inner_layer_clu_phi_1D.pdf", out_folder_directory.c_str()) );
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     check_outer_layer_clu_phi_1D -> Draw("hist");
     check_outer_layer_clu_phi_1D -> SetMinimum(0);
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print( Form("%s/check_outer_layer_clu_phi_1D.pdf", out_folder_directory.c_str()) );
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     clu4_track_ReducedChi2_1D -> Draw("hist");
     clu4_track_ReducedChi2_1D -> SetMinimum(0);
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print( Form("%s/clu4_track_ReducedChi2_1D.pdf", out_folder_directory.c_str()) );
     c1 -> Clear();
 
@@ -1610,7 +1643,7 @@ void INTTEta::PrintPlots()
     clu3_track_ReducedChi2_1D -> Draw("hist");
     clu3_track_ReducedChi2_1D -> SetMinimum(0);
     clu3_track_ReducedChi2_1D -> SetMaximum(clu3_track_ReducedChi2_1D->GetBinContent(clu3_track_ReducedChi2_1D->GetMaximumBin())*1.3);
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     coord_line -> DrawLine(mega_track_finder->Get_performance_cut(),0,mega_track_finder->Get_performance_cut(),clu3_track_ReducedChi2_1D->GetBinContent(clu3_track_ReducedChi2_1D->GetMaximumBin())*1.3);
     c1 -> Print( Form("%s/clu3_track_ReducedChi2_1D.pdf", out_folder_directory.c_str()) );
     c1 -> Clear();
@@ -1623,7 +1656,7 @@ void INTTEta::PrintPlots()
     {
         c1 -> cd();
         track_cluster_ratio_1D[i] -> Draw("hist");
-        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
         draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s",centrality_region[i].c_str()));
         c1 -> Print(Form("%s/track_cluster_ratio_1D.pdf", out_folder_directory.c_str()));
         c1 -> Clear();    
@@ -1638,7 +1671,7 @@ void INTTEta::PrintPlots()
     {
         c1 -> cd();
         track_cluster_ratio_1D_MC[i] -> Draw("hist");
-        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
         draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s",centrality_region[i].c_str()));
         c1 -> Print(Form("%s/track_cluster_ratio_1D_MC.pdf", out_folder_directory.c_str()));
         c1 -> Clear();    
@@ -1646,33 +1679,33 @@ void INTTEta::PrintPlots()
     c1 -> Print( Form("%s/track_cluster_ratio_1D_MC.pdf)", out_folder_directory.c_str()) );
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
-    c1 -> Print( Form("%s/dNdeta_1D.pdf(", out_folder_directory.c_str()) );
-    for (int i = 0; i < dNdeta_1D.size(); i++)
-    {   
-        double N_correction_evt = (i == dNdeta_1D_MC.size() - 1) ? N_GoodEvent : N_GoodEvent_vec[i];
-        dNdeta_1D_MC[i] -> Scale(1./double(dNdeta_1D_MC[i] -> GetBinWidth(1) ));
-        dNdeta_1D_MC[i] -> Scale(1./double(N_correction_evt));
+    // c1 -> Print( Form("%s/dNdeta_1D.pdf(", out_folder_directory.c_str()) );
+    // for (int i = 0; i < dNdeta_1D.size(); i++)
+    // {   
+    //     double N_correction_evt = (i == dNdeta_1D_MC.size() - 1) ? N_GoodEvent : N_GoodEvent_vec[i];
+    //     dNdeta_1D_MC[i] -> Scale(1./double(dNdeta_1D_MC[i] -> GetBinWidth(1) ));
+    //     dNdeta_1D_MC[i] -> Scale(1./double(N_correction_evt));
         
-        dNdeta_1D[i] -> Scale(1./double(dNdeta_1D[i] -> GetBinWidth(1) ));
-        dNdeta_1D[i] -> Scale(1./double(N_correction_evt));
-        dNdeta_1D[i] -> GetYaxis() -> SetRangeUser(0,800);
-        dNdeta_1D[i] -> Draw("ep");
-        dNdeta_1D_MC[i] -> Draw("hist same");
-        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
-        draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s, inclusive Zvtx",centrality_region[i].c_str()));
-        draw_text -> DrawLatex(0.21, 0.86, Form("Nevt MC = Nevt reco: %.1f", N_correction_evt));
-        draw_text -> DrawLatex(0.21, 0.82, Form("MC entry : %.2f, tight entry : %.2f", dNdeta_1D_MC[i] -> Integral(), dNdeta_1D[i] -> Integral()));
-        c1 -> Print(Form("%s/dNdeta_1D.pdf", out_folder_directory.c_str()));
-        c1 -> Clear();    
-    }
-    c1 -> Print( Form("%s/dNdeta_1D.pdf)", out_folder_directory.c_str()) );
+    //     dNdeta_1D[i] -> Scale(1./double(dNdeta_1D[i] -> GetBinWidth(1) ));
+    //     dNdeta_1D[i] -> Scale(1./double(N_correction_evt));
+    //     dNdeta_1D[i] -> GetYaxis() -> SetRangeUser(0,800);
+    //     dNdeta_1D[i] -> Draw("ep");
+    //     dNdeta_1D_MC[i] -> Draw("hist same");
+    //     ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
+    //     draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s, inclusive Zvtx",centrality_region[i].c_str()));
+    //     draw_text -> DrawLatex(0.21, 0.86, Form("Nevt MC = Nevt reco: %.1f", N_correction_evt));
+    //     draw_text -> DrawLatex(0.21, 0.82, Form("MC entry : %.2f, tight entry : %.2f", dNdeta_1D_MC[i] -> Integral(), dNdeta_1D[i] -> Integral()));
+    //     c1 -> Print(Form("%s/dNdeta_1D.pdf", out_folder_directory.c_str()));
+    //     c1 -> Clear();    
+    // }
+    // c1 -> Print( Form("%s/dNdeta_1D.pdf)", out_folder_directory.c_str()) );
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     c1 -> Print( Form("%s/track_eta_phi_2D.pdf(", out_folder_directory.c_str()) );
     for (int i = 0; i < track_eta_phi_2D.size(); i++)
     {
         track_eta_phi_2D[i] -> Draw("colz0");
-        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
         draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s",centrality_region[i].c_str()));
         c1 -> Print(Form("%s/track_eta_phi_2D.pdf", out_folder_directory.c_str()));
         c1 -> Clear();    
@@ -1685,7 +1718,7 @@ void INTTEta::PrintPlots()
     {
         track_eta_z_2D[i] -> Draw("colz0");
         DrawEtaZGrid();
-        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
         draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s",centrality_region[i].c_str()));
         c1 -> Print(Form("%s/track_eta_z_2D.pdf", out_folder_directory.c_str()));
         c1 -> Clear();    
@@ -1698,7 +1731,7 @@ void INTTEta::PrintPlots()
     {
         track_delta_phi_1D[i] -> SetMinimum(0);
         track_delta_phi_1D[i] -> Draw("hist");
-        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
         draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s",centrality_region[i].c_str()));
         coord_line -> DrawLine(-1*phi_diff_cut, 0, -1 * phi_diff_cut, track_delta_phi_1D[i]->GetMaximum() * 1.1);
         coord_line -> DrawLine(phi_diff_cut, 0, phi_diff_cut, track_delta_phi_1D[i]->GetMaximum() * 1.1);
@@ -1713,7 +1746,7 @@ void INTTEta::PrintPlots()
     {
         track_delta_eta_1D[i] -> SetMinimum(0);
         track_delta_eta_1D[i] -> Draw("hist");
-        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
         draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s",centrality_region[i].c_str()));
         // coord_line -> DrawLine(-1*phi_diff_cut, 0, -1 * phi_diff_cut, track_delta_eta_1D[i]->GetMaximum() * 1.1);
         // coord_line -> DrawLine(phi_diff_cut, 0, phi_diff_cut, track_delta_eta_1D[i]->GetMaximum() * 1.1);
@@ -1728,7 +1761,7 @@ void INTTEta::PrintPlots()
     {
         track_delta_eta_1D_post[i] -> SetMinimum(0);
         track_delta_eta_1D_post[i] -> Draw("hist");
-        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
         draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s",centrality_region[i].c_str()));
         // coord_line -> DrawLine(-1*phi_diff_cut, 0, -1 * phi_diff_cut, track_delta_eta_1D_post[i]->GetMaximum() * 1.1);
         // coord_line -> DrawLine(phi_diff_cut, 0, phi_diff_cut, track_delta_eta_1D_post[i]->GetMaximum() * 1.1);
@@ -1743,7 +1776,7 @@ void INTTEta::PrintPlots()
     {
         track_DCA_distance[i] -> SetMinimum(0);
         track_DCA_distance[i] -> Draw("hist");
-        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
         draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s",centrality_region[i].c_str()));
         coord_line -> DrawLine(DCA_cut.first, 0, DCA_cut.first, track_DCA_distance[i]->GetMaximum() * 1.05);
         coord_line -> DrawLine(DCA_cut.second, 0, DCA_cut.second, track_DCA_distance[i]->GetMaximum() * 1.05);
@@ -1757,7 +1790,7 @@ void INTTEta::PrintPlots()
     for (int i = 0; i < track_phi_DCA_2D.size(); i++)
     {
         track_phi_DCA_2D[i] -> Draw("colz0");
-        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
         draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s",centrality_region[i].c_str()));
         
         coord_line -> DrawLine(track_phi_DCA_2D[i] -> GetXaxis() -> GetXmin(), DCA_cut.first, track_phi_DCA_2D[i] -> GetXaxis() -> GetXmax(), DCA_cut.first);
@@ -1775,7 +1808,7 @@ void INTTEta::PrintPlots()
     {
         track_ratio_1D[i] -> SetMinimum(0);
         track_ratio_1D[i] -> Draw("hist");
-        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
         draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s",centrality_region[i].c_str()));
         c1 -> Print(Form("%s/track_ratio_1D.pdf", out_folder_directory.c_str()));
         c1 -> Clear();    
@@ -1854,7 +1887,7 @@ void INTTEta::PrintPlots()
             coord_line -> DrawLine(-1*signal_region, 0, -1 * signal_region, final_track_delta_phi_1D[i][i1] -> GetBinContent(final_track_delta_phi_1D[i][i1] -> GetMaximumBin()) * 1.5);
             coord_line -> DrawLine(signal_region, 0, signal_region, final_track_delta_phi_1D[i][i1] -> GetBinContent(final_track_delta_phi_1D[i][i1] -> GetMaximumBin()) * 1.5);
             
-            ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+            ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
             draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s, #eta: %.2f ~ %.2f, Z: %.0f ~ %.0f mm",centrality_region[i].c_str(), eta_region_hist -> GetBinCenter(binID_X) - eta_region_hist -> GetBinWidth(binID_X)/2., eta_region_hist -> GetBinCenter(binID_X) + eta_region_hist -> GetBinWidth(binID_X)/2., coarse_eta_z_map -> GetYaxis() -> GetBinCenter(binID_Y) - coarse_eta_z_map -> GetYaxis() -> GetBinWidth(binID_Y)/2., coarse_eta_z_map -> GetYaxis() -> GetBinCenter(binID_Y) + coarse_eta_z_map -> GetYaxis() -> GetBinWidth(binID_Y)/2.));
             draw_text -> DrawLatex(0.21, 0.85, Form("MBin: %i, #eta bin: %i, Z bin: %i", i, binID_X, binID_Y));
             // draw_text -> DrawLatex(0.21, 0.85, Form("Guassian integral : %.2f", gaus_integral));
@@ -1937,7 +1970,7 @@ void INTTEta::PrintPlots()
             coord_line -> DrawLine(-1*signal_region, 0, -1 * signal_region, final_track_multi_delta_phi_1D[i][i1] -> GetBinContent(final_track_multi_delta_phi_1D[i][i1] -> GetMaximumBin()) * 1.5);
             coord_line -> DrawLine(signal_region, 0, signal_region, final_track_multi_delta_phi_1D[i][i1] -> GetBinContent(final_track_multi_delta_phi_1D[i][i1] -> GetMaximumBin()) * 1.5);
             
-            ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+            ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
             draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s, #eta: %.2f ~ %.2f, Z: %.0f ~ %.0f mm",centrality_region[i].c_str(), eta_region_hist -> GetBinCenter(binID_X) - eta_region_hist -> GetBinWidth(binID_X)/2., eta_region_hist -> GetBinCenter(binID_X) + eta_region_hist -> GetBinWidth(binID_X)/2., coarse_eta_z_map -> GetYaxis() -> GetBinCenter(binID_Y) - coarse_eta_z_map -> GetYaxis() -> GetBinWidth(binID_Y)/2., coarse_eta_z_map -> GetYaxis() -> GetBinCenter(binID_Y) + coarse_eta_z_map -> GetYaxis() -> GetBinWidth(binID_Y)/2.));
             draw_text -> DrawLatex(0.21, 0.85, Form("MBin: %i, #eta bin: %i, Z bin: %i", i, binID_X, binID_Y));
             // draw_text -> DrawLatex(0.21, 0.85, Form("Guassian integral : %.2f", gaus_integral));
@@ -1969,7 +2002,7 @@ void INTTEta::PrintPlots()
         final_dNdeta_1D[i] -> Draw("ep");
         final_dNdeta_1D_MC[i] -> Draw("hist same");
         final_dNdeta_multi_1D[i] -> Draw("ep same");
-        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
         draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s, Z: %.2f ~ %.2f",centrality_region[i].c_str(), coarse_eta_z_map -> GetYaxis() -> GetBinCenter(tight_zvtx_bin) - coarse_eta_z_map -> GetYaxis() -> GetBinWidth(tight_zvtx_bin)/2., coarse_eta_z_map -> GetYaxis() -> GetBinCenter(tight_zvtx_bin) + coarse_eta_z_map -> GetYaxis() -> GetBinWidth(tight_zvtx_bin)/2.));
         draw_text -> DrawLatex(0.21, 0.86, Form("Nevt MC : %.1f, Nevt reco : %.1f",N_correction_evt_MC, N_correction_evt));
         draw_text -> DrawLatex(0.21, 0.82, Form("MC entry : %.2f, tight entry : %.2f, loose entry : %.2f", final_dNdeta_1D_MC[i] -> Integral(), final_dNdeta_1D[i] -> Integral(), final_dNdeta_multi_1D[i] -> Integral()));
@@ -1980,19 +2013,19 @@ void INTTEta::PrintPlots()
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     track_cluster_ratio_multiplicity_2D -> Draw("colz0");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print( Form("%s/track_cluster_ratio_multiplicity_2D.pdf", out_folder_directory.c_str()) );
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     track_cluster_ratio_multiplicity_2D_MC -> Draw("colz0");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print( Form("%s/track_cluster_ratio_multiplicity_2D_MC.pdf", out_folder_directory.c_str()) );
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     track_correlation_2D -> Draw("colz0");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     correlation_Line -> Draw("lsame");
     c1 -> Print( Form("%s/track_correlation_2D.pdf", out_folder_directory.c_str()) );
     c1 -> Clear();
@@ -2000,7 +2033,7 @@ void INTTEta::PrintPlots()
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     track_ratio_2D -> Draw("colz0");
     coord_line -> DrawLine( track_ratio_2D->GetXaxis()->GetXmin(), 1, track_ratio_2D->GetXaxis()->GetXmax(), 1 );
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     correlation_Line -> Draw("lsame");
     c1 -> Print( Form("%s/track_ratio_2D.pdf", out_folder_directory.c_str()) );
     c1 -> Clear();
@@ -2008,19 +2041,19 @@ void INTTEta::PrintPlots()
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     reco_eta_correlation_2D -> Draw("colz0");
     correlation_Line -> Draw("lsame");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print( Form("%s/reco_eta_correlation_2D.pdf", out_folder_directory.c_str()) );
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     reco_eta_diff_reco3P_2D -> Draw("colz0");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print( Form("%s/reco_eta_diff_reco3P_2D.pdf", out_folder_directory.c_str()) );
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     reco_eta_diff_1D -> Draw("hist");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print( Form("%s/reco_eta_diff_1D.pdf", out_folder_directory.c_str()) );
     c1 -> Clear();
 
@@ -2029,7 +2062,7 @@ void INTTEta::PrintPlots()
     for (int i = 0; i < track_DeltaPhi_eta_2D.size(); i++)
     {
         track_DeltaPhi_eta_2D[i] -> Draw("colz0");
-        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
         draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s",centrality_region[i].c_str()));
         c1 -> Print(Form("%s/track_DeltaPhi_eta_2D.pdf", out_folder_directory.c_str()));
         c1 -> Clear();    
@@ -2041,7 +2074,7 @@ void INTTEta::PrintPlots()
     for (int i = 0; i < track_DeltaPhi_DeltaEta_2D.size(); i++)
     {
         track_DeltaPhi_DeltaEta_2D[i] -> Draw("colz0");
-        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
         draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s",centrality_region[i].c_str()));
         c1 -> Print(Form("%s/track_DeltaPhi_DeltaEta_2D.pdf", out_folder_directory.c_str()));
         c1 -> Clear();    
@@ -2049,20 +2082,20 @@ void INTTEta::PrintPlots()
     c1 -> Print( Form("%s/track_DeltaPhi_DeltaEta_2D.pdf)", out_folder_directory.c_str()) );
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
-    c1 -> Print( Form("%s/dNdeta_1D_MC.pdf(", out_folder_directory.c_str()) );
-    for (int i = 0; i < dNdeta_1D_MC.size(); i++)
-    {
-        // dNdeta_1D_MC[i] -> Scale(1./double(dNdeta_1D_MC[i] -> GetBinWidth(1) ));
-        // double N_correction_evt = (i == dNdeta_1D_MC.size() - 1) ? N_GoodEvent : N_GoodEvent_vec[i];
-        // dNdeta_1D_MC[i] -> Scale(1./double(N_GoodEvent));
-        dNdeta_1D_MC[i] -> GetYaxis() -> SetRangeUser(0,800);
-        dNdeta_1D_MC[i] -> Draw("hist");
-        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
-        draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s",centrality_region[i].c_str()));
-        c1 -> Print(Form("%s/dNdeta_1D_MC.pdf", out_folder_directory.c_str()));
-        c1 -> Clear();    
-    }
-    c1 -> Print( Form("%s/dNdeta_1D_MC.pdf)", out_folder_directory.c_str()) );
+    // c1 -> Print( Form("%s/dNdeta_1D_MC.pdf(", out_folder_directory.c_str()) );
+    // for (int i = 0; i < dNdeta_1D_MC.size(); i++)
+    // {
+    //     // dNdeta_1D_MC[i] -> Scale(1./double(dNdeta_1D_MC[i] -> GetBinWidth(1) ));
+    //     // double N_correction_evt = (i == dNdeta_1D_MC.size() - 1) ? N_GoodEvent : N_GoodEvent_vec[i];
+    //     // dNdeta_1D_MC[i] -> Scale(1./double(N_GoodEvent));
+    //     dNdeta_1D_MC[i] -> GetYaxis() -> SetRangeUser(0,800);
+    //     dNdeta_1D_MC[i] -> Draw("hist");
+    //     ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
+    //     draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s",centrality_region[i].c_str()));
+    //     c1 -> Print(Form("%s/dNdeta_1D_MC.pdf", out_folder_directory.c_str()));
+    //     c1 -> Clear();    
+    // }
+    // c1 -> Print( Form("%s/dNdeta_1D_MC.pdf)", out_folder_directory.c_str()) );
 
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -2071,7 +2104,7 @@ void INTTEta::PrintPlots()
     {
         track_eta_z_2D_MC[i] -> Draw("colz0");
         DrawEtaZGrid();
-        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
         draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s",centrality_region[i].c_str()));
         c1 -> Print(Form("%s/track_eta_z_2D_MC.pdf", out_folder_directory.c_str()));
         c1 -> Clear();    
@@ -2080,7 +2113,7 @@ void INTTEta::PrintPlots()
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     clu_used_centrality_2D -> Draw("colz0");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print( Form("%s/clu_used_centrality_2D.pdf", out_folder_directory.c_str()) );
     c1 -> Clear();
 
@@ -2088,14 +2121,14 @@ void INTTEta::PrintPlots()
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     cluster4_track_phi_1D -> Draw("hist");
     cluster4_track_phi_1D -> SetMinimum(0);
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print( Form("%s/cluster4_track_phi_1D.pdf", out_folder_directory.c_str()) );
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     cluster3_track_phi_1D -> Draw("hist");
     cluster3_track_phi_1D -> SetMinimum(0);
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print( Form("%s/cluster3_track_phi_1D.pdf", out_folder_directory.c_str()) );
     c1 -> Clear();
 
@@ -2110,7 +2143,7 @@ void INTTEta::PrintPlots()
         }
     }
 
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print( Form("%s/cluster3_inner_track_phi_1D.pdf", out_folder_directory.c_str()) );
     c1 -> Clear();
 
@@ -2124,25 +2157,25 @@ void INTTEta::PrintPlots()
             cout<<i+1<<" mega Outer track phi bin center: "<<cluster3_outer_track_phi_1D -> GetBinCenter(i+1)<<" bin content: "<<cluster3_outer_track_phi_1D -> GetBinContent(i+1)<<endl;
         }
     }
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print( Form("%s/cluster3_outer_track_phi_1D.pdf", out_folder_directory.c_str()) );
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     NClu4_track_centrality_2D -> Draw("colz0");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print( Form("%s/NClu4_track_centrality_2D.pdf", out_folder_directory.c_str()) );
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     NClu3_track_centrality_2D -> Draw("colz0");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print( Form("%s/NClu3_track_centrality_2D.pdf", out_folder_directory.c_str()) );
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     coarse_eta_z_map -> Draw("colz0");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print( Form("%s/coarse_eta_z_map.pdf", out_folder_directory.c_str()) );
     c1 -> Clear();
 
@@ -2152,7 +2185,7 @@ void INTTEta::PrintPlots()
     {
         coarse_eta_z_2D_MC[i] -> Draw("colz0");
         DrawEtaZGrid();
-        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
         draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s",centrality_region[i].c_str()));
         c1 -> Print(Form("%s/coarse_eta_z_2D_MC.pdf", out_folder_directory.c_str()));
         c1 -> Clear();    
@@ -2161,13 +2194,13 @@ void INTTEta::PrintPlots()
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     MBin_Z_evt_hist_2D -> Draw("colz0");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print( Form("%s/MBin_Z_evt_hist_2D.pdf", out_folder_directory.c_str()) );
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     MBin_Z_evt_hist_2D_MC -> Draw("colz0");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print( Form("%s/MBin_Z_evt_hist_2D_MC.pdf", out_folder_directory.c_str()) );
     c1 -> Clear();
 
@@ -2177,7 +2210,7 @@ void INTTEta::PrintPlots()
     {
         coarse_Reco_SignalNTracklet_Single_eta_z_2D[i] -> Draw("colz0");
         DrawEtaZGrid();
-        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
         draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s",centrality_region[i].c_str()));
         c1 -> Print(Form("%s/coarse_Reco_SignalNTracklet_Single_eta_z_2D.pdf", out_folder_directory.c_str()));
         c1 -> Clear();    
@@ -2190,7 +2223,7 @@ void INTTEta::PrintPlots()
     {
         coarse_Reco_SignalNTracklet_Multi_eta_z_2D[i] -> Draw("colz0");
         DrawEtaZGrid();
-        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
         draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s",centrality_region[i].c_str()));
         c1 -> Print(Form("%s/coarse_Reco_SignalNTracklet_Multi_eta_z_2D.pdf", out_folder_directory.c_str()));
         c1 -> Clear();    
@@ -2297,6 +2330,10 @@ void INTTEta::EndRun()
     for (int i = 0; i < track_eta_phi_2D.size(); i++){ track_eta_phi_2D[i] -> Write(Form("track_eta_phi_2D_MBin%i",i)); }
     for (int i = 0; i < track_ratio_1D.size(); i++){ track_ratio_1D[i] -> Write(Form("track_ratio_1D_MBin%i",i)); }
     track_ratio_2D -> Write("track_ratio_2D");
+
+    for (int i = 0; i < dNdeta_1D.size(); i++) {dNdeta_1D[i] -> Write(Form("FineBin_Ntracklet_MBin%i",i));}
+    for (int i = 0; i < dNdeta_1D_MC.size(); i++) {dNdeta_1D_MC[i] -> Write(Form("FineBin_NTrueTrack_MBin%i",i));}
+    for (int i = 0; i < dNdeta_1D_MC_edge_eta_cut.size(); i++) {dNdeta_1D_MC_edge_eta_cut[i] -> Write(Form("FineBin_NTrueTrack_EdgeEtaCut_MBin%i",i));}
 
     tree_out -> Write("", TObject::kOverwrite);
 

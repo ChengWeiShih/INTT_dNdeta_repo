@@ -48,6 +48,8 @@ void avgXY_mother(int core_i)
     double out_quadrant_center_Y;
     double out_line_filled_mean_X;
     double out_line_filled_mean_Y;
+    double out_line_filled_meanE_X;
+    double out_line_filled_meanE_Y;
     double out_line_filled_stddev_X;
     double out_line_filled_stddev_Y;
     double out_line_filled_variance_X;
@@ -64,6 +66,8 @@ void avgXY_mother(int core_i)
     tree_out -> Branch("quadrant_center_Y",&out_quadrant_center_Y);
     tree_out -> Branch("line_filled_mean_X",&out_line_filled_mean_X);
     tree_out -> Branch("line_filled_mean_Y",&out_line_filled_mean_Y);
+    tree_out -> Branch("line_filled_meanE_X",&out_line_filled_meanE_X);
+    tree_out -> Branch("line_filled_meanE_Y",&out_line_filled_meanE_Y);
     tree_out -> Branch("line_filled_stddev_X",&out_line_filled_stddev_X);
     tree_out -> Branch("line_filled_stddev_Y",&out_line_filled_stddev_Y);
     tree_out -> Branch("line_filled_variance_X",&out_line_filled_variance_X);
@@ -102,7 +106,7 @@ void avgXY_mother(int core_i)
     // cout<<"The origin during that scan: "<<out_vtx[1].first<<" "<<out_vtx[1].second<<endl;
     // MCxy -> EndRun();
 
-    vector<pair<double,double>> out_vtx = MCxy -> MacroVTXSquare(4,10);
+    vector<pair<double,double>> out_vtx = MCxy -> MacroVTXSquare(4,8);
     cout<<" "<<endl;
     cout<<"The best vertex throughout the scan: "<<out_vtx[0].first<<" "<<out_vtx[0].second<<endl;
     cout<<"The origin during that scan: "<<out_vtx[1].first<<" "<<out_vtx[1].second<<endl;
@@ -129,6 +133,8 @@ void avgXY_mother(int core_i)
     out_quadrant_center_Y = out_vtx[1].second;
     out_line_filled_mean_X = out_vtx_line[0].first;
     out_line_filled_mean_Y = out_vtx_line[0].second;
+    out_line_filled_meanE_X = out_vtx_line[1].first;
+    out_line_filled_meanE_Y = out_vtx_line[1].second;
     out_line_filled_stddev_X = out_vtx_line[2].first;
     out_line_filled_stddev_Y = out_vtx_line[2].second;
 

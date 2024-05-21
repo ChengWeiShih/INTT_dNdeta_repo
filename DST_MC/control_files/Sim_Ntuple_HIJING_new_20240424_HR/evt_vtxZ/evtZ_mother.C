@@ -9,8 +9,8 @@ void evtZ_mother(int index)
     string out_folder_mother_directory = input_directory + "/evt_vtxZ";
     string out_folder_directory = out_folder_mother_directory + Form("/evtZ_%s", file_name_index.c_str());
     string tree_name = "EventTree";
-    
-    pair<double, double> beam_origin = {-0.402626, 2.40023}; // note : for MC selfgen v2 410
+    double cm = 10.;
+    pair<double, double> beam_origin = {-0.0399914 * cm, 0.240108 * cm}; // note : for for MC provided by HR 2024_05_07
     pair<double, double> DCA_cut ={-1., 1.}; // note : for run20869
     pair<double, double> zvtx_QA_width = {40, 70}; 
     double zvtx_QA_ratio = 0.00006;

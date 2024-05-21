@@ -6,7 +6,7 @@ int merged_tracklet_ana()
     string run_type_MC = "MC";
 
     // note : the new generated folder will be under the input_directory1
-    string input_directory1 = "/sphenix/user/ChengWei/sPH_dNdeta/Sim_Ntuple_HIJING_new_20240424_HR/evt_tracklet/complete_file/merged_file_folder";
+    string input_directory1 = "/sphenix/user/ChengWei/sPH_dNdeta/Sim_Ntuple_HIJING_new_20240424_HR/evt_tracklet/complete_file/merged_file_folder_cm_radian_test";
     string input_file1 = "merged_hist_half_corr.root";
     string out_folder_directory1 = input_directory1 + "/eta_closer_out_test_MultiZBin_half_corr";
     bool Mbin_Z_evt_map_name_bool1 = 0;
@@ -84,17 +84,19 @@ int merged_tracklet_ana()
     EtaDistReader * file_half_inner_phi_rotate_corr = new EtaDistReader(run_type_MC, out_folder_directory2, fulleta_MC_included_z_bin, included_eta_z_map, Form("%s/%s",input_directory2.c_str(), input_file2.c_str()), Mbin_Z_evt_map_name_bool2);
 
 
-    vector<TH1F *> DeltaPhi_Multi_stack_1D_1 = file_half_corr -> GetDeltaPhi_Multi_stack_1D();
+    vector<TH1F *> DeltaPhi_Multi_stack_1D_1 = file_half_corr -> GetDeltaPhi_Multi_stack_1D_radian();
     // vector<TH1F *> dNdeta_1D_fulleta_MC_1  = file_half_corr -> GetdNdeta_1D_fulleta_MC();
     // vector<TH1F *> dNdeta_1D_MC_1          = file_half_corr -> GetdNdeta_1D_MC();
     // vector<TH1F *> dNdeta_1D_reco_single_1 = file_half_corr -> GetdNdeta_1D_reco_single();
     // vector<TH1F *> dNdeta_1D_reco_multi_1  = file_half_corr -> GetdNdeta_1D_reco_multi();
 
-    vector<TH1F *> DeltaPhi_Multi_stack_1D_2 = file_half_inner_phi_rotate_corr -> GetDeltaPhi_Multi_stack_1D();
+    vector<TH1F *> DeltaPhi_Multi_stack_1D_2 = file_half_inner_phi_rotate_corr -> GetDeltaPhi_Multi_stack_1D_radian();
     // vector<TH1F *> dNdeta_1D_fulleta_MC_2  = file_half_inner_phi_rotate_corr -> GetdNdeta_1D_fulleta_MC();
     // vector<TH1F *> dNdeta_1D_MC_2          = file_half_inner_phi_rotate_corr -> GetdNdeta_1D_MC();
     // vector<TH1F *> dNdeta_1D_reco_single_2 = file_half_inner_phi_rotate_corr -> GetdNdeta_1D_reco_single();
     // vector<TH1F *> dNdeta_1D_reco_multi_2  = file_half_inner_phi_rotate_corr -> GetdNdeta_1D_reco_multi();
+
+    SetsPhenixStyle();
 
     TLatex * ltx = new TLatex();
     ltx->SetNDC();
@@ -108,8 +110,6 @@ int merged_tracklet_ana()
     TLegend * legend = new TLegend(0.25,0.7,0.75,0.8);
     // legend -> SetMargin(0);
     legend->SetTextSize(0.03);
-
-    SetsPhenixStyle();
 
     TCanvas * c2 = new TCanvas("c2","",950,800);
     
@@ -127,12 +127,12 @@ int merged_tracklet_ana()
         if (i == 0)
         {
             legend -> AddEntry(DeltaPhi_Multi_stack_1D_1[0],"Original","f");
-            legend -> AddEntry(DeltaPhi_Multi_stack_1D_2[0],"Inner cluster #phi rotated by 180 degrees","f");
+            legend -> AddEntry(DeltaPhi_Multi_stack_1D_2[0],"Inner cluster #phi rotated by #pi","f");
         }
 
         DeltaPhi_Multi_stack_1D_1[i] -> SetFillColorAlpha(3, 0.0);
         DeltaPhi_Multi_stack_1D_2[i] -> SetFillColorAlpha(3, 0.0);
-        DeltaPhi_Multi_stack_1D_1[i] -> GetXaxis() -> SetTitle("#Delta#phi [degrees]");
+        DeltaPhi_Multi_stack_1D_1[i] -> GetXaxis() -> SetTitle("#Delta#phi [radian]");
         DeltaPhi_Multi_stack_1D_1[i] -> GetYaxis() -> SetTitle("Entry");
         DeltaPhi_Multi_stack_1D_1[i] -> SetLineColor(TColor::GetColor("#1A3947"));
         DeltaPhi_Multi_stack_1D_2[i] -> SetLineColor(TColor::GetColor("#c48045"));

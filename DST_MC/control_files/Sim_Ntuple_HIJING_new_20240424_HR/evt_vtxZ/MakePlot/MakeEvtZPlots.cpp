@@ -1,5 +1,7 @@
 #include "../../../../plot_evt_zvtx_condor/plot_evt_zvtx.cpp"
 
+// todo: you may want to check the ANA_MAP_v1.h in "plot_evt_zvtx.cpp/plot_evt_zvtx.cpp"
+
 int MakeEvtZPlots()
 {
     double zvtx_range_l = -500;
@@ -14,7 +16,7 @@ int MakeEvtZPlots()
     int data_zvtx_dist_NClus_cut = 1000;
     int data_run_type = 1; // note : 1 = MC, 0 = data
 
-    plot_evt_zvtx * data_f4a_20869 = new plot_evt_zvtx(
+    plot_evt_zvtx * MC_f4a_2024_05_07 = new plot_evt_zvtx(
         data_input_directory,
         data_input_file_name,
         data_out_folder_directory,

@@ -18,7 +18,15 @@
 class CheckEvtXY
 {
     public:
-        CheckEvtXY(string mother_folder_directory, string input_file_list, string out_folder_directory, std::pair<double, double> beam_origin, int NClus_cut_label);
+        CheckEvtXY(
+            string mother_folder_directory_in, 
+            string input_file_list_in, 
+            string out_folder_directory_in, 
+            std::pair<double, double> beam_origin_in, 
+            int NClus_cut_label_in,
+            int unit_tag_in,
+            string run_type_in
+        );
         // virtual ~CheckEvtXY();
         
         void Prepare_info();
@@ -34,10 +42,24 @@ class CheckEvtXY
         TGraph * vtxX_bco_graph;
         TGraph * vtxY_bco_graph;
 
+        // note : for the MC
+        TH2F * vtxX_correlation;
+        TH2F * vtxY_correlation;
+        TH1F * vtxX_diff;
+        TH1F * vtxY_diff;
+
         TLatex * ltx;
         TLatex * ltx_warning;
         TLatex * draw_text;
         TF1 * gaus_fit_MC;
+        TF1 * pol1_fit;
+
+        string run_type;
+        string sPHENIX_suffix;
+
+        int unit_tag;
+        string unit_text;
+        double unit_correction;
 
         std::pair<double, double> beam_origin;
 

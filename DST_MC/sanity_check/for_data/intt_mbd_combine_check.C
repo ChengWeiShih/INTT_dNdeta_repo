@@ -32,6 +32,10 @@ int intt_mbd_combine_check()
     TH2F * intt_mbd_correlation = new TH2F("h_qmbd_nintt", "BbcQ vs Intt N;INTT number of clusters;MBD charge sum", 200, 0, 14000, 200, 0, 2500);
     intt_mbd_correlation -> GetXaxis() -> SetNdivisions(505);
 
+    SetsPhenixStyle();
+    TCanvas * c1 = new TCanvas("","",950,800);
+    c1 -> cd();
+
     TLatex * ltx = new TLatex();
     ltx->SetNDC();
     ltx->SetTextSize(0.045);
@@ -40,11 +44,6 @@ int intt_mbd_combine_check()
     TLatex * draw_text = new TLatex();
     draw_text -> SetNDC();
     draw_text -> SetTextSize(0.03);
-    
-    SetsPhenixStyle();
-    TCanvas * c1 = new TCanvas("","",950,800);
-    c1 -> cd();
-
 
     for (int i = 0; i < tree_in -> GetEntries(); i++)
     {

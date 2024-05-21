@@ -1,14 +1,16 @@
-#include "../../../../INTTReadTree.h"
-#include "../../../../INTTXYvtxEvt.h"
-#include "../../../../ReadINTTZ/ReadINTTZCombine.C"
-#include "../../../../ana_map_folder/ana_map_v1.h"
+#include "../../../INTTReadTree.h"
+#include "../../../INTTXYvtxEvt.h"
+#include "../../../ReadINTTZ/ReadINTTZCombine.C"
+#include "../../../ana_map_folder/ana_map_v1.h"
+
+namespace ana_map_version = ANA_MAP_V3;
 
 // todo : check used namespace
 
 void evtXY_mother(int index)
 {
-    string input_directory = "/sphenix/user/ChengWei/INTT/INTT_commissioning/ZeroField/F4A_20869/2024_05_07/folder_Data_CombinedNtuple_Run20869_HotDead_BCO_ADC_Survey";
-    string file_name = "Data_CombinedNtuple_Run20869_HotDead_BCO_ADC_Survey";
+    string input_directory = "/sphenix/user/ChengWei/sPH_dNdeta/Sim_Ntuple_HIJING_new_20240424_HR";
+    string file_name = "ntuple_merged";
     string tree_name = "EventTree";
 
     string input_directory_zvtx = input_directory + "/evt_vtxZ/complete_file";
@@ -18,12 +20,12 @@ void evtXY_mother(int index)
     string out_folder_mother_directory = input_directory + "/evt_vtxXY";
     string out_folder_directory = out_folder_mother_directory + Form("/evtXY_%s", file_name_index.c_str());
     double cm = 10.;
-    pair<double, double> beam_origin = {-0.0206744 * cm, 0.279965 * cm}; // note : width 4, iteration 8 for the quadrant method.
-    int clu_sum_adc_cut = ANA_MAP_V3::clu_sum_adc_cut;
-    int clu_size_cut = ANA_MAP_V3::clu_size_cut;
+    pair<double, double> beam_origin = {-0.0399914 * cm, 0.240108 * cm}; // note : for for MC provided by HR 2024_05_07
+    int clu_sum_adc_cut = ana_map_version::clu_sum_adc_cut;
+    int clu_size_cut = ana_map_version::clu_size_cut;
     int N_clu_cut  = 10000;
     int N_clu_cutl = 3000;
-    int data_type = 7;   // note : data F4A
+    int data_type = 0;   // note : MC
     int geo_mode_id = 1; // note : 0 -> perfect geo., 1 -> first-order survey geo.
     bool draw_event_display = true;
     double peek = 3.324;
@@ -39,7 +41,7 @@ void evtXY_mother(int index)
 
     INTTReadTree * INTTClu = new INTTReadTree(data_type, input_directory, file_name, tree_name, clu_size_cut, clu_sum_adc_cut);
 
-    int Nevt_per_core = 10000;
+    int Nevt_per_core = 3000;
 
     int start_evt = index * Nevt_per_core;
     int end_evt   = (index + 1) * Nevt_per_core;
@@ -78,7 +80,7 @@ void evtXY_mother(int index)
         RecoZ -> GetEntry(event_i);
 
         // note : MC, but the event is not the minimum bias event
-        if (INTTClu -> GetRunType() == "MC" && RecoZ -> is_min_bias == 0) {MCxy -> ClearEvt(); INTTClu -> EvtClear(); continue;}
+        if (INTTClu -> GetRunType() == "MC" && RecoZ -> is_min_bias_wozdc == 0) {MCxy -> ClearEvt(); INTTClu -> EvtClear(); continue;}
         // todo: here I use is_min_bias_wozdc for data
         // note : data, but the event is not the minomum bias event (wozdc)
         else { 
@@ -95,23 +97,23 @@ void evtXY_mother(int index)
 
         // todo : checked the used namespace
         double MBD_charge_assy = (RecoZ -> MBD_north_charge_sum - RecoZ -> MBD_south_charge_sum) / (RecoZ -> MBD_north_charge_sum + RecoZ -> MBD_south_charge_sum);
-        if ( MBD_charge_assy < -1 * ANA_MAP_V3::MBD_assy_ratio_cut || MBD_charge_assy >  ANA_MAP_V3::MBD_assy_ratio_cut) {MCxy -> ClearEvt(); INTTClu -> EvtClear(); continue;}
+        if ( MBD_charge_assy < -1 * ana_map_version::MBD_assy_ratio_cut || MBD_charge_assy >  ana_map_version::MBD_assy_ratio_cut) {MCxy -> ClearEvt(); INTTClu -> EvtClear(); continue;}
 
-        if (RecoZ -> LB_Gaus_Width_width < ANA_MAP_V3::INTT_zvtx_recohist_gaus_fit_width_cut_l || RecoZ -> LB_Gaus_Width_width > ANA_MAP_V3::INTT_zvtx_recohist_gaus_fit_width_cut_r) {MCxy -> ClearEvt(); INTTClu -> EvtClear(); continue;}
-        if (RecoZ -> LB_cut_peak_width <   ANA_MAP_V3::INTT_zvtx_recohist_cutgroup_width_cut_l || RecoZ -> LB_cut_peak_width >   ANA_MAP_V3::INTT_zvtx_recohist_cutgroup_width_cut_r) {MCxy -> ClearEvt(); INTTClu -> EvtClear(); continue;}        
+        if (RecoZ -> LB_Gaus_Width_width < ana_map_version::INTT_zvtx_recohist_gaus_fit_width_cut_l || RecoZ -> LB_Gaus_Width_width > ana_map_version::INTT_zvtx_recohist_gaus_fit_width_cut_r) {MCxy -> ClearEvt(); INTTClu -> EvtClear(); continue;}
+        if (RecoZ -> LB_cut_peak_width <   ana_map_version::INTT_zvtx_recohist_cutgroup_width_cut_l || RecoZ -> LB_cut_peak_width >   ana_map_version::INTT_zvtx_recohist_cutgroup_width_cut_r) {MCxy -> ClearEvt(); INTTClu -> EvtClear(); continue;}        
 
         INTTClu -> EvtInit(event_i);
         INTTClu -> EvtSetCluGroup();
 
-        if (RecoZ -> bco_full != INTTClu -> GetBCOFull()) 
+        if (RecoZ -> nclu_inner != INTTClu -> temp_sPH_inner_nocolumn_vec.size() || RecoZ -> nclu_outer != INTTClu -> temp_sPH_outer_nocolumn_vec.size()) 
         {
-            cout<<"error ! the bco_full is not matched !"<<endl;
+            cout<<"wrong matching found !!!, kill the job"<<endl;
             exit(1);
         }
 
-        cout<<"bco_full diff : "<<RecoZ -> bco_full - INTTClu -> GetBCOFull()<<" original bcofull : "<< INTTClu -> GetBCOFull()<< " zvtx file bcofull : "<< RecoZ -> bco_full <<" Z check, recoZ: "<<RecoZ -> LB_Gaus_Mean_mean<<endl;
+        cout<<"event ID: "<<event_i<<" recoZ: "<<RecoZ -> LB_Gaus_Mean_mean<<" mm, TrueZ: "<<RecoZ -> MC_true_zvtx<<" mm, diff: "<<RecoZ -> LB_Gaus_Mean_mean - RecoZ -> MC_true_zvtx<<" mm "<<endl;
 
-        int Centrality_bin = ANA_MAP_V3::convert_centrality_bin(RecoZ -> Centrality_float);
+        int Centrality_bin = ana_map_version::convert_centrality_bin(RecoZ -> Centrality_float);
 
         MCxy     -> ProcessEvt(
             event_i, 
@@ -124,7 +126,7 @@ void evtXY_mother(int index)
             INTTClu -> GetPhiCheckTag(), 
             INTTClu -> GetBCOFull(), 
             // {RecoZ -> LB_Gaus_Mean_mean, RecoZ -> LB_Gaus_Mean_meanE}
-            {RecoZ -> LB_Gaus_Mean_mean, ANA_MAP_V3::reco_Z_resolution[Centrality_bin]}
+            {RecoZ -> LB_Gaus_Mean_mean, ana_map_version::reco_Z_resolution[Centrality_bin]}
             // todo : be careful, the centrality_bin now is more than what the reco_Z_resolution is expecting, the only way it can work is because of the high multiplicity cut applied above
         );
 

@@ -2,30 +2,56 @@
 
 // todo: check the used namespace
 
+// note : the units of the input variables should still be mm
 plot_evt_zvtx::plot_evt_zvtx(
-    string input_directory, // = "/sphenix/user/ChengWei/INTT/INTT_commissioning/ZeroField/F4A_20869/2024_05_07/folder_Data_CombinedNtuple_Run20869_HotDead_BCO_ADC_Survey/evt_vtxZ/complete_file";
-    string input_file_name, // = "merged_file.root";
-    string out_folder_directory, // = input_directory + "/merged_result";
-    double required_zvtx_diff, // = 10.; // note : unit : mm
-    int zvtx_dist_NClus_cut, // = 1000;
-    int run_type, // = 0; // note : 1 = MC, 0 = data
-    double zvtx_range_l = -500,
-    double zvtx_range_r = 100,
-    double zvtx_range_zoomin_l = -300,
-    double zvtx_range_zoomin_r = -100   
+    string input_directory_in, // = "/sphenix/user/ChengWei/INTT/INTT_commissioning/ZeroField/F4A_20869/2024_05_07/folder_Data_CombinedNtuple_Run20869_HotDead_BCO_ADC_Survey/evt_vtxZ/complete_file";
+    string input_file_name_in, // = "merged_file.root";
+    string out_folder_directory_in, // = input_directory + "/merged_result";
+    double required_zvtx_diff_in, // = 10.; // note : unit : mm
+    int zvtx_dist_NClus_cut_in, // = 1000;
+    int run_type_in, // = 0; // note : 1 = MC, 0 = data
+    double zvtx_range_l_in = -500,
+    double zvtx_range_r_in = 100,
+    double zvtx_range_zoomin_l_in = -300,
+    double zvtx_range_zoomin_r_in = -100,   
+    int unit_tag_in = 1 // note : 1 = cm, 0 = mm
 ):
-input_directory(input_directory),
-input_file_name(input_file_name),
-out_folder_directory(out_folder_directory),
-required_zvtx_diff(required_zvtx_diff),
-zvtx_dist_NClus_cut(zvtx_dist_NClus_cut),
-run_type(run_type),
-zvtx_range_l(zvtx_range_l),
-zvtx_range_r(zvtx_range_r),
-zvtx_range_zoomin_l(zvtx_range_zoomin_l),
-zvtx_range_zoomin_r(zvtx_range_zoomin_r)
+input_directory(input_directory_in),
+input_file_name(input_file_name_in),
+out_folder_directory(out_folder_directory_in),
+required_zvtx_diff(required_zvtx_diff_in),
+zvtx_dist_NClus_cut(zvtx_dist_NClus_cut_in),
+run_type(run_type_in),
+zvtx_range_l(zvtx_range_l_in),
+zvtx_range_r(zvtx_range_r_in),
+zvtx_range_zoomin_l(zvtx_range_zoomin_l_in),
+zvtx_range_zoomin_r(zvtx_range_zoomin_r_in),
+unit_tag(unit_tag_in)
 {
     plot_text = (run_type == 1)? "Simulation" : "Work-in-progress";
+    unit_correction = (unit_tag == 1) ? 0.1 : 1.;
+    unit_text = (unit_tag == 1) ? "cm" : "mm";
+
+    cout<<"In plot_evt_zvtx, unit_tag: "<<unit_tag<<" unit_correction: "<<unit_correction<<endl;
+
+    zvtx_range_l = zvtx_range_l * unit_correction;
+    zvtx_range_r = zvtx_range_r * unit_correction;
+    zvtx_range_zoomin_l = zvtx_range_zoomin_l * unit_correction;
+    zvtx_range_zoomin_r = zvtx_range_zoomin_r * unit_correction;
+    required_zvtx_diff = required_zvtx_diff * unit_correction;
+
+    // cout<<"zvtx_range_l: "<<zvtx_range_l<<endl;
+    // cout<<"zvtx_range_r: "<<zvtx_range_r<<endl;
+    // cout<<"zvtx_range_zoomin_l: "<<zvtx_range_zoomin_l<<endl;
+    // cout<<"zvtx_range_zoomin_r: "<<zvtx_range_zoomin_r<<endl;
+    cout<<"In plot_evt_zvtx, check the required_zvtx_diff: "<<required_zvtx_diff<<Form("[%s]",unit_text.c_str())<<endl;
+    for (int i = 0; i < z_region.size(); i++) {z_region[i] = z_region[i] * unit_correction;}
+
+    if(std::filesystem::exists( Form("%s/%s", input_directory.c_str(), input_file_name.c_str()) ) == false){
+        // note : no merged root file, make one
+        cout<<"--- no merged file found, so, make one"<<endl;
+        system(Form("hadd %s/%s %s/evtZ_00*/INTT_zvtx.root", input_directory.c_str(), input_file_name.c_str(), input_directory.c_str()));
+    }
 
     // note : to generate the merged_result folder
     if(std::filesystem::exists(Form("%s",out_folder_directory.c_str())) == false){
@@ -39,16 +65,16 @@ zvtx_range_zoomin_r(zvtx_range_zoomin_r)
         system(Form("ls %s", out_folder_directory.c_str()));
     }
 
-    TFile_init();
-    Hist_init();
-    Rest_init();
-
     SetsPhenixStyle();
     c1 = new TCanvas("c1","c1",950,800);
     c1 -> cd();
 
+    TFile_init();
+    Hist_init();
+    Rest_init();
+
     LoopEvent();
-    PrintPlot();
+    PrintPlot();    
 }
 
 void plot_evt_zvtx::TFile_init()
@@ -91,24 +117,87 @@ void plot_evt_zvtx::TFile_init()
 
 void plot_evt_zvtx::Hist_init()
 {
-    reco_Zvtx_dist = new TH1F("","reco_Zvtx_dist;Reco Zvtx [mm];Entry",200, zvtx_range_l, zvtx_range_r);
+    cout<<"in Hist_init, zvtx_range_l: "<<zvtx_range_l<<endl;
+    cout<<"in Hist_init, zvtx_range_r: "<<zvtx_range_r<<endl;
+    cout<<"in Hist_init, zvtx_range_zoomin_l: "<<zvtx_range_zoomin_l<<endl;
+    cout<<"in Hist_init, zvtx_range_zoomin_r: "<<zvtx_range_zoomin_r<<endl;
+    // for (int i = 0; i < z_region.size(); i++) {cout<<z_region[i]<<endl;}
+
+    reco_Zvtx_dist = new TH1F(
+        "",
+        Form("reco_Zvtx_dist;Reco. Zvtx [%s];Entry",unit_text.c_str()),
+        200, 
+        zvtx_range_l, 
+        zvtx_range_r
+    );
     reco_Zvtx_dist -> SetMarkerColor(1);
     reco_Zvtx_dist -> GetXaxis() -> SetNdivisions(505);
 
-    NClus_intt_mbd_diff_corre = new TH2F("","NClus_intt_mbd_diff_corre;Number of INTT clusters; INTT_{z} - MBD_{z} [mm]",200,0,8500,200,-100,100);
+    NClus_intt_mbd_diff_corre = new TH2F(
+        "",
+        Form("NClus_intt_mbd_diff_corre;Number of INTT clusters; INTT_{z} - MBD_{z} [%s]", unit_text.c_str()),
+        200,
+        0,
+        8500,
+        200,
+        -100 * unit_correction,
+        100 * unit_correction
+    );
     NClus_intt_mbd_diff_corre -> GetXaxis() -> SetNdivisions(505);
-    intt_mbd_reco_z_corre = new TH2F("","intt_mbd_reco_z_corre;INTT zvtx [mm]; MBD zvtx [mm]", 200,zvtx_range_l, zvtx_range_r, 200,zvtx_range_l, zvtx_range_r);
+
+    intt_mbd_reco_z_corre = new TH2F(
+        "",
+        Form("intt_mbd_reco_z_corre;INTT zvtx [%s]; MBD zvtx [%s]", unit_text.c_str(), unit_text.c_str()), 
+        200,
+        zvtx_range_l, 
+        zvtx_range_r, 
+        200,
+        zvtx_range_l, 
+        zvtx_range_r
+    );
     intt_mbd_reco_z_corre -> GetXaxis() -> SetNdivisions(505);
-    intt_mbd_reco_z_diff  = new TH1F("","intt_mbd_reco_z_diff; INTT_{z} - MBD_{z} [mm];Entry",200,-100,100);
+
+    intt_mbd_reco_z_diff  = new TH1F(
+        "",
+        Form("intt_mbd_reco_z_diff; INTT_{z} - MBD_{z} [%s];Entry", unit_text.c_str()),
+        200,
+        -100 * unit_correction,
+        100 * unit_correction
+    );
     intt_mbd_reco_z_diff -> GetXaxis() -> SetNdivisions(505);
 
-    reco_Zvtx_dist_zoomin = new TH1F("","reco_Zvtx_dist_zoomin;Reco Zvtx [mm];Entry",200,zvtx_range_zoomin_l, zvtx_range_zoomin_r);
+    reco_Zvtx_dist_zoomin = new TH1F(
+        "",
+        Form("reco_Zvtx_dist_zoomin;Reco. Zvtx [%s];Entry", unit_text.c_str()),
+        200,
+        zvtx_range_zoomin_l,
+        zvtx_range_zoomin_r
+    );
     reco_Zvtx_dist_zoomin -> SetMarkerColor(1);
     reco_Zvtx_dist_zoomin -> GetXaxis() -> SetNdivisions(505);
 
-    MBDz_MBDChargeAssy  = new TH2F("","MBDz_MBDChargeAssy;MBD z [mm];(north-south)/(north+south)",200,zvtx_range_l, zvtx_range_r, 200, -1.2, 1.2); 
+    MBDz_MBDChargeAssy  = new TH2F(
+        "",
+        Form("MBDz_MBDChargeAssy;MBD z [%s];(north-south)/(north+south)", unit_text.c_str()),
+        200,
+        zvtx_range_l,
+        zvtx_range_r, 
+        200, 
+        -1.2, 
+        1.2
+    ); 
     MBDz_MBDChargeAssy -> GetXaxis() -> SetNdivisions(505);
-    INTTz_MBDChargeAssy = new TH2F("","INTTz_MBDChargeAssy;INTT z [mm];(north-south)/(north+south)",200,zvtx_range_l, zvtx_range_r, 200, -1.2, 1.2); 
+
+    INTTz_MBDChargeAssy = new TH2F(
+        "",
+        Form("INTTz_MBDChargeAssy;INTT z [%s];(north-south)/(north+south)", unit_text.c_str()),
+        200,
+        zvtx_range_l, 
+        zvtx_range_r, 
+        200, 
+        -1.2, 
+        1.2
+    ); 
     INTTz_MBDChargeAssy -> GetXaxis() -> SetNdivisions(505);
 
 
@@ -116,18 +205,18 @@ void plot_evt_zvtx::Hist_init()
     reco_Zvtx_dist_Mbin.clear();
     reco_Zvtx_dist_Mbin_zoomin.clear();
     for (int i = 0; i < centrality_region.size() - 1; i++){
-        reco_Zvtx_dist_Mbin.push_back(new TH1F("","reco_Zvtx_dist;Reco Zvtx [mm];Entry",200, zvtx_range_l, zvtx_range_r));
-        reco_Zvtx_dist_Mbin[i] -> SetMarkerColor(TColor::GetColor(color_code[i % int(color_code.size())].c_str()) );
-        reco_Zvtx_dist_Mbin[i] -> SetLineColor  (TColor::GetColor(color_code[i % int(color_code.size())].c_str()) );
+        reco_Zvtx_dist_Mbin.push_back(new TH1F("",Form("reco_Zvtx_dist;Reco. Zvtx [%s];Entry",unit_text.c_str()),200, zvtx_range_l, zvtx_range_r));
+        reco_Zvtx_dist_Mbin[i] -> SetMarkerColor( TColor::GetColor(color_code[i % int(color_code.size())].c_str()) );
+        reco_Zvtx_dist_Mbin[i] -> SetLineColor  ( TColor::GetColor(color_code[i % int(color_code.size())].c_str()) );
         if (i >= int(color_code.size())) {reco_Zvtx_dist_Mbin[i] -> SetMarkerStyle(21);}
 
-        reco_Zvtx_dist_Mbin_zoomin.push_back(new TH1F("","reco_Zvtx_dist;Reco Zvtx [mm];Entry",200,zvtx_range_zoomin_l,zvtx_range_zoomin_r));
+        reco_Zvtx_dist_Mbin_zoomin.push_back(new TH1F("",Form("reco_Zvtx_dist;Reco. Zvtx [%s];Entry",unit_text.c_str()),200,zvtx_range_zoomin_l, zvtx_range_zoomin_r));
         reco_Zvtx_dist_Mbin_zoomin[i] -> SetMarkerColor(TColor::GetColor(color_code[i % int(color_code.size())].c_str()) );
         reco_Zvtx_dist_Mbin_zoomin[i] -> SetLineColor  (TColor::GetColor(color_code[i % int(color_code.size())].c_str()) );
         if (i >= int(color_code.size())) {reco_Zvtx_dist_Mbin_zoomin[i] -> SetMarkerStyle(21);}
     }
 
-    true_Zvtx_dist = new TH1F("","true_Zvtx_dist;True Zvtx [mm];Entry",200, zvtx_range_l, zvtx_range_r);
+    true_Zvtx_dist = new TH1F("",Form("true_Zvtx_dist;True Zvtx [%s];Entry", unit_text.c_str()),200, zvtx_range_l, zvtx_range_r);
     true_Zvtx_dist -> GetXaxis() -> SetNdivisions(505);
     true_Zvtx_dist -> SetLineColor(2);
 
@@ -135,29 +224,32 @@ void plot_evt_zvtx::Hist_init()
     Z_resolution.clear();
     for (int i = 0; i < centrality_region.size(); i++)
     {
-        Z_resolution.push_back(new TH1F("",Form("Z_resolution Mbin %i;#DeltaZ (Reco - True) [mm];Entry", i),200,-25,25)); // note : unit: mm
+        Z_resolution.push_back(new TH1F("",Form("Z_resolution Mbin %i;#DeltaZ (Reco. - True) [%s];Entry", i, unit_text.c_str()),200, -25 * unit_correction, 25 * unit_correction)); 
         Z_resolution[i] -> GetXaxis() -> SetNdivisions(505);
     }
 
     // note : required zvtx tag
-    true_zvtx_Mbin_Truezpos = new TH2F("","true_zvtx_Mbin_Truezpos;MBin;True zvtx [mm]", centrality_region.size(), 0, centrality_region.size(), z_region.size() - 1, &z_region[0]); 
-    reco_zvtx_Mbin_Truezpos = new TH2F("","reco_zvtx_Mbin_Truezpos;MBin;True zvtx [mm]", centrality_region.size(), 0, centrality_region.size(), z_region.size() - 1, &z_region[0]); 
-    ratio_Mbin_Truezpos = new TH2F("","ratio_Mbin_Truezpos;MBin;True zvtx [mm]",         centrality_region.size(), 0, centrality_region.size(), z_region.size() - 1, &z_region[0]); 
+    true_zvtx_Mbin_Truezpos = new TH2F("",Form("true_zvtx_Mbin_Truezpos;MBin;True zvtx [%s]", unit_text.c_str()), centrality_region.size(), 0, centrality_region.size(), z_region.size() - 1, &z_region[0]); 
+    reco_zvtx_Mbin_Truezpos = new TH2F("",Form("reco_zvtx_Mbin_Truezpos;MBin;True zvtx [%s]", unit_text.c_str()), centrality_region.size(), 0, centrality_region.size(), z_region.size() - 1, &z_region[0]); 
+    ratio_Mbin_Truezpos     = new TH2F("",Form("ratio_Mbin_Truezpos;MBin;True zvtx [%s]", unit_text.c_str()),     centrality_region.size(), 0, centrality_region.size(), z_region.size() - 1, &z_region[0]); 
     
-    Z_resolution_Nclu = new TH2F("","Z_resolution_Nclu;# of clusters;#DeltaZ (Reco - True) [mm]",200,0,6000,200,-100,100);
+    Z_resolution_Nclu = new TH2F("",Form("Z_resolution_Nclu;# of clusters;#DeltaZ (Reco. - True) [%s]", unit_text.c_str()),200,0,6000,200,-100 * unit_correction,100 * unit_correction);
     Z_resolution_Nclu -> GetXaxis() -> SetNdivisions(505);
 
-    Z_resolution_pos = new TH2F("","Z_resolution_pos;True Zvtx [mm];#DeltaZ (Reco - True) [mm]",200,zvtx_range_l,zvtx_range_r,200,-50,50);
+    Z_resolution_pos = new TH2F("",Form("Z_resolution_pos;True Zvtx [%s];#DeltaZ (Reco. - True) [%s]", unit_text.c_str(), unit_text.c_str()), 200, zvtx_range_l, zvtx_range_r, 200,-50 * unit_correction, 50 * unit_correction);
     Z_resolution_pos -> GetXaxis() -> SetNdivisions(505);
 
-    Z_resolution_pos_cut = new TH2F("","Z_resolution_pos_cut;True Zvtx [mm];#DeltaZ (Reco - True) [mm]",200,zvtx_range_l,zvtx_range_r,200,-50,50);
+    Z_resolution_pos_cut = new TH2F("",Form("Z_resolution_pos_cut;True Zvtx [%s];#DeltaZ (Rec. - True) [%s]", unit_text.c_str(), unit_text.c_str()),200, zvtx_range_l, zvtx_range_r, 200, -50 * unit_correction, 50 * unit_correction);
     Z_resolution_pos_cut -> GetXaxis() -> SetNdivisions(505);
 
-    // Z_resolution = new TH1F("","Z_resolution;#DeltaZ (Reco - True) [mm];Entry",200,-30,30);
+    // Z_resolution = new TH1F("","Z_resolution;#DeltaZ (Rec. - True) [%s];Entry",200,-30,30);
     // Z_resolution -> GetXaxis() -> SetNdivisions(505);
 
-    Z_correlation = new TH2F("","Z_correlation;True Zvtx [mm];Reco Zvtx [mm]",200, zvtx_range_l, zvtx_range_r,200, zvtx_range_l, zvtx_range_r);
+    Z_correlation = new TH2F("",Form("Z_correlation;True Zvtx [%s];Reco. Zvtx [%s]", unit_text.c_str(), unit_text.c_str()),200, zvtx_range_l, zvtx_range_r, 200, zvtx_range_l, zvtx_range_r);
     Z_correlation -> GetXaxis() -> SetNdivisions(505);
+
+    LB_hist_gaus_width = new TH1F("",Form("LB_hist_gaus_width;Width [%s];Entry",unit_text.c_str()), 100, 0, 120 * unit_correction);
+    LB_hist_cut_group_width = new TH1F("",Form("LB_hist_cut_group_width;Width [%s];Entry",unit_text.c_str()), 100, 0, 200 * unit_correction);
 }
 
 void plot_evt_zvtx::Rest_init()
@@ -195,25 +287,25 @@ void plot_evt_zvtx::Rest_init()
     Z_resolution_centrality_gr_fit -> SetMarkerStyle(20);
     Z_resolution_centrality_gr_fit -> SetMarkerSize(1.5);
     Z_resolution_centrality_gr_fit -> GetXaxis()->SetTitle("Centrality bin"); 
-    Z_resolution_centrality_gr_fit -> GetYaxis()->SetTitle("#DeltaZ width");
+    Z_resolution_centrality_gr_fit -> GetYaxis()->SetTitle(Form("#DeltaZ dist. width [%s]", unit_text.c_str()));
 
     Z_mean_centrality_gr_fit = new TGraphErrors();
     Z_mean_centrality_gr_fit -> SetMarkerStyle(20);
     Z_mean_centrality_gr_fit -> SetMarkerSize(1.5);
     Z_mean_centrality_gr_fit -> GetXaxis()->SetTitle("Centrality bin"); 
-    Z_mean_centrality_gr_fit -> GetYaxis()->SetTitle("Dist. Mean");
+    Z_mean_centrality_gr_fit -> GetYaxis()->SetTitle(Form("#DeltaZ dist. mean [%s]", unit_text.c_str()));
 
     Z_resolution_centrality_gr_num = new TGraphErrors();
     Z_resolution_centrality_gr_num -> SetMarkerStyle(20);
     Z_resolution_centrality_gr_num -> SetMarkerSize(1.5);
     Z_resolution_centrality_gr_num -> GetXaxis()->SetTitle("Centrality bin"); 
-    Z_resolution_centrality_gr_num -> GetYaxis()->SetTitle("#DeltaZ width");
+    Z_resolution_centrality_gr_num -> GetYaxis()->SetTitle(Form("#DeltaZ dist. width [%s]", unit_text.c_str()));
 
     Z_mean_centrality_gr_num = new TGraphErrors();
     Z_mean_centrality_gr_num -> SetMarkerStyle(20);
     Z_mean_centrality_gr_num -> SetMarkerSize(1.5);
     Z_mean_centrality_gr_num -> GetXaxis()->SetTitle("Centrality bin"); 
-    Z_mean_centrality_gr_num -> GetYaxis()->SetTitle("Dist. Mean");
+    Z_mean_centrality_gr_num -> GetYaxis()->SetTitle(Form("#DeltaZ dist. mean [%s]", unit_text.c_str()));
 
     cout<<"confirmation, centrality_region size : "<<centrality_region.size()<<endl;
 
@@ -237,6 +329,21 @@ void plot_evt_zvtx::LoopEvent()
         if (Centrality_float != Centrality_float) {continue;}
         if (MBD_reco_z != MBD_reco_z) {continue;}
 
+        // in_nclu_inner
+        // in_nclu_outer
+        // good_zvtx_tag
+        // Centrality_float
+        // is_min_bias
+        // is_min_bias_wozdc
+        // eID_in
+        // MBD_north_charge_sum
+        // MBD_south_charge_sum
+        INTT_reco_zvtx = INTT_reco_zvtx * unit_correction;
+        MC_true_zvtx = MC_true_zvtx * unit_correction;
+        MBD_reco_z = MBD_reco_z * unit_correction;
+        INTT_zvtx_reco_gaus_width = INTT_zvtx_reco_gaus_width * unit_correction;
+        INTT_zvtx_reco_hist_cut_width = INTT_zvtx_reco_hist_cut_width * unit_correction;
+
         // todo : change the namespace upon necessity
         int Centrality_bin = ana_map_version::convert_centrality_bin(Centrality_float);
         // if (Centrality_float>0.89) {cout<<Centrality_float<<" "<<Centrality_bin<<endl;}
@@ -244,8 +351,11 @@ void plot_evt_zvtx::LoopEvent()
 
         MBDz_MBDChargeAssy -> Fill(MBD_reco_z, MBD_charge_assy);
 
-        if (INTT_zvtx_reco_gaus_width     < ana_map_version::INTT_zvtx_recohist_gaus_fit_width_cut_l || INTT_zvtx_reco_gaus_width     > ana_map_version::INTT_zvtx_recohist_gaus_fit_width_cut_r) {continue;}
-        if (INTT_zvtx_reco_hist_cut_width < ana_map_version::INTT_zvtx_recohist_cutgroup_width_cut_l || INTT_zvtx_reco_hist_cut_width > ana_map_version::INTT_zvtx_recohist_cutgroup_width_cut_r) {continue;}
+        LB_hist_gaus_width -> Fill(INTT_zvtx_reco_gaus_width);
+        LB_hist_cut_group_width -> Fill(INTT_zvtx_reco_hist_cut_width);
+
+        if (INTT_zvtx_reco_gaus_width     < ana_map_version::INTT_zvtx_recohist_gaus_fit_width_cut_l * unit_correction || INTT_zvtx_reco_gaus_width     > ana_map_version::INTT_zvtx_recohist_gaus_fit_width_cut_r * unit_correction) {continue;}
+        if (INTT_zvtx_reco_hist_cut_width < ana_map_version::INTT_zvtx_recohist_cutgroup_width_cut_l * unit_correction || INTT_zvtx_reco_hist_cut_width > ana_map_version::INTT_zvtx_recohist_cutgroup_width_cut_r * unit_correction) {continue;}
         // LB_Gaus_Width_width > 35 && LB_Gaus_Width_width < 80 && LB_cut_peak_width>40&&LB_cut_peak_width<110
         if (in_nclu_inner <= 0 || in_nclu_outer <= 0) {continue;}
 
@@ -276,17 +386,19 @@ void plot_evt_zvtx::LoopEvent()
         
         if ((in_nclu_inner + in_nclu_outer) > zvtx_dist_NClus_cut) {Z_resolution_pos_cut -> Fill(MC_true_zvtx, INTT_reco_zvtx - MC_true_zvtx);}
 
-        Z_resolution[ centrality_map[Centrality_bin] ] -> Fill( INTT_reco_zvtx - MC_true_zvtx );
-        Z_resolution[ Z_resolution.size() - 1 ]        -> Fill( INTT_reco_zvtx - MC_true_zvtx ); // note : the inclusive
+        Z_resolution[ centrality_map[Centrality_bin] ]                   -> Fill( INTT_reco_zvtx - MC_true_zvtx );
+        if ( centrality_map[Centrality_bin] < ana_map_version::inclusive_Mbin_cut ) {Z_resolution[ Z_resolution.size() - 1 ] -> Fill( INTT_reco_zvtx - MC_true_zvtx );} // note : the inclusive
+        
 
 
         // note : for the passing rate
         true_zvtx_Mbin_Truezpos -> Fill(centrality_map[Centrality_bin], MC_true_zvtx);
-        true_zvtx_Mbin_Truezpos -> Fill(centrality_map.size() - 1, MC_true_zvtx);
+        if ( centrality_map[Centrality_bin] < ana_map_version::inclusive_Mbin_cut ) {true_zvtx_Mbin_Truezpos -> Fill(centrality_region.size() - 1, MC_true_zvtx);}
+
         if (fabs(INTT_reco_zvtx - MC_true_zvtx) < required_zvtx_diff)
         {
             reco_zvtx_Mbin_Truezpos -> Fill(centrality_map[Centrality_bin], MC_true_zvtx);
-            reco_zvtx_Mbin_Truezpos -> Fill(centrality_map.size() - 1, MC_true_zvtx);
+            if ( centrality_map[Centrality_bin] < ana_map_version::inclusive_Mbin_cut ) {reco_zvtx_Mbin_Truezpos -> Fill(centrality_region.size() - 1, MC_true_zvtx);}
         }
 
     }
@@ -294,7 +406,31 @@ void plot_evt_zvtx::LoopEvent()
 
 void plot_evt_zvtx::PrintPlot()
 {
-     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+    
+    // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+    c1 -> cd();
+    LB_hist_gaus_width -> Draw("hist");
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
+    c1 -> Print(Form("%s/LB_hist_gaus_width.pdf",out_folder_directory.c_str()));
+    
+    c1 -> SetLogy(1);
+    c1 -> Print(Form("%s/LB_hist_gaus_width_log.pdf",out_folder_directory.c_str()));
+    c1 -> Clear();
+    c1 -> SetLogy(0);
+
+    // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+    c1 -> cd();
+    LB_hist_cut_group_width -> Draw("hist");
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
+    c1 -> Print(Form("%s/LB_hist_cut_group_width.pdf",out_folder_directory.c_str()));
+    
+    c1 -> SetLogy(1);
+    c1 -> Print(Form("%s/LB_hist_cut_group_width_log.pdf",out_folder_directory.c_str()));
+    c1 -> Clear();
+
+    c1 -> SetLogy(0);
+    
+    // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     MBDz_MBDChargeAssy -> Draw("colz0");
     ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/MBDz_MBDChargeAssy.pdf",out_folder_directory.c_str()));
@@ -325,8 +461,8 @@ void plot_evt_zvtx::PrintPlot()
     intt_mbd_reco_z_diff -> Draw("hist"); 
     ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     draw_text -> DrawLatex(0.21, 0.83+0.04, Form("Reco. Entries: %.0f", intt_mbd_reco_z_diff -> GetEntries()));
-    draw_text -> DrawLatex(0.21, 0.79+0.04, Form("Reco. Mean: %.2f mm", intt_mbd_reco_z_diff -> GetMean()));
-    draw_text -> DrawLatex(0.21, 0.75+0.04, Form("Reco. Width: %.2f mm", intt_mbd_reco_z_diff -> GetStdDev()));
+    draw_text -> DrawLatex(0.21, 0.79+0.04, Form("Reco. Mean: %.3f %s", intt_mbd_reco_z_diff -> GetMean(), unit_text.c_str() ));
+    draw_text -> DrawLatex(0.21, 0.75+0.04, Form("Reco. Width: %.3f %s", intt_mbd_reco_z_diff -> GetStdDev(), unit_text.c_str() ));
 
 
     gaus_fit_2 -> SetParameters(intt_mbd_reco_z_diff -> GetBinContent( intt_mbd_reco_z_diff -> GetMaximumBin() ), intt_mbd_reco_z_diff -> GetBinCenter( intt_mbd_reco_z_diff -> GetMaximumBin() ), intt_mbd_reco_z_diff -> GetStdDev() * 0.6, 0);
@@ -336,9 +472,9 @@ void plot_evt_zvtx::PrintPlot()
     intt_mbd_reco_z_diff -> Fit(gaus_fit_2, "N", "", intt_mbd_reco_z_diff -> GetBinCenter( intt_mbd_reco_z_diff -> GetMaximumBin() ) - (0.4 * intt_mbd_reco_z_diff -> GetStdDev() ), intt_mbd_reco_z_diff -> GetBinCenter( intt_mbd_reco_z_diff -> GetMaximumBin() ) + (0.4 * intt_mbd_reco_z_diff -> GetStdDev() ) );
     gaus_fit_2 -> SetRange( gaus_fit_2->GetParameter(1) - gaus_fit_2->GetParameter(2) * 0.5, gaus_fit_2->GetParameter(1) + gaus_fit_2->GetParameter(2) * 0.5 ); 
     gaus_fit_2 -> Draw("lsame");
-    draw_text -> DrawLatex(0.21, 0.71, Form("Gaus mean   : %.2f mm",gaus_fit_2 -> GetParameter(1)));
-    draw_text -> DrawLatex(0.21, 0.67, Form("Gaus width  : %.2f mm",fabs(gaus_fit_2 -> GetParameter(2))));
-    draw_text -> DrawLatex(0.21, 0.63, Form("Gaus offset : %.2f mm", gaus_fit_2 -> GetParameter(3)));
+    draw_text -> DrawLatex(0.21, 0.75, Form("Gaus mean: %.3f %s",gaus_fit_2 -> GetParameter(1), unit_text.c_str() ));
+    // draw_text -> DrawLatex(0.21, 0.67, Form("Gaus width  : %.3f %s",fabs(gaus_fit_2 -> GetParameter(2)), unit_text.c_str() ));
+    // draw_text -> DrawLatex(0.21, 0.63, Form("Gaus offset : %.3f %s", gaus_fit_2 -> GetParameter(3), unit_text.c_str() ));
 
     c1 -> Print(Form("%s/intt_mbd_reco_z_diff.pdf",out_folder_directory.c_str()));
     c1 -> Clear();
@@ -347,10 +483,10 @@ void plot_evt_zvtx::PrintPlot()
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     reco_Zvtx_dist -> Draw("hist"); 
     ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
-    draw_text -> DrawLatex(0.21, 0.87, Form("NClus > %i", zvtx_dist_NClus_cut));
+    // draw_text -> DrawLatex(0.21, 0.87, Form("NClus > %i", zvtx_dist_NClus_cut));
     draw_text -> DrawLatex(0.21, 0.83, Form("Reco. Entries: %.0f", reco_Zvtx_dist -> GetEntries()));
-    draw_text -> DrawLatex(0.21, 0.79, Form("Reco. Mean: %.2f mm", reco_Zvtx_dist -> GetMean()));
-    draw_text -> DrawLatex(0.21, 0.75, Form("Reco. Width: %.2f mm", reco_Zvtx_dist -> GetStdDev()));
+    draw_text -> DrawLatex(0.21, 0.79, Form("Reco. Mean: %.3f %s", reco_Zvtx_dist -> GetMean(), unit_text.c_str()));
+    draw_text -> DrawLatex(0.21, 0.75, Form("Reco. Width: %.3f %s", reco_Zvtx_dist -> GetStdDev(), unit_text.c_str()));
 
     if (run_type == 1) // note: MC
     {
@@ -359,8 +495,8 @@ void plot_evt_zvtx::PrintPlot()
         true_Zvtx_dist -> Draw("hist same");
 
         draw_text -> DrawLatex(0.21, 0.71, Form("True Entries: %.0f", true_Zvtx_dist -> GetEntries()));
-        draw_text -> DrawLatex(0.21, 0.67, Form("True Mean: %.2f mm", true_Zvtx_dist -> GetMean()));
-        draw_text -> DrawLatex(0.21, 0.63, Form("True Width: %.2f mm", true_Zvtx_dist -> GetStdDev()));
+        draw_text -> DrawLatex(0.21, 0.67, Form("True Mean: %.3f %s", true_Zvtx_dist -> GetMean(), unit_text.c_str()));
+        draw_text -> DrawLatex(0.21, 0.63, Form("True Width: %.3f %s", true_Zvtx_dist -> GetStdDev(), unit_text.c_str()));
 
         leg -> Draw("same");
     }
@@ -517,8 +653,8 @@ void plot_evt_zvtx::PrintPlot()
             gaus_fit_2 -> SetRange( gaus_fit_2->GetParameter(1) - gaus_fit_2->GetParameter(2) * 2.5, gaus_fit_2->GetParameter(1) + gaus_fit_2->GetParameter(2) * 2.5 ); 
             gaus_fit_2 -> Draw("lsame");
             draw_text -> DrawLatex(0.21, 0.75, Form("Centrality: %s", centrality_region[i].c_str()));
-            draw_text -> DrawLatex(0.21, 0.71, Form("Gaus mean  : %.2f mm",gaus_fit_2 -> GetParameter(1)));
-            draw_text -> DrawLatex(0.21, 0.67, Form("Gaus width : %.2f mm",fabs(gaus_fit_2 -> GetParameter(2))));
+            draw_text -> DrawLatex(0.21, 0.71, Form("Gaus mean  : %.3f %s",gaus_fit_2 -> GetParameter(1), unit_text.c_str()));
+            draw_text -> DrawLatex(0.21, 0.67, Form("Gaus width : %.3f %s",fabs(gaus_fit_2 -> GetParameter(2)), unit_text.c_str()));
             ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
 
             // Z_resolution_centrality_gr_fit -> SetPoint     (i, i, gaus_fit_2->GetParameter(2));
@@ -550,9 +686,10 @@ void plot_evt_zvtx::PrintPlot()
         c1 -> Print(Form("%s/INTT_Z_resolution_centrality.pdf)", out_folder_directory.c_str()));
         c1 -> Clear();
 
+        // note : important 
         for (int i = 0; i < fit_width_vec.size(); i++)
         {
-            cout<<i<<" fit: "<<fit_width_vec[i]<<", num: "<<num_width_vec[i]<<", avg: "<<avg_width_vec[i]<<endl;
+            cout<<i<<" fit: "<<fit_width_vec[i]<<Form(" %s, num: ",unit_text.c_str())<<num_width_vec[i]<<Form(" %s, avg: ", unit_text.c_str())<<avg_width_vec[i]<<Form(" %s", unit_text.c_str())<<endl;
         }
     }
 
@@ -656,7 +793,6 @@ void plot_evt_zvtx::PrintPlot()
     true_zvtx_Mbin_Truezpos -> Draw("colz0");
     true_zvtx_Mbin_Truezpos -> Draw("HIST TEXT45 SAME");
     ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
-    // draw_text->DrawLatex(0.16, 1 - gPad->GetTopMargin() + 0.01, Form("Pass if |Reco - True| < %.0f mm", required_zvtx_diff));
     c1 -> Print(Form("%s/true_zvtx_Mbin_Truezpos.pdf", out_folder_directory.c_str()));
     c1 -> Clear();
 
@@ -665,7 +801,7 @@ void plot_evt_zvtx::PrintPlot()
     reco_zvtx_Mbin_Truezpos -> Draw("colz0");
     reco_zvtx_Mbin_Truezpos -> Draw("HIST TEXT45 SAME");
     ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
-    draw_text->DrawLatex(0.16, 1 - gPad->GetTopMargin() + 0.01, Form("Pass if |Reco - True| < %.0f mm", required_zvtx_diff));
+    draw_text->DrawLatex(0.16, 1 - gPad->GetTopMargin() + 0.01, Form("Pass if |Reco. - True| < %.1f %s", required_zvtx_diff, unit_text.c_str()));
     c1 -> Print(Form("%s/reco_zvtx_Mbin_Truezpos.pdf", out_folder_directory.c_str()));
     c1 -> Clear();
 
@@ -676,7 +812,7 @@ void plot_evt_zvtx::PrintPlot()
     ratio_Mbin_Truezpos -> Draw("colz0");
     ratio_Mbin_Truezpos -> Draw("HIST TEXT45E SAME");
     ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
-    draw_text->DrawLatex(0.16, 1 - gPad->GetTopMargin() + 0.01, Form("Pass if |Reco - True| < %.0f mm", required_zvtx_diff));
+    draw_text->DrawLatex(0.16, 1 - gPad->GetTopMargin() + 0.01, Form("Pass if |Reco. - True| < %.1f %s", required_zvtx_diff, unit_text.c_str()));
     c1 -> Print(Form("%s/ratio_Mbin_Truezpos.pdf", out_folder_directory.c_str()));
     c1 -> Clear();
 

@@ -354,51 +354,55 @@ namespace ANA_MAP_V3
         20
     };
 
+    pair<double, double> selected_z_region_id = {3,9};
+
     // todo: zvtx resolution from the file shown above 
     // todo: from /sphenix/user/ChengWei/sPH_dNdeta/HIJING_ana398_xvtx-0p04cm_yvtx0p24cm_zvtx-20cm_dummyAlignParams/SemiFinal_EvtZ_MC_ZF_zvtx/INTT_zvtx.root
-    map<int, double> reco_Z_resolution = {
-        {0, 1.78117},
-        {1, 1.85937},
-        {2, 2.05982},
-        {3, 2.33111},
-        {4, 2.80505},
-        {5, 3.70811},
-        {6, 4.65284},
-        {7, 5.37133},
-        {8, 5.94759},
-        {9, 6.56091},
-        {10, 2.2836} // note : the inclusive centrality, 0% - 95%
-    };
+    // map<int, double> reco_Z_resolution = {
+    //     {0, 1.78117},
+    //     {1, 1.85937},
+    //     {2, 2.05982},
+    //     {3, 2.33111},
+    //     {4, 2.80505},
+    //     {5, 3.70811},
+    //     {6, 4.65284},
+    //     {7, 5.37133},
+    //     {8, 5.94759},
+    //     {9, 6.56091},
+    //     {10, 2.2836} // note : the inclusive centrality, 0% - 95%
+    // };
 
     // todo : the weird centrality behavior 
     // todo : from /sphenix/user/ChengWei/sPH_dNdeta/Sim_Ntuple_HIJING_new_20240424_HR/evt_vtxZ/complete_file/merged_file.root
-    // 0 fit: 0, num: 0, avg: 0
-    // 1 fit: 1.77232, num: 1.92834, avg: 1.85033
-    // 2 fit: 1.86409, num: 1.93611, avg: 1.9001
-    // 3 fit: 1.85952, num: 1.91684, avg: 1.88818
-    // 4 fit: 1.93077, num: 2.11623, avg: 2.0235
-    // 5 fit: 2.42972, num: 2.59487, avg: 2.51229
-    // 6 fit: 3.00789, num: 3.37918, avg: 3.19354
-    // 7 fit: 4.18009, num: 4.77947, avg: 4.47978
-    // 8 fit: 5.62165, num: 5.89599, avg: 5.75882
-    // 9 fit: 5.00464, num: 6.40251, avg: 5.70358
-    // 10 fit: 0, num: 0, avg: 0
-    // 11 fit: 2.27027, num: 3.36742, avg: 2.81884
+    // 0 fit: 0 cm, num: 0 cm, avg: 0 cm
+    // 1 fit: 0.184351 cm, num: 0.192904 cm, avg: 0.188627 cm
+    // 2 fit: 0.190324 cm, num: 0.193508 cm, avg: 0.191916 cm
+    // 3 fit: 0.191219 cm, num: 0.191739 cm, avg: 0.191479 cm
+    // 4 fit: 0.202834 cm, num: 0.211722 cm, avg: 0.207278 cm
+    // 5 fit: 0.242848 cm, num: 0.259601 cm, avg: 0.251224 cm
+    // 6 fit: 0.300977 cm, num: 0.338136 cm, avg: 0.319557 cm
+    // 7 fit: 0.416109 cm, num: 0.477896 cm, avg: 0.447002 cm
+    // 8 fit: 0.571877 cm, num: 0.590128 cm, avg: 0.581003 cm
+    // 9 fit: 0.494087 cm, num: 0.640948 cm, avg: 0.567518 cm
+    // 10 fit: 0 cm, num: 0 cm, avg: 0 cm
+    // 11 fit: 0.223783 cm, num: 0.302418 cm, avg: 0.2631 cm
 
-    // map<int, double> reco_Z_resolution = {
-    //     {0,  0},
-    //     {1,  1.85033},
-    //     {2,  1.9001},
-    //     {3,  1.88818},
-    //     {4,  2.0235},
-    //     {5,  2.51229},
-    //     {6,  3.19354},
-    //     {7,  4.47978},
-    //     {8,  5.75882},
-    //     {9,  5.70358},
-    //     {10,  0},
-    //     {11,  2.81884}
-    // };
+    map<int, double> reco_Z_resolution = {
+        {0, 1.78117},
+        {1, 1.88627},
+        {2, 1.91916},
+        {3, 1.91479},
+        {4, 2.07278},
+        {5, 2.51224},
+        {6, 3.19557},
+        {7, 4.47002},
+        {8, 5.81003},
+        {9, 5.67518},
+        {10,6.56091} // note : NOT the width of the inclusive bin
+    }; 
+    // todo: the width numbers are for sure incorrect, due to the incorrect centrality calibration in both data and MC
+    // todo : in addition, the inclusive deltaZ width is expected not used.
+
 
     double signal_region = 1.;
 

@@ -99,6 +99,7 @@ class INTTZvtx
         TH2F * Z_resolution_pos_cut;  
         TH1F * Z_resolution;          
         TH1F * evt_possible_z;
+        TH1F * line_breakdown_hist_cm;            // note : same thing, but with the unit cm 
         TH1F * line_breakdown_hist;               // note : try to fill the line into the histogram
         TH1F * line_breakdown_gaus_ratio_hist;    // note : the distribution of the entry/width of gaus fit 
         TH1F * line_breakdown_gaus_width_hist;    // note : the distribution of the gaus fit width 
@@ -131,6 +132,7 @@ class INTTZvtx
         TFile  * out_file;
         TTree  * tree_out;
         TF1    * gaus_fit;
+        TF1    * gaus_fit_cm; 
         TF1    * gaus_fit_2;
         TF1    * double_gaus_fit;
         TF1    * zvtx_finder;
@@ -248,7 +250,7 @@ class INTTZvtx
         int min_width_ID(vector<double> input_width_vec);
         double get_delta_phi(double angle_1, double angle_2);
         double get_track_phi(double inner_clu_phi_in, double delta_phi_in);
-        
+        void FakeClone1D(TH1F * hist_in, TH1F * hist_out);
         
 
 };
@@ -297,7 +299,13 @@ INTTZvtx::INTTZvtx(string run_type, string out_folder_directory, pair<double,dou
     
     // mega_track_finder = new MegaTrackFinder(run_type, out_folder_directory, centrality_map.size(), beam_origin);
 
-    if (draw_event_display) {c2 -> Print(Form("%s/temp_event_display.pdf(",out_folder_directory.c_str()));}
+    if (draw_event_display) 
+    {
+        c2 -> cd();
+        c2 -> Print(Form("%s/temp_event_display.pdf(",out_folder_directory.c_str()));
+        c1 -> cd();
+        c1 -> Print(Form("%s/evt_linebreak_display.pdf(",out_folder_directory.c_str()));
+    }
 }
 
 void INTTZvtx::Characterize_Pad (TPad *pad, float left = 0.15, float right = 0.1, float top = 0.1, float bottom = 0.12, bool set_logY = false, int setgrid_bool = 0)
@@ -409,6 +417,11 @@ void INTTZvtx::InitHist()
     line_breakdown_hist -> GetXaxis() -> SetTitle("Z [mm]");
     line_breakdown_hist -> GetYaxis() -> SetTitle("Entry");
     if (print_message_opt == true) {cout<<"class INTTZvtx, Line brakdown hist, range : "<<line_breakdown_hist->GetXaxis()->GetXmin()<<" "<<line_breakdown_hist->GetXaxis()->GetXmax()<<" "<<line_breakdown_hist->GetBinWidth(1)<<endl;}
+
+    line_breakdown_hist_cm = new TH1F("", "line_breakdown_hist_cm", line_breakdown_hist -> GetNbinsX(), line_breakdown_hist -> GetXaxis() -> GetXmin() * 0.1, line_breakdown_hist -> GetXaxis() -> GetXmax() * 0.1);
+    line_breakdown_hist_cm -> SetLineWidth(1);
+    line_breakdown_hist_cm -> GetXaxis() -> SetTitle("Z [cm]");
+    line_breakdown_hist_cm -> GetYaxis() -> SetTitle("Entry");
 
     line_breakdown_gaus_ratio_hist = new TH1F("","line_breakdown_gaus_ratio_hist",200,0,0.0005);
     line_breakdown_gaus_ratio_hist -> GetXaxis() -> SetTitle("(Norm. size) / width");
@@ -590,6 +603,11 @@ void INTTZvtx::InitRest()
     gaus_fit -> SetLineColor(2);
     gaus_fit -> SetLineWidth(1);
     gaus_fit -> SetNpx(1000);
+
+    gaus_fit_cm = new TF1("gaus_fit_cm",gaus_func,evt_possible_z_range.first,evt_possible_z_range.second,4);
+    gaus_fit_cm -> SetLineColor(2);
+    gaus_fit_cm -> SetLineWidth(1);
+    gaus_fit_cm -> SetNpx(1000);
 
     gaus_fit_2 = new TF1("gaus_fit_2",gaus_func,evt_possible_z_range.first,evt_possible_z_range.second,4);
     gaus_fit_2 -> SetLineColor(2);
@@ -935,6 +953,8 @@ void INTTZvtx::ProcessEvt(
     {   
         N_group_info = find_Ngroup(evt_possible_z);
         N_group_info_detail = find_Ngroup(line_breakdown_hist);
+
+        FakeClone1D(line_breakdown_hist, line_breakdown_hist_cm);
         
         // note : first fit is for the width, so apply the constraints on the Gaussian offset
         gaus_fit -> SetParameters(line_breakdown_hist -> GetBinContent( line_breakdown_hist -> GetMaximumBin() ), line_breakdown_hist -> GetBinCenter( line_breakdown_hist -> GetMaximumBin() ), 40, 0);
@@ -961,7 +981,14 @@ void INTTZvtx::ProcessEvt(
         // line_breakdown_hist -> Fit(gaus_fit, "NQ", "", N_group_info_detail[2]-10, N_group_info_detail[3]+10);
         loose_offset_peak = gaus_fit -> GetParameter(1);
         loose_offset_peakE = gaus_fit -> GetParError(1);        
+
         
+        // note : ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+        // note : first fit is for the width, so apply the constraints on the Gaussian offset
+        gaus_fit_cm -> SetParameters(gaus_fit -> GetParameter(0), gaus_fit -> GetParameter(1) * 0.1, gaus_fit -> GetParameter(2) * 0.1, gaus_fit -> GetParameter(3));
+        // note : ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
         // note : eff sigma method, relatively sensitive to the background
         // note : use z-mid to do the effi_sig, because that line_breakdown takes too long time
         temp_event_zvtx_info = sigmaEff_avg(z_mid,Integrate_portion);
@@ -1100,6 +1127,7 @@ void INTTZvtx::ProcessEvt(
 
     if (N_comb.size() > zvtx_cal_require && draw_event_display == true)
     {   
+        c2 -> cd();
         temp_event_xy = new TGraph(temp_sPH_nocolumn_vec[0].size(),&temp_sPH_nocolumn_vec[0][0],&temp_sPH_nocolumn_vec[1][0]);
         temp_event_xy -> SetTitle("INTT event display X-Y plane");
         temp_event_xy -> GetXaxis() -> SetLimits(-150,150);
@@ -1256,6 +1284,25 @@ void INTTZvtx::ProcessEvt(
         pad_inner_outer_phi -> Clear();
         pad_phi_diff_1D -> Clear();
 
+        c1 -> cd();
+        line_breakdown_hist_cm -> SetMinimum(0);
+        line_breakdown_hist_cm -> SetMaximum(line_breakdown_hist_cm -> GetBinContent( line_breakdown_hist_cm->GetMaximumBin() ) * 2);
+        line_breakdown_hist_cm -> Draw("hist");
+        gaus_fit_cm -> Draw("l same");
+        
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
+        draw_text -> DrawLatex(0.2, 0.84, Form("Event ID: %i", event_i));
+        draw_text -> DrawLatex(0.2, 0.80, Form("Reconstructed vertex Z: %.3f cm", gaus_fit_cm -> GetParameter(1)));
+        if (run_type == "MC") {draw_text -> DrawLatex(0.2, 0.76, Form("True vertex Z: %.3f cm",TrigZvtxMC));}
+
+        if(draw_event_display && (event_i % print_rate) == 0 /*&& good_zvtx_tag == true*/){c1 -> Print(Form("%s/evt_linebreak_display.pdf",out_folder_directory.c_str()));}
+        else if(draw_event_display && (final_zvtx > 0 || final_zvtx < -450)) {cout<<"In INTTZvtx class, event :"<<event_i<<" weird zvtx "<<endl; c1 -> Print(Form("%s/evt_linebreak_display.pdf",out_folder_directory.c_str()));}
+        else if ( draw_event_display && ( (final_zvtx - MBD_reco_z) < -45 || (final_zvtx - MBD_reco_z) > 30 ) && total_NClus > 1500 ) { cout<<"In INTTZvtx class, event :"<<event_i<<" High NClus, poor INTTrecoZ with MBDrecoZ, diff : "<< final_zvtx - MBD_reco_z <<endl; c1 -> Print(Form("%s/evt_linebreak_display.pdf",out_folder_directory.c_str())); }
+        else if ( draw_event_display && run_type == "MC" && fabs(final_zvtx - (TrigZvtxMC * 10.)) > 2. && total_NClus > 3000) { cout<<"In INTTZvtx class, event :"<<event_i<<" High NClus, poor Z : "<< fabs(final_zvtx - (TrigZvtxMC * 10.)) <<endl; c1 -> Print(Form("%s/evt_linebreak_display.pdf",out_folder_directory.c_str())); }
+        else if ( draw_event_display && run_type == "MC" && fabs(final_zvtx - (TrigZvtxMC * 10.)) > 2.) { cout<<"In INTTZvtx class, event :"<<event_i<<" low NClus, poor Z : "<< fabs(final_zvtx - (TrigZvtxMC * 10.)) <<endl; c1 -> Print(Form("%s/evt_linebreak_display.pdf",out_folder_directory.c_str())); }
+        c1 -> Clear();
+
+
         // temp_event_xy -> Delete();
         // temp_event_rz -> Delete();
         // z_range_gr_draw -> Delete();
@@ -1319,6 +1366,8 @@ void INTTZvtx::PrintPlots()
 {
     if (draw_event_display) {c2 -> Print(Form("%s/temp_event_display.pdf)",out_folder_directory.c_str()));}
     c2 -> Clear();
+
+    if (draw_event_display) {c1 -> Print(Form("%s/evt_linebreak_display.pdf)",out_folder_directory.c_str()));}
     c1 -> Clear();
 
     cout<<"avg_event_zvtx_vec size : "<<avg_event_zvtx_vec.size()<<endl;
@@ -1332,7 +1381,7 @@ void INTTZvtx::PrintPlots()
     avg_event_zvtx -> SetMinimum( 0 );  avg_event_zvtx -> SetMaximum( avg_event_zvtx->GetBinContent(avg_event_zvtx->GetMaximumBin()) * 1.5 );
     avg_event_zvtx -> Draw("hist");
 
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     // ltx->DrawLatex(0.54, 0.86, Form("Run %s",run_ID.c_str()));
     // ltx->DrawLatex(0.54, 0.86, "Au+Au #sqrt{s_{NN}} = 200 GeV");
 
@@ -1347,28 +1396,28 @@ void INTTZvtx::PrintPlots()
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     width_density -> Draw("hist"); 
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/width_density.pdf",out_folder_directory.c_str()));
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     ES_width -> Draw("hist"); 
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/ES_width.pdf",out_folder_directory.c_str()));
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     ES_width_ratio -> Draw("hist"); 
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/ES_width_ratio.pdf",out_folder_directory.c_str()));
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     zvtx_evt_fitError -> Draw("hist"); 
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/zvtx_evt_fitError.pdf",out_folder_directory.c_str()));
     c1 -> Clear();
 
@@ -1393,7 +1442,7 @@ void INTTZvtx::PrintPlots()
         draw_text -> DrawLatex(0.21, 0.79, Form("EffSig avg : %.2f mm",Z_resolution_vec_info[0]));
         draw_text -> DrawLatex(0.21, 0.71, Form("Gaus mean  : %.2f mm",gaus_fit_2 -> GetParameter(1)));
         draw_text -> DrawLatex(0.21, 0.67, Form("Gaus width : %.2f mm",fabs(gaus_fit_2 -> GetParameter(2))));
-        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
         c1 -> Print(Form("%s/Z_resolution.pdf",out_folder_directory.c_str()));
         c1 -> Clear();
 
@@ -1407,7 +1456,7 @@ void INTTZvtx::PrintPlots()
     if (run_type == "MC")
     {    
         Z_resolution_Nclu -> Draw("colz0"); 
-        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
         c1 -> Print(Form("%s/Z_resolution_Nclu.pdf",out_folder_directory.c_str()));
         c1 -> Clear();
     }
@@ -1416,7 +1465,7 @@ void INTTZvtx::PrintPlots()
     if (run_type == "MC")
     {
         Z_resolution_pos -> Draw("colz0"); 
-        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
         c1 -> Print(Form("%s/Z_resolution_pos.pdf",out_folder_directory.c_str()));
         c1 -> Clear();
     }
@@ -1425,92 +1474,92 @@ void INTTZvtx::PrintPlots()
     if (run_type == "MC")
     {
         Z_resolution_pos_cut -> Draw("colz0"); 
-        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
         c1 -> Print(Form("%s/Z_resolution_pos_cut.pdf",out_folder_directory.c_str()));
         c1 -> Clear();
     }
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     zvtx_evt_fitError_corre -> Draw("colz0"); 
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/zvtx_evt_fitError_corre.pdf",out_folder_directory.c_str()));
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     zvtx_evt_nclu_corre -> Draw("colz0"); 
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/zvtx_evt_nclu_corre.pdf",out_folder_directory.c_str()));
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     zvtx_evt_width_corre -> Draw("colz0"); 
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/zvtx_evt_width_corre.pdf",out_folder_directory.c_str()));
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     gaus_width_Nclu -> Draw("colz0"); 
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/gaus_width_Nclu.pdf",out_folder_directory.c_str()));
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     gaus_rchi2_Nclu -> Draw("colz0"); 
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/gaus_rchi2_Nclu.pdf",out_folder_directory.c_str()));
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     final_fit_width -> Draw("colz0"); 
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/final_fit_width.pdf",out_folder_directory.c_str()));
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     N_track_candidate_Nclu -> Draw("colz0"); 
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/N_track_candidate_Nclu.pdf",out_folder_directory.c_str()));
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     peak_group_width_hist -> Draw("hist"); 
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/peak_group_width_hist.pdf",out_folder_directory.c_str()));
     c1 -> Clear();
     
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     peak_group_ratio_hist -> Draw("hist"); 
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/peak_group_ratio_hist.pdf",out_folder_directory.c_str()));
     c1 -> Clear();
     
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     N_group_hist -> Draw("hist"); 
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/N_group_hist.pdf",out_folder_directory.c_str()));
     c1 -> Clear();
     
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     peak_group_detail_width_hist -> Draw("hist"); 
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/peak_group_detail_width_hist.pdf",out_folder_directory.c_str()));
     c1 -> Clear();
     
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     peak_group_detail_ratio_hist -> Draw("hist"); 
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/peak_group_detail_ratio_hist.pdf",out_folder_directory.c_str()));
     c1 -> Clear();
     
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     N_group_detail_hist -> Draw("hist"); 
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/N_group_detail_hist.pdf",out_folder_directory.c_str()));
     c1 -> Clear();
 
@@ -1527,7 +1576,7 @@ void INTTZvtx::PrintPlots()
     // draw_text -> DrawLatex(0.45, 0.82, Form("Gaus mean %.2f mm", gaus_fit -> GetParameter(1)));
     // draw_text -> DrawLatex(0.45, 0.78, Form("Width : %.2f mm", fabs(gaus_fit -> GetParameter(2))));
     // draw_text -> DrawLatex(0.45, 0.74, Form("Reduced #chi2 : %.3f", gaus_fit -> GetChisquare() / double(gaus_fit -> GetNDF())));
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
 
     c1 -> Print(Form("%s/line_breakdown_gaus_ratio_hist.pdf",out_folder_directory.c_str()));
     c1 -> Clear();
@@ -1546,7 +1595,7 @@ void INTTZvtx::PrintPlots()
     draw_text -> DrawLatex(0.2, 0.82, Form("Gaus mean %.2f mm", gaus_fit -> GetParameter(1)));
     draw_text -> DrawLatex(0.2, 0.78, Form("Width : %.2f mm", fabs(gaus_fit -> GetParameter(2))));
     draw_text -> DrawLatex(0.2, 0.74, Form("Reduced #chi2 : %.3f", gaus_fit -> GetChisquare() / double(gaus_fit -> GetNDF())));
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     
     c1 -> Print(Form("%s/line_breakdown_gaus_width_hist.pdf",out_folder_directory.c_str()));
     c1 -> Clear();
@@ -1932,6 +1981,19 @@ double INTTZvtx::get_track_phi(double inner_clu_phi_in, double delta_phi_in)
     else {track_phi = track_phi;}
     return track_phi;
 }
+
+void INTTZvtx::FakeClone1D(TH1F * hist_in, TH1F * hist_out)
+{
+    if (hist_in -> GetNbinsX() != hist_out -> GetNbinsX()) {cout<<"In INTTZvtx::FakeClone1D, the input and output hist have different number of bins!!!"<<endl; return;}
+
+    for (int i = 0; i < hist_in -> GetNbinsX(); i++)
+    {
+        hist_out -> SetBinContent(i+1, hist_in -> GetBinContent(i+1));
+    }
+
+    return;
+}
+
 #endif
 
 

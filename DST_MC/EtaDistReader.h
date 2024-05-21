@@ -52,6 +52,7 @@ class EtaDistReader : public INTTEta
             dNdeta_1D_reco_single_postalpha = vector<TH1F*>(N_centrality_bin, nullptr);
             dNdeta_1D_reco_multi_postalpha = vector<TH1F*>(N_centrality_bin, nullptr);
             DeltaPhi_Multi_1D.clear();
+            DeltaPhi_Multi_Stack_hist_out.clear();
             DeltaPhi_Multi_Stack.clear();
             SignalNTrack_Single.clear(); 
             SignalNTrack_Multi.clear();
@@ -59,7 +60,10 @@ class EtaDistReader : public INTTEta
             N_event_counting_MC         = vector<vector<int>>(N_centrality_bin, vector<int>(included_eta_z_map.size(),0));
             N_event_counting_fulleta_MC = vector<vector<int>>(N_centrality_bin, vector<int>(eta_region.size() - 1, 0)); // note : N centrality_bin x N eta_bin
 
-            DeltaPhi_Multi_Stack_hist_out.clear();
+            DeltaPhi_Multi_Stack_hist_out_radian.clear();
+            DeltaPhi_Multi_Stack_radian.clear();
+            DeltaPhi_Multi_1D_radian.clear();
+            
             
             solid_line = new TLine();
             solid_line -> SetLineWidth(1);
@@ -85,6 +89,7 @@ class EtaDistReader : public INTTEta
         };
 
         vector<TH1F *> GetDeltaPhi_Multi_stack_1D();
+        vector<TH1F *> GetDeltaPhi_Multi_stack_1D_radian();
         vector<TH1F *> GetdNdeta_1D_MC();
         vector<TH1F *> GetdNdeta_1D_fulleta_MC();
         vector<TH1F *> GetdNdeta_1D_reco_single_original();
@@ -132,6 +137,10 @@ class EtaDistReader : public INTTEta
         TH2F * eta_z_ref_used_check;
         TH2F * eta_z_ref_used_check_binID;
 
+        TH2F * eta_z_ref_cm;
+        TH2F * eta_z_ref_used_check_cm;
+        TH2F * eta_z_ref_used_check_binID_cm;
+
         TH2F * eta_Mbin_correction_tight;
         TH2F * eta_Mbin_correction_loose;
         TH2F * eta_Mbin_correction_loose_noUPC; // note : no ultra peripheral collision bin
@@ -149,6 +158,10 @@ class EtaDistReader : public INTTEta
 
         map<string, THStack *> DeltaPhi_Multi_Stack;
         vector<TH1F *> DeltaPhi_Multi_Stack_hist_out;
+        map<string, THStack *> DeltaPhi_Multi_Stack_radian;
+        vector<TH1F *> DeltaPhi_Multi_Stack_hist_out_radian;
+        map<string,TH1F *> DeltaPhi_Multi_1D_radian;
+
         map<string, int> SignalNTrack_Single;
         map<string, int> SignalNTrack_Multi;
         vector<vector<int>> N_event_counting;
@@ -161,13 +174,15 @@ class EtaDistReader : public INTTEta
 
         int post_alpha_tag;
 
+        double radian_conversion = 180./M_PI;
+
         // TFile * file_out; 
 
         void ReadFileHist();
         void InitHist();
         void MainPreparation();
         void DrawCoordLine(TH2F * hist_in);
-        void DrawEtaCoverBox(TH2F * hist_in);
+        void DrawEtaCoverBox(TH2F * hist_in, string unit_string);
         void HistDivision();
         void Hist1DSetting(TH1F * hist_in, string color_code);
         
@@ -214,9 +229,22 @@ void EtaDistReader::DrawCoordLine(TH2F * hist_in)
     ); 
 }
 
-void EtaDistReader::DrawEtaCoverBox(TH2F * hist_in)
+void EtaDistReader::DrawEtaCoverBox(TH2F * hist_in, string unit_string)
 {
-    double INTT_layer_R[4] = {71.88, 77.32, 96.8, 102.62}; // note : the radii of the INTT layers
+    double unit_correction;
+    if (unit_string == "mm") { unit_correction = 1.; }
+    else if (unit_string == "cm") { unit_correction = 0.1; }
+    else {cout<<"In EtaDistReader, wrong unit_string input"<<endl;}
+
+    double INTT_layer_R[4] = {
+        71.88 * unit_correction, 
+        77.32 * unit_correction, 
+        96.8 * unit_correction, 
+        102.62 * unit_correction
+    }; // note : the radii of the INTT layers
+
+    double INTT_left_edge = -230.; INTT_left_edge = INTT_left_edge * unit_correction;
+    double INTT_right_edge = 230.; INTT_right_edge = INTT_right_edge * unit_correction;
 
     // note : low  Z edge for left  eta
     // note : high Z edge for right eta
@@ -225,8 +253,8 @@ void EtaDistReader::DrawEtaCoverBox(TH2F * hist_in)
         double bin_low_zvtx  = hist_in->GetYaxis()->GetBinLowEdge(i+1);
         double bin_high_zvtx = hist_in->GetYaxis()->GetBinLowEdge(i+1) + hist_in->GetYaxis()->GetBinWidth(i+1);
 
-        double INTT_eta_acceptance_l = -0.5 * TMath::Log((sqrt(pow(-230.-bin_low_zvtx,2)+pow(INTT_layer_R[0],2))-(-230.-bin_low_zvtx)) / (sqrt(pow(-230.-bin_low_zvtx,2)+pow(INTT_layer_R[0],2))+(-230.-bin_low_zvtx))); // note : left
-        double INTT_eta_acceptance_r = -0.5 * TMath::Log((sqrt(pow(230.-bin_high_zvtx,2)+pow(INTT_layer_R[3],2))-(230.-bin_high_zvtx)) / (sqrt(pow(230.-bin_high_zvtx,2)+pow(INTT_layer_R[3],2))+(230.-bin_high_zvtx))); // note : right
+        double INTT_eta_acceptance_l = -0.5 * TMath::Log((sqrt(pow(INTT_left_edge - bin_low_zvtx,2)+pow(INTT_layer_R[0],2))-(INTT_left_edge - bin_low_zvtx)) / (sqrt(pow(INTT_left_edge - bin_low_zvtx,2)+pow(INTT_layer_R[0],2))+(INTT_left_edge - bin_low_zvtx))); // note : left
+        double INTT_eta_acceptance_r = -0.5 * TMath::Log((sqrt(pow(INTT_right_edge - bin_high_zvtx,2)+pow(INTT_layer_R[3],2))-(INTT_right_edge - bin_high_zvtx)) / (sqrt(pow(INTT_right_edge - bin_high_zvtx,2)+pow(INTT_layer_R[3],2))+(INTT_right_edge - bin_high_zvtx))); // note : right
         
         solid_line -> DrawLine(INTT_eta_acceptance_l, bin_low_zvtx, INTT_eta_acceptance_l, bin_high_zvtx); // note : vertical
         solid_line -> DrawLine(INTT_eta_acceptance_r, bin_low_zvtx, INTT_eta_acceptance_r, bin_high_zvtx); // note : vertical
@@ -261,6 +289,14 @@ void EtaDistReader::ReadFileHist()
             {
                 DeltaPhi_Multi_1D[Form("%i_%i_%i",Mbin,eta_z.first,eta_z.second[zbin])] = (TH1F *) file_in -> Get(Form("Reco_DeltaPhi1D_Multi_MBin%i_Eta%i_Z%i",Mbin,eta_z.first,eta_z.second[zbin]));
                 DeltaPhi_Multi_1D[Form("%i_%i_%i",Mbin,eta_z.first,eta_z.second[zbin])] -> SetFillColor(TColor::GetColor(color_code[zbin%5].c_str()));
+
+                // note : change the unit, for the presentation
+                DeltaPhi_Multi_1D_radian[Form("%i_%i_%i",Mbin,eta_z.first,eta_z.second[zbin])] = (TH1F *) file_in -> Get(Form("Reco_DeltaPhi1D_Multi_MBin%i_Eta%i_Z%i",Mbin,eta_z.first,eta_z.second[zbin]));
+                DeltaPhi_Multi_1D_radian[Form("%i_%i_%i",Mbin,eta_z.first,eta_z.second[zbin])] -> SetFillColor(TColor::GetColor(color_code[zbin%5].c_str()));
+                DeltaPhi_Multi_1D_radian[Form("%i_%i_%i",Mbin,eta_z.first,eta_z.second[zbin])] -> GetXaxis() -> SetLimits(
+                    DeltaPhi_Multi_1D_radian[Form("%i_%i_%i",Mbin,eta_z.first,eta_z.second[zbin])] -> GetXaxis() -> GetXmin() / radian_conversion,
+                    DeltaPhi_Multi_1D_radian[Form("%i_%i_%i",Mbin,eta_z.first,eta_z.second[zbin])] -> GetXaxis() -> GetXmax() / radian_conversion
+                );
             }
         }
     }
@@ -288,6 +324,20 @@ void EtaDistReader::ReadFileHist()
     eta_z_ref_used_check = (TH2F*) eta_z_ref -> Clone("eta_z_ref_used_check");
     eta_z_ref_used_check_binID = (TH2F*) eta_z_ref -> Clone("eta_z_ref_used_check");
     
+    // todo, the unit_correction is hard written here, the 0.1, I meant. 
+    eta_z_ref_cm = new TH2F (
+        "",
+        "eta_z_ref_cm;reco #eta;reco zvtx [cm]",
+        eta_z_ref -> GetNbinsX(),
+        eta_z_ref -> GetXaxis() -> GetXmin(),
+        eta_z_ref -> GetXaxis() -> GetXmax(),
+        eta_z_ref -> GetNbinsY(),
+        eta_z_ref -> GetYaxis() -> GetXmin() * 0.1,
+        eta_z_ref -> GetYaxis() -> GetXmax() * 0.1
+    );
+    eta_z_ref_used_check_cm = (TH2F *) eta_z_ref_cm -> Clone("eta_z_ref_used_check_cm");
+    eta_z_ref_used_check_binID_cm = (TH2F *) eta_z_ref_cm -> Clone("eta_z_ref_used_check_binID_cm");
+
     cout<<"ReadFileHist done"<<endl;
 
     return;
@@ -300,7 +350,8 @@ void EtaDistReader::FindCoveredRegion()
     {
         for (int z_bin = 0; z_bin < eta_z_ref_used_check_binID->GetNbinsY(); z_bin++)
         {
-            eta_z_ref_used_check_binID -> SetBinContent(eta_bin+1,z_bin+1, 100 * (eta_bin+1) + (z_bin+1));
+            eta_z_ref_used_check_binID    -> SetBinContent(eta_bin+1,z_bin+1, 100 * (eta_bin+1) + (z_bin+1));
+            eta_z_ref_used_check_binID_cm -> SetBinContent(eta_bin+1,z_bin+1, 100 * (eta_bin+1) + (z_bin+1));
         }
     }
 
@@ -310,7 +361,7 @@ void EtaDistReader::FindCoveredRegion()
     eta_z_ref -> Draw("colz0");
     ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     DrawCoordLine(eta_z_ref);    
-    DrawEtaCoverBox(eta_z_ref);
+    DrawEtaCoverBox(eta_z_ref, "mm");
     c1 -> Print(Form("%s/eta_z_ref.pdf",out_folder_directory.c_str()));
     c1 -> Clear();
 
@@ -327,13 +378,43 @@ void EtaDistReader::FindCoveredRegion()
     eta_z_ref_used_check -> Draw("colz0");
     ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     DrawCoordLine(eta_z_ref_used_check);    
-    DrawEtaCoverBox(eta_z_ref_used_check);
+    DrawEtaCoverBox(eta_z_ref_used_check, "mm");
 
     gStyle->SetPaintTextFormat("1.0f");
     eta_z_ref_used_check_binID -> SetMarkerSize(0.7);
     eta_z_ref_used_check_binID -> Draw("HIST TEXT45 SAME");
 
     c1 -> Print(Form("%s/eta_z_ref_used_check.pdf",out_folder_directory.c_str()));
+    c1 -> Clear();
+
+    // note : unit in cm, for the presentation
+    TH2F_FakeClone(eta_z_ref, eta_z_ref_cm);
+    TH2F_FakeClone(eta_z_ref_used_check, eta_z_ref_used_check_cm);
+
+    c1 -> cd();
+    eta_z_ref_cm -> GetXaxis() -> SetTitle("reco #eta");
+    eta_z_ref_cm -> GetYaxis() -> SetTitle("reco zvtx [cm]");
+    eta_z_ref_cm -> Draw("colz0");
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
+    DrawCoordLine(eta_z_ref_cm);    
+    DrawEtaCoverBox(eta_z_ref_cm, "cm");
+    c1 -> Print(Form("%s/eta_z_ref_cm.pdf",out_folder_directory.c_str()));
+    c1 -> Clear();
+
+    // note : for the used bins check
+    c1 -> cd();
+    eta_z_ref_used_check_cm -> GetXaxis() -> SetTitle("reco #eta");
+    eta_z_ref_used_check_cm -> GetYaxis() -> SetTitle("reco zvtx [cm]");
+    eta_z_ref_used_check_cm -> Draw("colz0");
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
+    DrawCoordLine(eta_z_ref_used_check_cm);    
+    DrawEtaCoverBox(eta_z_ref_used_check_cm, "cm");
+
+    gStyle->SetPaintTextFormat("1.0f");
+    eta_z_ref_used_check_binID_cm -> SetMarkerSize(0.7);
+    eta_z_ref_used_check_binID_cm -> Draw("HIST TEXT45 SAME");
+
+    c1 -> Print(Form("%s/eta_z_ref_used_check_cm.pdf",out_folder_directory.c_str()));
     c1 -> Clear();
 
 }
@@ -514,6 +595,50 @@ void EtaDistReader::MainPreparation()
             draw_text -> DrawLatex(0.21, 0.86, Form("MBin: %i, #eta_bin: %i, #Delta#Phi_bin width: %.2f", Mbin, eta_z.first, temp_hist -> GetBinWidth(1)));
             draw_text -> DrawLatex(0.21, 0.82, Form("pol2: %.2f + %.2f(x-%.2f) + %.2f(x-%.2f)^{2}", bkg_fit_pol2 -> GetParameter(0), bkg_fit_pol2 -> GetParameter(1), bkg_fit_pol2 -> GetParameter(3), bkg_fit_pol2 -> GetParameter(2), bkg_fit_pol2 -> GetParameter(3)));
             draw_text -> DrawLatex(0.21, 0.78, Form("Signal size: %i, pol2 bkg size: %.2f", SignalNTrack_Multi[Form("%i_%i",Mbin,eta_z.first)], pol2_bkg_integral));
+
+            c1 -> Print(Form("%s/Reco_DeltaPhi_Multi_Stack.pdf", out_folder_directory.c_str()));
+            c1 -> Clear();
+
+
+            // note : ============================================================================================================================================================================================================
+            // note : ============================================================================================================================================================================================================
+            // note : ============================================================================================================================================================================================================
+            // note : ============================================================================================================================================================================================================
+            // note : change the unit for the presentation
+            DeltaPhi_Multi_Stack_radian[Form("%i_%i",Mbin,eta_z.first)] = new THStack(Form("DeltaPhi_Multi_Stack_MBin%i_Eta%i",Mbin,eta_z.first),Form("DeltaPhi_Multi_Stack_MBin%i_Eta%i;#Delta#phi (Inner - Outer) [radian];Entry",Mbin,eta_z.first));
+            for(int zbin : eta_z.second) { // note :  Z bin
+                // note : the key to the map: "MBin_EtaBin"
+                DeltaPhi_Multi_Stack_radian[Form("%i_%i",Mbin,eta_z.first)] -> Add(DeltaPhi_Multi_1D_radian[Form("%i_%i_%i",Mbin,eta_z.first,zbin)]);
+            }
+
+            // note : Background fit on the DeltaPhi distributions, to know the background level
+            // note : print the DeltaPhi distributions for each centrality bin adn each eta bin, after stacking
+            temp_hist = (TH1F *) DeltaPhi_Multi_Stack_radian[Form("%i_%i",Mbin,eta_z.first)] -> GetStack() -> Last();
+            
+            DeltaPhi_Multi_Stack_hist_out_radian.push_back(temp_hist);
+            DeltaPhi_Multi_Stack_hist_out_radian[DeltaPhi_Multi_Stack_hist_out_radian.size() - 1] -> SetTitle(Form("MBin%i_EtaBin%i",Mbin,eta_z.first));
+
+            // note : p[0] + p[1]*(x-p[3])+p[2] * (x-p[3])^2
+            draw_pol2_line -> SetParameters(bkg_fit_pol2 -> GetParameter(0), bkg_fit_pol2 -> GetParameter(1) * radian_conversion, bkg_fit_pol2 -> GetParameter(2) * pow(radian_conversion,2), bkg_fit_pol2 -> GetParameter(3)/radian_conversion);
+
+            DeltaPhi_Multi_Stack_radian[Form("%i_%i",Mbin,eta_z.first)] -> SetMinimum(0);
+            DeltaPhi_Multi_Stack_radian[Form("%i_%i",Mbin,eta_z.first)] -> SetMaximum( temp_hist -> GetBinContent(temp_hist -> GetMaximumBin()) * 1.5);
+            DeltaPhi_Multi_Stack_radian[Form("%i_%i",Mbin,eta_z.first)] -> Draw(); 
+
+            draw_pol2_line -> Draw("lsame");
+
+            coord_line -> DrawLine(-1 * signal_region / radian_conversion, 0, -1 * signal_region / radian_conversion, temp_hist -> GetBinContent(temp_hist -> GetMaximumBin()) * 1.5);
+            coord_line -> DrawLine(     signal_region / radian_conversion, 0,      signal_region / radian_conversion, temp_hist -> GetBinContent(temp_hist -> GetMaximumBin()) * 1.5);
+            
+            ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
+            
+            draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s, #eta: %.2f ~ %.2f",centrality_region[Mbin].c_str(), 
+                eta_z_ref -> GetXaxis() -> GetBinCenter(eta_z.first) - eta_z_ref -> GetXaxis() -> GetBinWidth(eta_z.first)/2., 
+                eta_z_ref -> GetXaxis() -> GetBinCenter(eta_z.first) + eta_z_ref -> GetXaxis() -> GetBinWidth(eta_z.first)/2.)
+            );
+            
+            draw_text -> DrawLatex(0.21, 0.86, Form("#Delta#Phi_bin width: %.5f", temp_hist -> GetBinWidth(1)));
+            draw_text -> DrawLatex(0.21, 0.82, Form("pol2: %.2f + %.2f(x-%.2f) + %.2f(x-%.2f)^{2}", draw_pol2_line -> GetParameter(0), draw_pol2_line -> GetParameter(1), draw_pol2_line -> GetParameter(3), draw_pol2_line -> GetParameter(2), draw_pol2_line -> GetParameter(3)));
 
             c1 -> Print(Form("%s/Reco_DeltaPhi_Multi_Stack.pdf", out_folder_directory.c_str()));
             c1 -> Clear();
@@ -836,6 +961,10 @@ void EtaDistReader::EndRun()
 vector<TH1F *> EtaDistReader::GetDeltaPhi_Multi_stack_1D()
 {
     return DeltaPhi_Multi_Stack_hist_out;
+}
+vector<TH1F *> EtaDistReader::GetDeltaPhi_Multi_stack_1D_radian()
+{
+    return DeltaPhi_Multi_Stack_hist_out_radian;
 }
 vector<TH1F *> EtaDistReader::GetdNdeta_1D_MC()
 {

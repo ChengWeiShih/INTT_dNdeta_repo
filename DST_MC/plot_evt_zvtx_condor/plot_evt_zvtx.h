@@ -30,16 +30,17 @@ class plot_evt_zvtx
 {
     public:
         plot_evt_zvtx(
-            string input_directory,
-            string input_file_name,
-            string out_folder_directory,
-            double required_zvtx_diff,
-            int zvtx_dist_NClus_cut,
-            int run_type,
-            double zvtx_range_l,
-            double zvtx_range_r,
-            double zvtx_range_zoomin_l,
-            double zvtx_range_zoomin_r
+            string input_directory_in,
+            string input_file_name_in,
+            string out_folder_directory_in,
+            double required_zvtx_diff_in,
+            int zvtx_dist_NClus_cut_in,
+            int run_type_in,
+            double zvtx_range_l_in,
+            double zvtx_range_r_in,
+            double zvtx_range_zoomin_l_in,
+            double zvtx_range_zoomin_r_in,
+            int unit_tag_in // note : 1 = cm, 0 = mm
         );
 
         pair<TH1F*, vector<TH1F*>> GetINTTRecoZHistVec();
@@ -73,6 +74,10 @@ class plot_evt_zvtx
         double INTT_zvtx_reco_gaus_width;
         double INTT_zvtx_reco_hist_cut_width;
 
+        int unit_tag;
+        string unit_text;
+        double unit_correction;
+
         // string color_code[5] = {"#fedc97", "#b5b682", "#7c9885", "#28666e", "#033f63"};
         vector<string> color_code = {"#167288", "#8cdaec", "#b45248", "#d48c84", "#a89a49", "#d6cfa2", "#3cb464", "#9bddb1", "#643c6a", "#836394"};
         // string color_code[12]  = {"#9e0142","#d53e4f","#f46d43","#fdae61","#fee08b",""}
@@ -94,6 +99,8 @@ class plot_evt_zvtx
         TH2F * MBDz_MBDChargeAssy;
         TH2F * INTTz_MBDChargeAssy;
         TH1F * true_Zvtx_dist;
+        TH1F * LB_hist_gaus_width;
+        TH1F * LB_hist_cut_group_width;
 
         vector<TH1F *> reco_Zvtx_dist_Mbin; 
         vector<TH1F *> reco_Zvtx_dist_Mbin_zoomin; 

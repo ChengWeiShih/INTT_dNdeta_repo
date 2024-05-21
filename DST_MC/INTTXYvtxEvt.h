@@ -21,6 +21,11 @@ class INTTXYvtxEvt : public INTTXYvtx{
             out_binwidth_x.clear();
             out_binwidth_y.clear();
 
+            legend = new TLegend(0.2,0.87,0.64,0.92);
+            // legend -> SetMargin(0);
+            legend->SetTextSize(0.03);
+            legend->SetNColumns(2);
+
             inner_clu_phi_map.clear();
             outer_clu_phi_map.clear();
             inner_clu_phi_map = vector<vector<pair<bool,clu_info>>>(360);
@@ -29,6 +34,7 @@ class INTTXYvtxEvt : public INTTXYvtx{
             InitHist_Evt();
             InitGraphEvt();
             if (draw_event_display == true) {c2 -> Print(Form("%s/temp_event_display.pdf(",out_folder_directory.c_str()));}
+            if (draw_event_display == true) {c1 -> Print(Form("%s/evt_LineFill2D.pdf(",out_folder_directory.c_str()));}
         };
 
         INTTXYvtxEvt(string run_type, string out_folder_directory):INTTXYvtx(run_type, out_folder_directory)
@@ -93,7 +99,10 @@ class INTTXYvtxEvt : public INTTXYvtx{
         TPad * pad_delta_phi_1D;
 
         TH2F * evt_display_xy_hist_1;
-        TH2F * evt_display_xy_hist_1_bkgrm; // note : fine binning 
+        TH2F * evt_display_xy_hist_1_bkgrm; // note : fine binning
+        TH2F * evt_display_xy_hist_1_cm;
+        TH2F * evt_display_xy_hist_1_bkgrm_cm; // note : fine binning 
+
         TH2F * evt_display_xy_hist_2;
         TH2F * evt_display_xy_hist_2_bkgrm; // note: second fine binning
         TH2F * evt_display_xy_hist_3;
@@ -126,6 +135,8 @@ class INTTXYvtxEvt : public INTTXYvtx{
 
         vector<vector<pair<bool,clu_info>>> inner_clu_phi_map; // note: phi
         vector<vector<pair<bool,clu_info>>> outer_clu_phi_map; // note: phi
+
+        TLegend * legend;
         
         TFile * file_out;
         TTree * tree_out;
@@ -334,6 +345,36 @@ void INTTXYvtxEvt::InitHist_Evt()
     evt_display_xy_hist_1_bkgrm -> GetXaxis() -> SetTitle("X axis [mm]");
     evt_display_xy_hist_1_bkgrm -> GetYaxis() -> SetTitle("Y axis [mm]");
     evt_display_xy_hist_1_bkgrm -> GetXaxis() -> SetNdivisions(505);
+
+    
+
+    evt_display_xy_hist_1_cm = new TH2F(
+        "",
+        "evt_display_xy_hist_1_cm;X axis [cm];Y axis [cm]", 
+        evt_display_xy_hist_1 -> GetNbinsX(),
+        evt_display_xy_hist_1 -> GetXaxis() -> GetXmin() * 0.1,
+        evt_display_xy_hist_1 -> GetXaxis() -> GetXmax() * 0.1,
+        evt_display_xy_hist_1 -> GetNbinsY(),
+        evt_display_xy_hist_1 -> GetYaxis() -> GetXmin() * 0.1,
+        evt_display_xy_hist_1 -> GetYaxis() -> GetXmax() * 0.1
+    );
+    evt_display_xy_hist_1_cm -> SetStats(0);
+    evt_display_xy_hist_1_cm -> GetXaxis() -> SetNdivisions(505);
+
+    evt_display_xy_hist_1_bkgrm_cm = new TH2F(
+        "",
+        "evt_display_xy_hist_1_bkgrm_cm;X axis [cm];Y axis [cm]", 
+        evt_display_xy_hist_1_bkgrm -> GetNbinsX(),
+        evt_display_xy_hist_1_bkgrm -> GetXaxis() -> GetXmin() * 0.1,
+        evt_display_xy_hist_1_bkgrm -> GetXaxis() -> GetXmax() * 0.1,
+        evt_display_xy_hist_1_bkgrm -> GetNbinsY(),
+        evt_display_xy_hist_1_bkgrm -> GetYaxis() -> GetXmin() * 0.1,
+        evt_display_xy_hist_1_bkgrm -> GetYaxis() -> GetXmax() * 0.1
+    );
+    evt_display_xy_hist_1_bkgrm_cm -> SetStats(0);
+    evt_display_xy_hist_1_bkgrm_cm -> GetXaxis() -> SetNdivisions(505);
+
+
 
     evt_display_xy_hist_2 = new TH2F("","evt_display_xy_hist_2", 75, -2.5 + beam_origin.first, 2.5 + beam_origin.first, 75, -2.5 + beam_origin.second, 2.5 + beam_origin.second);
     evt_display_xy_hist_2 -> SetStats(0);
@@ -784,6 +825,10 @@ void INTTXYvtxEvt::ProcessEvt(int event_i, vector<clu_info> temp_sPH_inner_nocol
     TH2F_FakeClone(evt_display_xy_hist_1,evt_display_xy_hist_1_bkgrm);
     TH2F_threshold_advanced_2(evt_display_xy_hist_1_bkgrm, 0.7);
 
+    // note : for the presentation, mm -> cm
+    TH2F_FakeClone(evt_display_xy_hist_1, evt_display_xy_hist_1_cm);
+    TH2F_FakeClone(evt_display_xy_hist_1_bkgrm, evt_display_xy_hist_1_bkgrm_cm);
+
     // TH2F_FakeClone(evt_display_xy_hist_2,evt_display_xy_hist_2_bkgrm);
     // TH2F_threshold_advanced_2(evt_display_xy_hist_2_bkgrm, 0.7);
 
@@ -845,10 +890,10 @@ void INTTXYvtxEvt::ProcessEvt(int event_i, vector<clu_info> temp_sPH_inner_nocol
     VTXy_diff_Nclus -> Fill(total_NClus, reco_vtx_y - TrigvtxMC[1]*10.);
     
     cout<<"note, event: "<<event_i<<"----------------------- ----------------------- ----------------------- ----------------------- -----------------------"<<endl;
-    cout<<"reco zvtx : "<<reco_vtx_x<<" "<<reco_vtx_y<<endl;
+    cout<<"reco vtxXY by reco zvtx: "<<reco_vtx_x<<" "<<reco_vtx_y<<endl;
     if (run_type == "MC")
     {
-        cout<<"true zvtx : "<<TrigvtxMC[0]*10.<<" "<<TrigvtxMC[1]*10.<<endl;
+        cout<<"true vtxXY : "<<TrigvtxMC[0]*10.<<" "<<TrigvtxMC[1]*10.<<endl;
         cout<<"Deviation "<<reco_vtx_x - TrigvtxMC[0]*10.<<" "<<reco_vtx_y - TrigvtxMC[1]*10.<<endl;
         cout<<"Distance "<<sqrt(pow(reco_vtx_x - TrigvtxMC[0]*10.,2)+pow(reco_vtx_y - TrigvtxMC[1]*10.,2))<<endl;
     }
@@ -986,6 +1031,49 @@ void INTTXYvtxEvt::ProcessEvt(int event_i, vector<clu_info> temp_sPH_inner_nocol
         pad_inner_outer_phi -> Clear();
         pad_track_phi_1D -> Clear();
         pad_delta_phi_1D -> Clear();
+        
+        // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+        if (true_vertex_gr -> GetN() != 0) {true_vertex_gr -> Set(0);}
+        if (reco_vertex_gr -> GetN() != 0) {reco_vertex_gr -> Set(0);}
+
+        true_vertex_gr -> SetPoint(true_vertex_gr -> GetN(), TrigvtxMC[0], TrigvtxMC[1]);
+        reco_vertex_gr -> SetPoint(reco_vertex_gr -> GetN(), reco_vtx_x * 0.1 , reco_vtx_y * 0.1);
+
+        true_vertex_gr -> SetMarkerStyle(50);
+        true_vertex_gr -> SetMarkerColor(2);
+        true_vertex_gr -> SetMarkerSize(1.);
+        reco_vertex_gr -> SetMarkerStyle(50);
+        reco_vertex_gr -> SetMarkerColor(4);
+        reco_vertex_gr -> SetMarkerSize(1.);
+
+        c1 -> cd();
+        evt_display_xy_hist_1_cm -> Draw("colz0");
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
+        draw_text -> DrawLatex(0.21, 0.82, Form("event ID: %i", event_i));
+        if (draw_event_display && (event_i % print_rate) == 0) {c1 -> Print(Form("%s/evt_LineFill2D.pdf",out_folder_directory.c_str()));}
+        c1 -> Clear();
+
+
+        legend -> AddEntry(reco_vertex_gr, "Reco. vertex XY", "p");
+
+        evt_display_xy_hist_1_bkgrm_cm -> Draw("colz0");
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
+        draw_text -> DrawLatex(0.21, 0.82, Form("event ID: %i", event_i));
+        draw_text -> DrawLatex(0.21, 0.78, Form("Reco. vertex XY: %.4f cm, %.4f cm", reco_vertex_gr->GetPointX(0), reco_vertex_gr->GetPointY(0)));
+        reco_vertex_gr -> Draw("psame");
+        if (run_type == "MC"){
+            legend -> AddEntry(true_vertex_gr, "True vertex XY", "p");
+            true_vertex_gr -> Draw("psame");
+            draw_text -> DrawLatex(0.21, 0.74, Form("True vertex XY: %.4f cm, %.4f cm", true_vertex_gr->GetPointX(0), true_vertex_gr->GetPointY(0)));
+        }
+        legend -> Draw("same");
+        if (draw_event_display && (event_i % print_rate) == 0) {c1 -> Print(Form("%s/evt_LineFill2D.pdf",out_folder_directory.c_str()));}
+        c1 -> Clear();
+        legend -> Clear();
+
+        if (true_vertex_gr -> GetN() != 0) {true_vertex_gr -> Set(0);}
+        if (reco_vertex_gr -> GetN() != 0) {reco_vertex_gr -> Set(0);}
     }
 }
 
@@ -1365,6 +1453,7 @@ void INTTXYvtxEvt::EndRun()
     N_cluster_correlation -> Reset("ICESM");
     N_cluster_correlation_close -> Reset("ICESM");
     if (draw_event_display == true) {c2 -> Print(Form("%s/temp_event_display.pdf)",out_folder_directory.c_str()));};
+    if (draw_event_display == true) {c1 -> Print(Form("%s/evt_LineFill2D.pdf)",out_folder_directory.c_str()));}
     
     file_out -> cd();
     tree_out -> SetDirectory(file_out);
