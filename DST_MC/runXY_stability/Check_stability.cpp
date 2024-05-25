@@ -61,9 +61,9 @@ vector<string> read_list(string folder_direction, string MC_list_name)
     return file_list;
 }
 
-int main()
+int main(int argc, char* argv[])
 {
-    int data_type = 1; // note : 1 = MC, 0 = data
+    int data_type = std::stod(argv[1]); // note : 1 = MC, 0 = data
     int unit_tag = 1; // note : 1 = cm, 0 = mm
     double unit_correction = (unit_tag == 1) ? 0.1 : 1.;
     double frame_shift_forX = (data_type == 1) ? 0. : 0.3;
@@ -76,7 +76,8 @@ int main()
     double Y_range_l = (1.7 + frame_shift_forY) * unit_correction;
     double Y_range_r = (3.2 + frame_shift_forY) * unit_correction;
     
-    string input_folder = "/sphenix/user/ChengWei/sPH_dNdeta/Sim_Ntuple_HIJING_new_20240424_HR/avg_vtxXY";
+    string input_folder = argv[2];
+    // string input_folder = "/sphenix/user/ChengWei/sPH_dNdeta/Sim_Ntuple_HIJING_new_20240424_HR/avg_vtxXY";
     // string input_folder = "/sphenix/user/ChengWei/INTT/INTT_commissioning/ZeroField/F4A_20869/2024_05_07/folder_Data_CombinedNtuple_Run20869_HotDead_BCO_ADC_Survey/avg_vtxXY";
     string file_list_name = "file_list.txt";
     string output_directory = input_folder + "/" + "merged_result";
@@ -471,7 +472,7 @@ int main()
     cout<<"line filled Y : "<<vector_average(line_filled_mean_Y_vec)<<" +/- "<<vector_stddev(line_filled_mean_Y_vec)<<endl;
     cout<<"quadrant X : "<<vector_average(quadrant_VtxX_vec)<<" +/- "<<vector_stddev(quadrant_VtxX_vec)<<endl;
     cout<<"quadrant Y : "<<vector_average(quadrant_VtxY_vec)<<" +/- "<<vector_stddev(quadrant_VtxY_vec)<<endl;
-    cout<<"avg: {"<<( vector_average(line_filled_mean_X_vec) + vector_average(quadrant_VtxX_vec) )/2.<<Form(" %s, ",unit_text.c_str())<<( vector_average(line_filled_mean_Y_vec) + vector_average(quadrant_VtxY_vec) )/2.<<Form(" %s}",unit_text.c_str())<<endl;
-    cout<<"Fit avg: {"<<pol0_fit_X->GetParameter(0)<<Form(" %s, ",unit_text.c_str())<<pol0_fit_Y->GetParameter(0)<<Form(" %s}",unit_text.c_str())<<endl;
+    cout<<"avg: {"<<( vector_average(line_filled_mean_X_vec) + vector_average(quadrant_VtxX_vec) )/2.<<Form(" * %s, ",unit_text.c_str())<<( vector_average(line_filled_mean_Y_vec) + vector_average(quadrant_VtxY_vec) )/2.<<Form(" * %s}",unit_text.c_str())<<endl;
+    cout<<"Fit avg: {"<<pol0_fit_X->GetParameter(0)<<Form(" * %s, ",unit_text.c_str())<<pol0_fit_Y->GetParameter(0)<<Form(" * %s}",unit_text.c_str())<<endl;
     return 0;
 }

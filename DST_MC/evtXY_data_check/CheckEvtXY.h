@@ -10,9 +10,9 @@
 #include <TLatex.h>
 #include <TF1.h>
 
-#include "ReadEvtXY_Chain.h"
-#include "sPhenixStyle.h"
-#include "gaus_func.h"
+#include "ReadEvtXY_Chain.C"
+#include "sPhenixStyle.C"
+#include "gaus_func.cpp"
 
 
 class CheckEvtXY

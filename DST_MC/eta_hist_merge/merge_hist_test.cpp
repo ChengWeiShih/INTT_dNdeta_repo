@@ -189,11 +189,11 @@ int main(int argc, char *argv[])
 
     cout<<"the merged file is closed"<<endl;
 
-    for (pair<string, TFile*> file : TFile_in_map)
-    {
-        file.second -> Close();
-        cout<<"file : "<<file.first<<" is closed"<<endl;
-    }
+    // for (pair<string, TFile*> file : TFile_in_map)
+    // {
+    //     file.second -> Close();
+    //     cout<<"file : "<<file.first<<" is closed"<<endl;
+    // }
 
     return 0;
 }

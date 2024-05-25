@@ -50,26 +50,26 @@ void CheckEvtXY::Init()
 
     vtxX_1D = new TH1F("","vtxX_1D", 100, -window_half_width + beam_origin.first, window_half_width + beam_origin.first);
     vtxX_1D -> SetStats(0);
-    vtxX_1D -> GetXaxis() -> SetTitle(Form("X axis [%s]", unit_text.c_str()));
+    vtxX_1D -> GetXaxis() -> SetTitle(Form("Vertex X [%s]", unit_text.c_str()));
     vtxX_1D -> GetYaxis() -> SetTitle("Entry");
     vtxX_1D -> GetXaxis() -> SetNdivisions(505);
 
     vtxY_1D = new TH1F("","vtxY_1D", 100, -window_half_width + beam_origin.second, window_half_width + beam_origin.second);
     vtxY_1D -> SetStats(0);
-    vtxY_1D -> GetXaxis() -> SetTitle(Form("Y axis [%s]", unit_text.c_str()));
+    vtxY_1D -> GetXaxis() -> SetTitle(Form("Vertex Y [%s]", unit_text.c_str()));
     vtxY_1D -> GetYaxis() -> SetTitle("Entry");
     vtxY_1D -> GetXaxis() -> SetNdivisions(505);
 
     vtxX_eID_2D = new TH2F("","vtxX_eID_2D", 200, 0, int(data_in -> eID * 1.3), 200, vtxX_1D -> GetXaxis() -> GetXmin(), vtxX_1D -> GetXaxis() -> GetXmax());
     vtxX_eID_2D -> SetStats(0);
     vtxX_eID_2D -> GetXaxis() -> SetTitle("Event ID");
-    vtxX_eID_2D -> GetYaxis() -> SetTitle(Form("vtxX [%s]", unit_text.c_str()));
+    vtxX_eID_2D -> GetYaxis() -> SetTitle(Form("Vertex X [%s]", unit_text.c_str()));
     vtxX_eID_2D -> GetXaxis() -> SetNdivisions(505);
     
     vtxY_eID_2D = new TH2F("","vtxY_eID_2D", 200, 0, int(data_in -> eID * 1.3), 200, vtxY_1D -> GetXaxis() -> GetXmin(), vtxY_1D -> GetXaxis() -> GetXmax());
     vtxY_eID_2D -> SetStats(0);
     vtxY_eID_2D -> GetXaxis() -> SetTitle("Event ID");
-    vtxY_eID_2D -> GetYaxis() -> SetTitle(Form("vtxY [%s]", unit_text.c_str()));
+    vtxY_eID_2D -> GetYaxis() -> SetTitle(Form("Vertex Y [%s]", unit_text.c_str()));
     vtxY_eID_2D -> GetXaxis() -> SetNdivisions(505);
 
     vtxXY_2D = new TH2F("","vtxXY_2D", 100, -window_half_width + beam_origin.first, window_half_width + beam_origin.first, 100, -window_half_width + beam_origin.second, window_half_width + beam_origin.second);
@@ -79,16 +79,16 @@ void CheckEvtXY::Init()
     vtxXY_2D -> GetXaxis() -> SetNdivisions(505);
 
     // note : for the MC comparison
-    vtxX_correlation = new TH2F("", Form("vtxX_correlation;true vertex X [%s];reco. vertex X [%s]", unit_text.c_str(), unit_text.c_str()), 100, -small_half_width + beam_origin.first, small_half_width + beam_origin.first, 100, -small_half_width + beam_origin.first, small_half_width + beam_origin.first);
+    vtxX_correlation = new TH2F("", Form("vtxX_correlation;True vertex X [%s];Reco. vertex X [%s]", unit_text.c_str(), unit_text.c_str()), 100, -small_half_width + beam_origin.first, small_half_width + beam_origin.first, 100, -small_half_width + beam_origin.first, small_half_width + beam_origin.first);
     vtxX_correlation -> GetXaxis() -> SetNdivisions(505);    
     
-    vtxY_correlation = new TH2F("", Form("vtxY_correlation;true vertex Y [%s];reco. vertex Y [%s]", unit_text.c_str(), unit_text.c_str()), 100, -small_half_width + beam_origin.second, small_half_width + beam_origin.second, 100, -small_half_width + beam_origin.second, small_half_width + beam_origin.second);
+    vtxY_correlation = new TH2F("", Form("vtxY_correlation;True vertex Y [%s];Reco. vertex Y [%s]", unit_text.c_str(), unit_text.c_str()), 100, -small_half_width + beam_origin.second, small_half_width + beam_origin.second, 100, -small_half_width + beam_origin.second, small_half_width + beam_origin.second);
     vtxY_correlation -> GetXaxis() -> SetNdivisions(505);    
     
-    vtxX_diff = new TH1F("",Form("vtxX_diff;RecoZ - TrueZ [%s];Entry",unit_text.c_str()), 100, -diff_half_width, diff_half_width);
+    vtxX_diff = new TH1F("",Form("vtxX_diff;#DeltaX (Reco. - True) [%s];Entry",unit_text.c_str()), 100, -diff_half_width, diff_half_width);
     vtxX_diff -> GetXaxis() -> SetNdivisions(505);    
     
-    vtxY_diff = new TH1F("",Form("vtxY_diff;RecoZ - TrueZ [%s];Entry",unit_text.c_str()), 100, -diff_half_width, diff_half_width);
+    vtxY_diff = new TH1F("",Form("vtxY_diff;#DeltaY (Reco. - True) [%s];Entry",unit_text.c_str()), 100, -diff_half_width, diff_half_width);
     vtxY_diff -> GetXaxis() -> SetNdivisions(505);
      
     vtxX_bco_graph = new TGraph(); 
@@ -236,7 +236,7 @@ void CheckEvtXY::Print_plots()
     vtxX_bco_graph -> SetMarkerSize(0.1);
     vtxX_bco_graph -> Draw("AP");
     vtxX_bco_graph -> GetXaxis() -> SetTitle("bco_full");
-    vtxX_bco_graph -> GetYaxis() -> SetTitle(Form("vtxX [%s]", unit_text.c_str()));
+    vtxX_bco_graph -> GetYaxis() -> SetTitle(Form("Vertex X [%s]", unit_text.c_str()));
     vtxX_bco_graph -> GetYaxis() -> SetRangeUser(vtxX_1D->GetXaxis()->GetXmin(), vtxX_1D->GetXaxis()->GetXmax());
     ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", sPHENIX_suffix.c_str()));
     // ltx_warning->DrawLatex(0.95, 0.88, Form("#color[2]{The data used in the plot is not produced by F4A, will be replaced in two weeks}"));
@@ -250,7 +250,7 @@ void CheckEvtXY::Print_plots()
     vtxY_bco_graph -> SetMarkerSize(0.1);
     vtxY_bco_graph -> Draw("AP");
     vtxY_bco_graph -> GetXaxis() -> SetTitle("bco_full");
-    vtxY_bco_graph -> GetYaxis() -> SetTitle(Form("vtxY [%s]", unit_text.c_str()));
+    vtxY_bco_graph -> GetYaxis() -> SetTitle(Form("Vertex Y [%s]", unit_text.c_str()));
     vtxY_bco_graph -> GetYaxis() -> SetRangeUser(vtxY_1D->GetXaxis()->GetXmin(), vtxY_1D->GetXaxis()->GetXmax());
     ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", sPHENIX_suffix.c_str()));
     // ltx_warning->DrawLatex(0.95, 0.88, Form("#color[2]{The data used in the plot is not produced by F4A, will be replaced in two weeks}"));

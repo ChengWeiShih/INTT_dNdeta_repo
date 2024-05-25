@@ -157,6 +157,18 @@ void plot_evt_zvtx::Hist_init()
     );
     intt_mbd_reco_z_corre -> GetXaxis() -> SetNdivisions(505);
 
+    intt_mbd_reco_z_corre_cut = new TH2F(
+        "",
+        Form("intt_mbd_reco_z_corre_cut;INTT zvtx [%s]; MBD zvtx [%s]", unit_text.c_str(), unit_text.c_str()), 
+        intt_mbd_reco_z_corre -> GetNbinsX(),
+        intt_mbd_reco_z_corre -> GetXaxis() -> GetXmin(),
+        intt_mbd_reco_z_corre -> GetXaxis() -> GetXmax(),
+        intt_mbd_reco_z_corre -> GetNbinsY(),
+        intt_mbd_reco_z_corre -> GetYaxis() -> GetXmin(),
+        intt_mbd_reco_z_corre -> GetYaxis() -> GetXmax()
+    );
+    intt_mbd_reco_z_corre_cut -> GetXaxis() -> SetNdivisions(505);
+
     intt_mbd_reco_z_diff  = new TH1F(
         "",
         Form("intt_mbd_reco_z_diff; INTT_{z} - MBD_{z} [%s];Entry", unit_text.c_str()),
@@ -239,10 +251,10 @@ void plot_evt_zvtx::Hist_init()
     Z_resolution_pos = new TH2F("",Form("Z_resolution_pos;True Zvtx [%s];#DeltaZ (Reco. - True) [%s]", unit_text.c_str(), unit_text.c_str()), 200, zvtx_range_l, zvtx_range_r, 200,-50 * unit_correction, 50 * unit_correction);
     Z_resolution_pos -> GetXaxis() -> SetNdivisions(505);
 
-    Z_resolution_pos_cut = new TH2F("",Form("Z_resolution_pos_cut;True Zvtx [%s];#DeltaZ (Rec. - True) [%s]", unit_text.c_str(), unit_text.c_str()),200, zvtx_range_l, zvtx_range_r, 200, -50 * unit_correction, 50 * unit_correction);
+    Z_resolution_pos_cut = new TH2F("",Form("Z_resolution_pos_cut;True Zvtx [%s];#DeltaZ (Reco. - True) [%s]", unit_text.c_str(), unit_text.c_str()),200, zvtx_range_l, zvtx_range_r, 200, -50 * unit_correction, 50 * unit_correction);
     Z_resolution_pos_cut -> GetXaxis() -> SetNdivisions(505);
 
-    // Z_resolution = new TH1F("","Z_resolution;#DeltaZ (Rec. - True) [%s];Entry",200,-30,30);
+    // Z_resolution = new TH1F("","Z_resolution;#DeltaZ (Reco. - True) [%s];Entry",200,-30,30);
     // Z_resolution -> GetXaxis() -> SetNdivisions(505);
 
     Z_correlation = new TH2F("",Form("Z_correlation;True Zvtx [%s];Reco. Zvtx [%s]", unit_text.c_str(), unit_text.c_str()),200, zvtx_range_l, zvtx_range_r, 200, zvtx_range_l, zvtx_range_r);
@@ -374,6 +386,10 @@ void plot_evt_zvtx::LoopEvent()
         intt_mbd_reco_z_corre -> Fill(INTT_reco_zvtx, MBD_reco_z);
         intt_mbd_reco_z_diff  -> Fill(INTT_reco_zvtx - MBD_reco_z);
 
+        double INTTz_MBDz_diff_used_cut_l = (run_type == 1) ? ana_map_version::INTTz_MBDz_diff_cut_MC_l * unit_correction : ana_map_version::INTTz_MBDz_diff_cut_l * unit_correction;
+        double INTTz_MBDz_diff_used_cut_r = (run_type == 1) ? ana_map_version::INTTz_MBDz_diff_cut_MC_r * unit_correction : ana_map_version::INTTz_MBDz_diff_cut_r * unit_correction;
+        if ( (INTT_reco_zvtx - MBD_reco_z) > INTTz_MBDz_diff_used_cut_l && (INTT_reco_zvtx - MBD_reco_z) < INTTz_MBDz_diff_used_cut_r ) {intt_mbd_reco_z_corre_cut -> Fill(INTT_reco_zvtx, MBD_reco_z);}
+
         reco_Zvtx_dist_Mbin[centrality_map[Centrality_bin]] -> Fill(INTT_reco_zvtx);
         reco_Zvtx_dist_Mbin_zoomin[centrality_map[Centrality_bin]] -> Fill(INTT_reco_zvtx);
 
@@ -455,6 +471,15 @@ void plot_evt_zvtx::PrintPlot()
     linear_fit -> Draw("l same");
     draw_text -> DrawLatex(0.21, 0.87, Form("Y = %.2fx + %.2f", linear_fit -> GetParameter(1), linear_fit -> GetParameter(0)));
     c1 -> Print(Form("%s/intt_mbd_reco_z_corre.pdf",out_folder_directory.c_str()));
+    c1 -> Clear();
+
+    // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+    intt_mbd_reco_z_corre_cut -> Draw("colz0"); 
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
+    intt_mbd_reco_z_corre_cut -> Fit(linear_fit, "NQ");
+    linear_fit -> Draw("l same");
+    draw_text -> DrawLatex(0.21, 0.87, Form("Y = %.2fx + %.2f", linear_fit -> GetParameter(1), linear_fit -> GetParameter(0)));
+    c1 -> Print(Form("%s/intt_mbd_reco_z_corre_cut.pdf",out_folder_directory.c_str()));
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
