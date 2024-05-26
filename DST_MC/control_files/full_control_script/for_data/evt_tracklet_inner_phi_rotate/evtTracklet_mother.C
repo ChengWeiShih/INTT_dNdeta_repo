@@ -4,17 +4,17 @@
 #include "../../../../ana_map_folder/ana_map_v1.h"
 namespace ana_map_version = ANA_MAP_V3;
 
-void evtTracklet_mother(int index)
+void evtTracklet_mother(int index, string output_sub_folder = "evt_tracklet_inner_phi_rotate", string used_zvtx_folder_name = "evt_vtxZ")
 {
     string input_directory = ana_map_version::data_input_directory;
     string file_name       = ana_map_version::data_file_name;
     string tree_name       = ana_map_version::data_tree_name;
 
-    string input_directory_zvtx = input_directory + "/evt_vtxZ/complete_file";
+    string input_directory_zvtx = input_directory + "/" + used_zvtx_folder_name + "/complete_file";
     string file_name_zvtx = "merged_file.root";
 
     string file_name_index = to_string(index); file_name_index = string(5 - file_name_index.length(), '0') + file_name_index;
-    string out_folder_mother_directory = input_directory + "/evt_tracklet_inner_phi_rotate";
+    string out_folder_mother_directory = input_directory + "/" + output_sub_folder;
     string out_folder_directory = out_folder_mother_directory + Form("/evtTracklet_%s", file_name_index.c_str());
 
     pair<double, double> beam_origin = ana_map_version::data_beam_origin;

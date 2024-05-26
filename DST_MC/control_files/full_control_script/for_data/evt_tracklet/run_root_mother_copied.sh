@@ -3,7 +3,7 @@ source /opt/sphenix/core/bin/sphenix_setup.sh -n ana.410
 # source /opt/sphenix/core/bin/setup_local.sh /sphenix/user/ChengWei/sPH_dNdeta/build_folder/build_HR_ntuple/install
 
 core_i=the_file_number
-root -l -b -q /sphenix/user/ChengWei/INTT/INTT_dNdeta_repo/DST_MC/control_files/full_control_script/for_data/evt_tracklet/evtTracklet_mother.C\(${core_i}\)
+root -l -b -q /sphenix/user/ChengWei/INTT/INTT_dNdeta_repo/DST_MC/control_files/full_control_script/for_data/evt_tracklet/evtTracklet_mother.C\(${core_i},\"evt_tracklet_INTTz_shifted\",\"evt_vtxZ\"\)
 
 # core_i=the_file_number
 

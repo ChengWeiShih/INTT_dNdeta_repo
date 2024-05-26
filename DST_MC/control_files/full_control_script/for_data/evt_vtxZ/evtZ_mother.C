@@ -3,7 +3,7 @@
 #include "../../../../ana_map_folder/ana_map_v1.h"
 namespace ana_map_version = ANA_MAP_V3;
 
-void evtZ_mother(int index)
+void evtZ_mother(int index, string output_sub_folder_name = "evt_vtxZ")
 {
     string input_directory           = ana_map_version::data_input_directory;
     string file_name                 = ana_map_version::data_file_name;
@@ -11,7 +11,7 @@ void evtZ_mother(int index)
     string tree_name                 = ana_map_version::data_tree_name;
 
     string file_name_index = to_string(index); file_name_index = string(5 - file_name_index.length(), '0') + file_name_index;
-    string out_folder_mother_directory = input_directory + "/evt_vtxZ";
+    string out_folder_mother_directory = input_directory + "/" + output_sub_folder_name;
     string out_folder_directory = out_folder_mother_directory + Form("/evtZ_%s", file_name_index.c_str());
     
     double phi_diff_cut                = ana_map_version::evt_vtxZ_phi_diff_cut;

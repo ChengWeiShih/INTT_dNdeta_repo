@@ -3,7 +3,7 @@ source /opt/sphenix/core/bin/sphenix_setup.sh -n ana.410
 # source /opt/sphenix/core/bin/setup_local.sh /sphenix/user/ChengWei/sPH_dNdeta/build_folder/build_HR_ntuple/install
 
 core_i=the_file_number
-root -l -b -q control_file_to_be_updated/evt_tracklet/evtTracklet_mother.C\(${core_i}\)
+root -l -b -q control_file_to_be_updated/evt_tracklet/evtTracklet_mother.C\(${core_i},\"output_sub_folder_name_to_be_updated\",\"used_zvtx_folder_name_to_be_updated\"\)
 
 # core_i=the_file_number
 

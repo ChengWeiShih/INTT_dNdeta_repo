@@ -4,14 +4,14 @@ namespace ana_map_version = ANA_MAP_V3;
 
 // todo: you may want to check the ANA_MAP_v1.h in "plot_evt_zvtx.cpp/plot_evt_zvtx.cpp"
 
-int MakeEvtZPlots()
+int MakeEvtZPlots(string input_sub_folder_name = "evt_vtxZ")
 {
     double zvtx_range_l        = ana_map_version::evt_vtxZ_zvtx_range_l;
     double zvtx_range_r        = ana_map_version::evt_vtxZ_zvtx_range_r;
     double zvtx_range_zoomin_l = ana_map_version::evt_vtxZ_zvtx_range_zoomin_l;
     double zvtx_range_zoomin_r = ana_map_version::evt_vtxZ_zvtx_range_zoomin_r;
 
-    string data_input_directory = ana_map_version::MC_input_directory + "/evt_vtxZ/complete_file";
+    string data_input_directory = ana_map_version::MC_input_directory + "/" + input_sub_folder_name + "/complete_file";
     string data_input_file_name = "merged_file.root";
     string data_out_folder_directory = data_input_directory + "/merged_result";
     double data_required_zvtx_diff = ana_map_version::evt_vtxZ_data_required_zvtx_diff;

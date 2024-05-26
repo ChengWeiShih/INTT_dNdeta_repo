@@ -4,18 +4,18 @@
 #include "../../../../ana_map_folder/ana_map_v1.h"
 namespace ana_map_version = ANA_MAP_V3;
 
-void evtTracklet_mother(int core_i)
+void evtTracklet_mother(int core_i, string output_sub_folder_name = "evt_tracklet_inner_phi_rotate", string used_zvtx_folder_name = "evt_vtxZ")
 {
     string input_directory = ana_map_version::MC_input_directory;
     string tree_name       = ana_map_version::MC_tree_name;
     string file_name_index = to_string(core_i); file_name_index = string(5 - file_name_index.length(), '0') + file_name_index;
     string file_name = "ntuple_" + file_name_index;
     
-    string out_folder_mother_directory = input_directory + "/evt_tracklet_inner_phi_rotate";
+    string out_folder_mother_directory = input_directory + "/" + output_sub_folder_name;
     string out_folder_directory = out_folder_mother_directory + Form("/evtTracklet_%s", file_name_index.c_str());
     
     
-    string input_recoZ_directory = input_directory + "/evt_vtxZ/complete_file/evtZ_"+file_name_index+"/INTT_zvtx.root";
+    string input_recoZ_directory = input_directory + "/" + used_zvtx_folder_name + "/complete_file/evtZ_"+file_name_index+"/INTT_zvtx.root";
     TFile * file_in = TFile::Open(Form("%s",input_recoZ_directory.c_str()));
     TTree * Tree_z = (TTree *)file_in->Get("tree_Z");
     ReadINTTZCombine * RecoZ = new ReadINTTZCombine(Tree_z);

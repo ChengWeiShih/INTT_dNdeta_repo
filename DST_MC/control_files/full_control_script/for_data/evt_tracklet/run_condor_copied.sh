@@ -1,5 +1,6 @@
 #!/bin/bash                                                                                                                                                                                  
 
+#note : 10k events per job 
 for ((i=0; i<=58; i+=1));
 do
     echo condor submission $i
@@ -17,5 +18,5 @@ do
 
     rm run_condor_job_sub.job
     # rm run_root_sub_${i}.sh
-    sleep 0.5
+    sleep 1
 done
