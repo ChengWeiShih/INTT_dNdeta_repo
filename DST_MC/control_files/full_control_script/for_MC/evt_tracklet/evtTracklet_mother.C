@@ -51,13 +51,8 @@ void evtTracklet_mother(int core_i, string output_sub_folder_name = "evt_trackle
         RecoZ -> GetEntry(event_i);
 
         // note : MC, but the event is not the minimum bias event
-        if (INTTClu -> GetRunType() == "MC" && RecoZ -> is_min_bias_wozdc == 0) {MCEta -> ClearEvt(); INTTClu -> EvtClear(); continue;}
-        // todo: here I use is_min_bias_wozdc for data
-        // note : data, but the event is not the minomum bias event (wozdc)
-        else { 
-            if ( RecoZ -> is_min_bias_wozdc == 0) {MCEta -> ClearEvt(); INTTClu -> EvtClear(); continue;}
-        }
-
+        if (RecoZ -> is_min_bias_wozdc == 0) {MCEta -> ClearEvt(); INTTClu -> EvtClear(); continue;}
+        
         // note : to get rid of the nan value
         if (RecoZ -> Centrality_float != RecoZ -> Centrality_float) {MCEta -> ClearEvt(); INTTClu -> EvtClear(); continue;}
         if (RecoZ -> MBD_reco_z       != RecoZ -> MBD_reco_z)       {MCEta -> ClearEvt(); INTTClu -> EvtClear(); continue;}
@@ -103,7 +98,8 @@ void evtTracklet_mother(int core_i, string output_sub_folder_name = "evt_trackle
             INTTClu -> GetBCOFull(), 
             {RecoZ -> LB_Gaus_Mean_mean, ana_map_version::reco_Z_resolution[Centrality_bin]}, 
             Centrality_bin, 
-            INTTClu->GetTrueTrackInfo()
+            INTTClu->GetTrueTrackInfo(),
+            ana_map_version::zvtx_reweight_factor[ana_map_version::get_zvtx_BinID(RecoZ -> LB_Gaus_Mean_mean)]
         );
 
         MCEta -> ClearEvt();

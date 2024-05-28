@@ -76,12 +76,7 @@ void evtTracklet_mother(int index, string output_sub_folder_name = "evt_tracklet
         RecoZ -> GetEntry(event_i);
 
         // note : MC, but the event is not the minimum bias event
-        if (INTTClu -> GetRunType() == "MC" && RecoZ -> is_min_bias_wozdc == 0) {MCEta -> ClearEvt(); INTTClu -> EvtClear(); continue;}
-        // todo: here I use is_min_bias_wozdc for data
-        // note : data, but the event is not the minomum bias event (wozdc)
-        else { 
-            if ( RecoZ -> is_min_bias_wozdc == 0) {MCEta -> ClearEvt(); INTTClu -> EvtClear(); continue;}
-        }
+        if (RecoZ -> is_min_bias_wozdc == 0) {MCEta -> ClearEvt(); INTTClu -> EvtClear(); continue;}
 
         // note : to get rid of the nan value
         if (RecoZ -> Centrality_float != RecoZ -> Centrality_float) {MCEta -> ClearEvt(); INTTClu -> EvtClear(); continue;}
@@ -125,7 +120,7 @@ void evtTracklet_mother(int index, string output_sub_folder_name = "evt_tracklet
             INTTClu -> GetTrigvtxMC(), 
             INTTClu -> GetPhiCheckTag(), 
             INTTClu -> GetBCOFull(), 
-            {RecoZ -> LB_Gaus_Mean_mean + 10.56, ana_map_version::reco_Z_resolution[Centrality_bin]}, // note : special_tag, apply the offset on the INTT zvtx based on the diff b/w INTTz and MBDz
+            {RecoZ -> LB_Gaus_Mean_mean, ana_map_version::reco_Z_resolution[Centrality_bin]},
             Centrality_bin, 
             INTTClu->GetTrueTrackInfo()
         );

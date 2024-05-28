@@ -145,6 +145,19 @@ void plot_evt_zvtx::Hist_init()
     );
     NClus_intt_mbd_diff_corre -> GetXaxis() -> SetNdivisions(505);
 
+    mbdz_intt_mbd_diff_corre_cut = new TH2F(
+        "",
+        Form("mbdz_intt_mbd_diff_corre_cut;MBD_{z} [%s]; INTT_{z} - MBD_{z} [%s]", unit_text.c_str(), unit_text.c_str()),
+        200,
+        zvtx_range_l,
+        zvtx_range_r,
+        200,
+        -100 * unit_correction,
+        100 * unit_correction
+    );
+    mbdz_intt_mbd_diff_corre_cut -> GetXaxis() -> SetNdivisions(705);
+    
+
     intt_mbd_reco_z_corre = new TH2F(
         "",
         Form("intt_mbd_reco_z_corre;INTT zvtx [%s]; MBD zvtx [%s]", unit_text.c_str(), unit_text.c_str()), 
@@ -386,6 +399,8 @@ void plot_evt_zvtx::LoopEvent()
         intt_mbd_reco_z_corre -> Fill(INTT_reco_zvtx, MBD_reco_z);
         intt_mbd_reco_z_diff  -> Fill(INTT_reco_zvtx - MBD_reco_z);
 
+        if ((in_nclu_inner + in_nclu_outer) > zvtx_dist_NClus_cut) {mbdz_intt_mbd_diff_corre_cut -> Fill(MBD_reco_z, INTT_reco_zvtx - MBD_reco_z);}
+
         double INTTz_MBDz_diff_used_cut_l = (run_type == 1) ? ana_map_version::INTTz_MBDz_diff_cut_MC_l * unit_correction : ana_map_version::INTTz_MBDz_diff_cut_l * unit_correction;
         double INTTz_MBDz_diff_used_cut_r = (run_type == 1) ? ana_map_version::INTTz_MBDz_diff_cut_MC_r * unit_correction : ana_map_version::INTTz_MBDz_diff_cut_r * unit_correction;
         if ( (INTT_reco_zvtx - MBD_reco_z) > INTTz_MBDz_diff_used_cut_l && (INTT_reco_zvtx - MBD_reco_z) < INTTz_MBDz_diff_used_cut_r ) {intt_mbd_reco_z_corre_cut -> Fill(INTT_reco_zvtx, MBD_reco_z);}
@@ -462,6 +477,13 @@ void plot_evt_zvtx::PrintPlot()
     NClus_intt_mbd_diff_corre -> Draw("colz0");
     ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/NClus_intt_mbd_diff_corre.pdf",out_folder_directory.c_str()));
+    c1 -> Clear();
+
+    // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+    mbdz_intt_mbd_diff_corre_cut -> Draw("colz0");
+    draw_text -> DrawLatex(0.21, 0.87, Form("NClus > %i", zvtx_dist_NClus_cut));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
+    c1 -> Print(Form("%s/mbdz_intt_mbd_diff_corre_cut.pdf",out_folder_directory.c_str()));
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------

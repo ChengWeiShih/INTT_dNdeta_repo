@@ -29,7 +29,7 @@ namespace ANA_MAP_V3
     string               data_tree_name = "EventTree";
     string               data_tracklet_merged_folder = "merged_file_folder";
     pair<double, double> data_beam_origin = {-0.0206744 * cm, 0.279965 * cm};
-    int                  data_data_type = 7; // note : MC
+    int                  data_data_type = 7; // note : data_F4A
 
     // note : -------------------------------- common for topic, avg_vtxXY --------------------------------
     int avg_vtxXY_N_clu_cut = 350;
@@ -107,7 +107,7 @@ namespace ANA_MAP_V3
     double INTTz_MBDz_diff_cut_r = 30;
     double INTTz_MBDz_diff_cut_MC_l = -40;
     double INTTz_MBDz_diff_cut_MC_r = 40;
-    int    inclusive_Mbin_cut = 8;
+    int    inclusive_Mbin_cut = 8; // note : for 0 - 70% centrality
 
     // note : the `centrality_edges`, `centrality_map`, and `centrality_region` have to correspond to each other
     // note : no inclusive
@@ -239,8 +239,80 @@ namespace ANA_MAP_V3
         -20,
         20
     };
-
     pair<double, double> selected_z_region_id = {3,9};
+
+    // note : original
+    // note : from /sphenix/user/ChengWei/sPH_dNdeta/Sim_Ntuple_HIJING_new_20240424_HR_test/evt_vtxZ/complete_file
+    // note : from /sphenix/user/ChengWei/INTT/INTT_commissioning/ZeroField/F4A_20869/2024_05_07/folder_Data_CombinedNtuple_Run20869_HotDead_BCO_ADC_Survey_test/evt_vtxZ/complete_file
+    // file_i : 1 bin : 1 -40 20.0436
+    // file_i : 1 bin : 2 -36 6.97846
+    // file_i : 1 bin : 3 -32 2.5875
+    // file_i : 1 bin : 4 -28 1.38437
+    // file_i : 1 bin : 5 -24 1.00747
+    // file_i : 1 bin : 6 -20 0.80477
+    // file_i : 1 bin : 7 -16 0.805168
+    // file_i : 1 bin : 8 -12 0.979011
+    // file_i : 1 bin : 9 -8 1.43326
+    // file_i : 1 bin : 10 -4 2.56772
+    // file_i : 1 bin : 11 0 4.85905
+
+    map<int, double> zvtx_reweight_factor = {
+        {0, 1.},
+        {1, 20.0436},
+        {2, 6.97846},
+        {3, 2.5875},
+        {4, 1.38437},
+        {5, 1.00747},
+        {6, 0.80477},
+        {7, 0.805168},
+        {8, 0.979011},
+        {9, 1.43326},
+        {10, 2.56772},
+        {11, 4.85905}
+    };
+
+    // note : the INTTz shift 1.056 cm
+    // file_i : 1 bin : 1 -40 14.7109
+    // file_i : 1 bin : 2 -36 4.96769
+    // file_i : 1 bin : 3 -32 1.96646
+    // file_i : 1 bin : 4 -28 1.13199
+    // file_i : 1 bin : 5 -24 0.887917
+    // file_i : 1 bin : 6 -20 0.839093
+    // file_i : 1 bin : 7 -16 0.868618
+    // file_i : 1 bin : 8 -12 1.21689
+    // file_i : 1 bin : 9 -8 1.88843
+    // file_i : 1 bin : 10 -4 3.93604
+    // file_i : 1 bin : 11 0 7.79008
+
+    
+    // map<int, double> zvtx_reweight_factor = {
+    //     {0, 1.},
+    //     {1, 14.7109},
+    //     {2, 4.96769},
+    //     {3, 1.96646},
+    //     {4, 1.13199},
+    //     {5, 0.887917},
+    //     {6, 0.839093},
+    //     {7, 0.868618},
+    //     {8, 1.21689},
+    //     {9, 1.88843},
+    //     {10, 3.93604},
+    //     {11, 7.79008}
+    // };
+
+    TH1F * zvtx_hist = new TH1F("","",z_region.size() - 1,&z_region[0]);
+    int get_zvtx_BinID (double zvtx_in) { 
+        int found_bin = zvtx_hist -> FindBin(zvtx_in);
+        if (found_bin == 0){ // note : at the left edge
+            cout<<" zvtx value outside the given range, input zvtx value : "<<zvtx_in<<endl;
+            return 0;
+        }
+        else if (found_bin == zvtx_hist -> GetNbinsX() + 1) { // note : at right edge
+            cout<<" zvtx value outside the given range, input zvtx value : "<<zvtx_in<<endl;
+            return 0;
+        }
+        else { return found_bin - 1; }
+    }
 
     // todo: zvtx resolution from the file shown above 
     // todo: from /sphenix/user/ChengWei/sPH_dNdeta/HIJING_ana398_xvtx-0p04cm_yvtx0p24cm_zvtx-20cm_dummyAlignParams/SemiFinal_EvtZ_MC_ZF_zvtx/INTT_zvtx.root

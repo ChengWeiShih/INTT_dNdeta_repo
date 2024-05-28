@@ -141,7 +141,8 @@ class INTTEta : public INTTXYvtxEvt
             Long64_t bco_full, 
             pair<double,double> evt_z, 
             int centrality_bin, 
-            vector<vector<float>> true_track_info
+            vector<vector<float>> true_track_info,
+            double zvtx_weighting
         ); 
         // void ProcessEvtMC(int event_i, vector<float> true_track_info, vector<double> TrigvtxMC);
         void ClearEvt() override;
@@ -211,6 +212,29 @@ class INTTEta : public INTTXYvtxEvt
         // note : diagnostic plots
         TH1F * check_inner_layer_clu_phi_1D;
         TH1F * check_outer_layer_clu_phi_1D;
+
+        // note : for the comparison with other files, MC, for example
+        // note : after all the selections, so it is exclusive
+        // note : cut : cluster size, cluster adc
+        // note : min bias cut
+        // note : zvtx quality cut
+        // note: zvtx acceptance cut
+        TH1F * exclusive_NClus_inner;
+        TH1F * exclusive_NClus_outer;
+        TH1F * exclusive_NClus_sum;
+
+        TH1F * exclusive_cluster_inner_eta;
+        TH1F * exclusive_cluster_inner_phi;
+        TH1F * exclusive_cluster_outer_eta;
+        TH1F * exclusive_cluster_outer_phi;
+        TH1F * exclusive_cluster_all_eta;
+        TH1F * exclusive_cluster_all_phi;
+
+        TH1F * exclusive_tight_tracklet_eta; // note : signal region only
+        TH1F * exclusive_tight_tracklet_phi; // note : signal region only
+        TH1F * exclusive_loose_tracklet_eta; // note : signal region only
+        TH1F * exclusive_loose_tracklet_phi; // note : signal region only
+
 
         // vector<pair<bool,clu_info>> inner_clu_phi_map[360]; // note: phi
         // vector<pair<bool,clu_info>> outer_clu_phi_map[360]; // note: phi
@@ -622,6 +646,22 @@ void INTTEta::InitHist()
     clu_used_centrality_2D -> GetXaxis() -> SetTitle("NClus");
     clu_used_centrality_2D -> GetYaxis() -> SetTitle("N used each clu");
     clu_used_centrality_2D -> GetXaxis() -> SetNdivisions(505);
+
+    exclusive_NClus_inner        = new TH1F("","exclusive_NClus_inner;NClus inner barrel;Entry",50, 0, 5000);
+    exclusive_NClus_outer        = new TH1F("","exclusive_NClus_outer;NClus outer barrel;Entry",50,0,5000);
+    exclusive_NClus_sum          = new TH1F("","exclusive_NClus_sum;NClus total;Entry",50,0,9000);
+    
+    exclusive_cluster_inner_eta  = new TH1F("","exclusive_cluster_inner_eta;Cluster inner #eta;Entry",50,-3.5,3.5);
+    exclusive_cluster_inner_phi  = new TH1F("","exclusive_cluster_inner_phi;Cluster inner #phi [radian];Entry",50,-3.5,3.5);
+    exclusive_cluster_outer_eta  = new TH1F("","exclusive_cluster_outer_eta;Cluster outer #eta;Entry",50,-3.5,3.5);
+    exclusive_cluster_outer_phi  = new TH1F("","exclusive_cluster_outer_phi;Cluster outer #phi [radian];Entry",50,-3.5,3.5);
+    exclusive_cluster_all_eta    = new TH1F("","exclusive_cluster_all_eta;Cluster #eta;Entry",50,-3.5,3.5);
+    exclusive_cluster_all_phi    = new TH1F("","exclusive_cluster_all_phi;Cluster #phi [radian];Entry",50,-3.5,3.5);
+    
+    exclusive_tight_tracklet_eta = new TH1F("","exclusive_tight_tracklet_eta;Tracklet #eta;Entry",50,-3.5,3.5);
+    exclusive_tight_tracklet_phi = new TH1F("","exclusive_tight_tracklet_phi;Tracklet #phi [radian];Entry",50,-3.5,3.5);
+    exclusive_loose_tracklet_eta = new TH1F("","exclusive_loose_tracklet_eta;Tracklet #eta;Entry",50,-3.5,3.5);
+    exclusive_loose_tracklet_phi = new TH1F("","exclusive_loose_tracklet_phi;Tracklet #phi [radian];Entry",50,-3.5,3.5);
 
     eta_region_hist = new TH1F("","", eta_region.size() - 1, &eta_region[0]);
 
@@ -1038,7 +1078,8 @@ void INTTEta::ProcessEvt(
     Long64_t bco_full, 
     pair<double,double> evt_z, 
     int centrality_bin, 
-    vector<vector<float>> true_track_info
+    vector<vector<float>> true_track_info,
+    double zvtx_weighting = 1.0
 )
 { // note : evt_z : {z, width}
     return_tag = 0;
@@ -1067,8 +1108,8 @@ void INTTEta::ProcessEvt(
     // if (-100 > evt_z.first + evt_z.second || 100 < evt_z.first - evt_z.second) {return;}
     
     // note : for data, the denominator
-    MBin_Z_evt_hist_2D -> Fill(centrality_map[centrality_bin], evt_z.first);
-    MBin_Z_evt_hist_2D -> Fill(MBin_Z_evt_hist_2D -> GetNbinsX()-1, evt_z.first);
+    MBin_Z_evt_hist_2D -> Fill(centrality_map[centrality_bin], evt_z.first, zvtx_weighting); 
+    MBin_Z_evt_hist_2D -> Fill(MBin_Z_evt_hist_2D -> GetNbinsX()-1, evt_z.first, zvtx_weighting); 
     
     N_GoodEvent += 1;
     N_GoodEvent_vec[centrality_map[centrality_bin]] += 1;
@@ -1140,24 +1181,51 @@ void INTTEta::ProcessEvt(
         // if (evt_NTrack_MC < 10) {cout<<"evt : "<<event_i<<" ---- N reco track : "<<evt_NTrack<<" N true track : "<<evt_NTrack_MC<<" ratio : "<<double(evt_NTrack) / double(evt_NTrack_MC)<<endl;}
     }
 
+    if (evt_z.first > z_region[selected_z_region_id.first] && evt_z.first < z_region[selected_z_region_id.second])
+    {
+        exclusive_NClus_inner -> Fill(temp_sPH_inner_nocolumn_vec.size(), zvtx_weighting);
+        exclusive_NClus_outer -> Fill(temp_sPH_outer_nocolumn_vec.size(), zvtx_weighting);
+        exclusive_NClus_sum   -> Fill(temp_sPH_inner_nocolumn_vec.size() + temp_sPH_outer_nocolumn_vec.size(), zvtx_weighting);
+    }
+
     // note : put the cluster into the phi map, the first bool is for the cluster usage.
     // note : false means the cluster is not used
     for (int inner_i = 0; inner_i < temp_sPH_inner_nocolumn_vec.size(); inner_i++) {
         Clus_InnerPhi_Offset = (temp_sPH_inner_nocolumn_vec[inner_i].y - beam_origin.second < 0) ? atan2(temp_sPH_inner_nocolumn_vec[inner_i].y - beam_origin.second, temp_sPH_inner_nocolumn_vec[inner_i].x - beam_origin.first) * (180./TMath::Pi()) + 360 : atan2(temp_sPH_inner_nocolumn_vec[inner_i].y - beam_origin.second, temp_sPH_inner_nocolumn_vec[inner_i].x - beam_origin.first) * (180./TMath::Pi());
+        double Clus_InnerPhi_Offset_radian = atan2(temp_sPH_inner_nocolumn_vec[inner_i].y - beam_origin.second, temp_sPH_inner_nocolumn_vec[inner_i].x - beam_origin.first);
+
         // cout<<"inner clu phi : "<<Clus_InnerPhi_Offset<<" origin: "<< temp_sPH_inner_nocolumn_vec[inner_i].phi <<endl;
         // cout<<" ("<<Clus_InnerPhi_Offset<<", "<< temp_sPH_inner_nocolumn_vec[inner_i].phi<<")" <<endl;
         inner_clu_phi_map[ int(Clus_InnerPhi_Offset) ].push_back({false,temp_sPH_inner_nocolumn_vec[inner_i]});
         check_inner_layer_clu_phi_1D->Fill(Clus_InnerPhi_Offset);
 
         double clu_eta = get_clu_eta({beam_origin.first, beam_origin.second, evt_z.first},{temp_sPH_inner_nocolumn_vec[inner_i].x, temp_sPH_inner_nocolumn_vec[inner_i].y, temp_sPH_inner_nocolumn_vec[inner_i].z});
+        
+        if (evt_z.first > z_region[selected_z_region_id.first] && evt_z.first < z_region[selected_z_region_id.second]){
+            exclusive_cluster_inner_eta -> Fill(clu_eta, zvtx_weighting);
+            exclusive_cluster_inner_phi -> Fill(Clus_InnerPhi_Offset_radian, zvtx_weighting);
+            exclusive_cluster_all_eta   -> Fill(clu_eta, zvtx_weighting);
+            exclusive_cluster_all_phi   -> Fill(Clus_InnerPhi_Offset_radian, zvtx_weighting);
+        }
+
         if (clu_eta > INTT_eta_acceptance_l && clu_eta < INTT_eta_acceptance_r) {effective_total_NClus += 1;}
     }
     for (int outer_i = 0; outer_i < temp_sPH_outer_nocolumn_vec.size(); outer_i++) {
         Clus_OuterPhi_Offset = (temp_sPH_outer_nocolumn_vec[outer_i].y - beam_origin.second < 0) ? atan2(temp_sPH_outer_nocolumn_vec[outer_i].y - beam_origin.second, temp_sPH_outer_nocolumn_vec[outer_i].x - beam_origin.first) * (180./TMath::Pi()) + 360 : atan2(temp_sPH_outer_nocolumn_vec[outer_i].y - beam_origin.second, temp_sPH_outer_nocolumn_vec[outer_i].x - beam_origin.first) * (180./TMath::Pi());
+        double Clus_OuterPhi_Offset_radian = atan2(temp_sPH_outer_nocolumn_vec[outer_i].y - beam_origin.second, temp_sPH_outer_nocolumn_vec[outer_i].x - beam_origin.first);
+
         outer_clu_phi_map[ int(Clus_OuterPhi_Offset) ].push_back({false,temp_sPH_outer_nocolumn_vec[outer_i]});
         check_outer_layer_clu_phi_1D->Fill(Clus_OuterPhi_Offset);
 
         double clu_eta = get_clu_eta({beam_origin.first, beam_origin.second, evt_z.first},{temp_sPH_outer_nocolumn_vec[outer_i].x, temp_sPH_outer_nocolumn_vec[outer_i].y, temp_sPH_outer_nocolumn_vec[outer_i].z});
+       
+        if (evt_z.first > z_region[selected_z_region_id.first] && evt_z.first < z_region[selected_z_region_id.second]){
+            exclusive_cluster_outer_eta -> Fill(clu_eta, zvtx_weighting);
+            exclusive_cluster_outer_phi -> Fill(Clus_OuterPhi_Offset_radian, zvtx_weighting);
+            exclusive_cluster_all_eta   -> Fill(clu_eta, zvtx_weighting);
+            exclusive_cluster_all_phi   -> Fill(Clus_OuterPhi_Offset_radian, zvtx_weighting);
+        }
+       
         if (clu_eta > INTT_eta_acceptance_l && clu_eta < INTT_eta_acceptance_r) {effective_total_NClus += 1;}
     }
 
@@ -1183,6 +1251,7 @@ void INTTEta::ProcessEvt(
             if (inner_clu_phi_map[inner_phi_i][inner_phi_clu_i].first == true) {continue;}
 
             Clus_InnerPhi_Offset = (inner_clu_phi_map[inner_phi_i][inner_phi_clu_i].second.y - beam_origin.second < 0) ? atan2(inner_clu_phi_map[inner_phi_i][inner_phi_clu_i].second.y - beam_origin.second, inner_clu_phi_map[inner_phi_i][inner_phi_clu_i].second.x - beam_origin.first) * (180./TMath::Pi()) + 360 : atan2(inner_clu_phi_map[inner_phi_i][inner_phi_clu_i].second.y - beam_origin.second, inner_clu_phi_map[inner_phi_i][inner_phi_clu_i].second.x - beam_origin.first) * (180./TMath::Pi());
+            double Clus_InnerPhi_Offset_radian = atan2(inner_clu_phi_map[inner_phi_i][inner_phi_clu_i].second.y - beam_origin.second, inner_clu_phi_map[inner_phi_i][inner_phi_clu_i].second.x - beam_origin.first);
 
             // todo: change the outer phi scan range
             // note : the outer phi index, -4, -3, -2, -1, 0, 1, 2, 3, 4
@@ -1196,6 +1265,7 @@ void INTTEta::ProcessEvt(
                     if (outer_clu_phi_map[true_scan_i][outer_phi_clu_i].first == true) {continue;}
 
                     Clus_OuterPhi_Offset = (outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.y - beam_origin.second < 0) ? atan2(outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.y - beam_origin.second, outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.x - beam_origin.first) * (180./TMath::Pi()) + 360 : atan2(outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.y - beam_origin.second, outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.x - beam_origin.first) * (180./TMath::Pi());
+                    double Clus_OuterPhi_Offset_radian = atan2(outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.y - beam_origin.second, outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.x - beam_origin.first);
                     double delta_phi = get_delta_phi(Clus_InnerPhi_Offset, Clus_OuterPhi_Offset);
                     
                     // if (fabs(delta_phi) > 5.72) {continue;}
@@ -1270,15 +1340,22 @@ void INTTEta::ProcessEvt(
                     double eta_z_bin = GetTH2Index1D(GetTH2BinXY(coarse_eta_z_map->GetNbinsX(), coarse_eta_z_map->GetNbinsY(), coarse_eta_z_map -> Fill(Get_eta_pair.second, evt_z.first)), coarse_eta_z_map->GetNbinsX());
                     if (int(eta_z_bin) != -1)
                     {
-                        final_track_multi_delta_phi_1D[centrality_map[centrality_bin]][eta_z_bin]            -> Fill(delta_phi); // note : each coarse eta and z bin
-                        final_track_multi_delta_phi_1D[final_track_multi_delta_phi_1D.size() - 1][eta_z_bin] -> Fill(delta_phi);
+                        final_track_multi_delta_phi_1D[centrality_map[centrality_bin]][eta_z_bin]            -> Fill(delta_phi, zvtx_weighting); // note : each coarse eta and z bin
+                        final_track_multi_delta_phi_1D[final_track_multi_delta_phi_1D.size() - 1][eta_z_bin] -> Fill(delta_phi, zvtx_weighting);
 
                         if (fabs(delta_phi) <= signal_region) { 
                             good_tracklet_multi_counting[centrality_map[centrality_bin]][eta_z_bin]          += 1;
                             good_tracklet_multi_counting[good_tracklet_multi_counting.size() - 1][eta_z_bin] += 1;
 
-                            coarse_Reco_SignalNTracklet_Multi_eta_z_2D[centrality_map[centrality_bin]]                        -> Fill(Get_eta_pair.second, evt_z.first);
-                            coarse_Reco_SignalNTracklet_Multi_eta_z_2D[coarse_Reco_SignalNTracklet_Multi_eta_z_2D.size() - 1] -> Fill(Get_eta_pair.second, evt_z.first);
+                            coarse_Reco_SignalNTracklet_Multi_eta_z_2D[centrality_map[centrality_bin]]                        -> Fill(Get_eta_pair.second, evt_z.first, zvtx_weighting);
+                            coarse_Reco_SignalNTracklet_Multi_eta_z_2D[coarse_Reco_SignalNTracklet_Multi_eta_z_2D.size() - 1] -> Fill(Get_eta_pair.second, evt_z.first, zvtx_weighting);
+
+                            if (evt_z.first > z_region[selected_z_region_id.first] && evt_z.first < z_region[selected_z_region_id.second])
+                            {
+                                exclusive_loose_tracklet_eta -> Fill(Get_eta_pair.second, zvtx_weighting);
+                                exclusive_loose_tracklet_phi -> Fill( (Clus_InnerPhi_Offset_radian + Clus_OuterPhi_Offset_radian)/2. , zvtx_weighting);
+                            }
+
                         }
 
                     }
@@ -1389,7 +1466,10 @@ void INTTEta::ProcessEvt(
 
         double inner_clu_eta = get_clu_eta({beam_origin.first, beam_origin.second, evt_z.first},{inner_clu_phi_map[inner_index_0][inner_index_1].second.x, inner_clu_phi_map[inner_index_0][inner_index_1].second.y, inner_clu_phi_map[inner_index_0][inner_index_1].second.z});
         double outer_clu_eta = get_clu_eta({beam_origin.first, beam_origin.second, evt_z.first},{outer_clu_phi_map[outer_index_0][outer_index_1].second.x, outer_clu_phi_map[outer_index_0][outer_index_1].second.y, outer_clu_phi_map[outer_index_0][outer_index_1].second.z});
-        
+
+        double Clus_InnerPhi_Offset_radian = atan2(inner_clu_phi_map[inner_index_0][inner_index_1].second.y - beam_origin.second, inner_clu_phi_map[inner_index_0][inner_index_1].second.x - beam_origin.first);
+        double Clus_OuterPhi_Offset_radian = atan2(outer_clu_phi_map[outer_index_0][outer_index_1].second.y - beam_origin.second, outer_clu_phi_map[outer_index_0][outer_index_1].second.x - beam_origin.first);
+
         if  (Get_eta_pair.second - (inner_clu_eta + outer_clu_eta)/2. > 0.3)
         {
             cout<<" "<<endl;
@@ -1463,8 +1543,14 @@ void INTTEta::ProcessEvt(
                 good_tracklet_counting[centrality_map[centrality_bin]][eta_z_bin]    += 1;
                 good_tracklet_counting[good_tracklet_counting.size() - 1][eta_z_bin] += 1;
 
-                coarse_Reco_SignalNTracklet_Single_eta_z_2D[centrality_map[centrality_bin]]                         -> Fill(Get_eta_pair.second, evt_z.first);
-                coarse_Reco_SignalNTracklet_Single_eta_z_2D[coarse_Reco_SignalNTracklet_Single_eta_z_2D.size() - 1] -> Fill(Get_eta_pair.second, evt_z.first);
+                coarse_Reco_SignalNTracklet_Single_eta_z_2D[centrality_map[centrality_bin]]                         -> Fill(Get_eta_pair.second, evt_z.first, zvtx_weighting);
+                coarse_Reco_SignalNTracklet_Single_eta_z_2D[coarse_Reco_SignalNTracklet_Single_eta_z_2D.size() - 1] -> Fill(Get_eta_pair.second, evt_z.first, zvtx_weighting);
+
+                if (evt_z.first > z_region[selected_z_region_id.first] && evt_z.first < z_region[selected_z_region_id.second])
+                {
+                    exclusive_tight_tracklet_eta -> Fill(Get_eta_pair.second, zvtx_weighting);
+                    exclusive_tight_tracklet_phi -> Fill((Clus_InnerPhi_Offset_radian + Clus_OuterPhi_Offset_radian)/2., zvtx_weighting);
+                }
             }
 
             // note : save the information in detail
@@ -1821,36 +1907,41 @@ void INTTEta::PrintPlots()
         c1 -> Print( Form("%s/final_track_delta_phi_1D_MBin%i.pdf(", out_folder_directory.c_str(), i) );
         for (int i1 = 0; i1 < final_track_delta_phi_1D[i].size(); i1++)
         {   
-            double hist_offset = get_dist_offset(final_track_delta_phi_1D[i][i1], 15);
-            gaus_pol1_fit->SetParameters( final_track_delta_phi_1D[i][i1] -> GetBinContent(final_track_delta_phi_1D[i][i1] -> GetMaximumBin()) - hist_offset, 0, final_track_delta_phi_1D[i][i1]->GetStdDev()/2., hist_offset, 0);
-            if (final_track_delta_phi_1D[i][i1] -> GetEntries() > 0) {final_track_delta_phi_1D[i][i1] -> Fit(gaus_pol1_fit,"NQ");}
+            if (final_track_delta_phi_1D[i][i1] -> GetEntries() > 0) {
+                double hist_offset = get_dist_offset(final_track_delta_phi_1D[i][i1], 15);
+                gaus_pol1_fit->SetParameters( final_track_delta_phi_1D[i][i1] -> GetBinContent(final_track_delta_phi_1D[i][i1] -> GetMaximumBin()) - hist_offset, 0, final_track_delta_phi_1D[i][i1]->GetStdDev()/2., hist_offset, 0);
+                final_track_delta_phi_1D[i][i1] -> Fit(gaus_pol1_fit,"NQ");
+            
+            
+                // note : par[0] : size
+                // note : par[1] : ratio of the two gaussians
+                // note : par[2] : mean
+                // note : par[3] : width of gaus 1
+                // note : par[4] : width of gaus 2
+                // note : par[5] : offset
+                // note : par[6] : slope
+                // note : fit with double gaussian function + pol1
+                d_gaus_pol1_fit -> SetParameters(final_track_delta_phi_1D[i][i1] -> GetBinContent(final_track_delta_phi_1D[i][i1] -> GetMaximumBin()) - hist_offset, 0.2, 0, final_track_delta_phi_1D[i][i1]->GetStdDev()/2., final_track_delta_phi_1D[i][i1]->GetStdDev()/2., hist_offset, 0);
+                d_gaus_pol1_fit -> SetParLimits(1, 0, 0.5);  // note : the first gaussian is  the main distribution, So it should contain more than 50% of the total distribution
+                d_gaus_pol1_fit -> SetParLimits(3, 0, 1000); // note : the width of the gaussian should be positive
+                d_gaus_pol1_fit -> SetParLimits(4, 0, 1000); // note : the width of the gaussian should be positive
+                final_track_delta_phi_1D[i][i1] -> Fit(d_gaus_pol1_fit,"NQ");
+                // note : extract the signal region
+                draw_d_gaus -> SetParameters(d_gaus_pol1_fit->GetParameter(0), d_gaus_pol1_fit->GetParameter(1), d_gaus_pol1_fit->GetParameter(2), d_gaus_pol1_fit->GetParameter(3), d_gaus_pol1_fit->GetParameter(4));
+                // note : extract the part of pol1 background
+                draw_pol1_line -> SetParameters(d_gaus_pol1_fit -> GetParameter(5), d_gaus_pol1_fit -> GetParameter(6));
 
-            // note : par[0] : size
-            // note : par[1] : ratio of the two gaussians
-            // note : par[2] : mean
-            // note : par[3] : width of gaus 1
-            // note : par[4] : width of gaus 2
-            // note : par[5] : offset
-            // note : par[6] : slope
-            // note : fit with double gaussian function + pol1
-            d_gaus_pol1_fit -> SetParameters(final_track_delta_phi_1D[i][i1] -> GetBinContent(final_track_delta_phi_1D[i][i1] -> GetMaximumBin()) - hist_offset, 0.2, 0, final_track_delta_phi_1D[i][i1]->GetStdDev()/2., final_track_delta_phi_1D[i][i1]->GetStdDev()/2., hist_offset, 0);
-            d_gaus_pol1_fit -> SetParLimits(1, 0, 0.5);  // note : the first gaussian is  the main distribution, So it should contain more than 50% of the total distribution
-            d_gaus_pol1_fit -> SetParLimits(3, 0, 1000); // note : the width of the gaussian should be positive
-            d_gaus_pol1_fit -> SetParLimits(4, 0, 1000); // note : the width of the gaussian should be positive
-            if (final_track_delta_phi_1D[i][i1] -> GetEntries() > 0) {final_track_delta_phi_1D[i][i1] -> Fit(d_gaus_pol1_fit,"NQ");}
-            // note : extract the signal region
-            draw_d_gaus -> SetParameters(d_gaus_pol1_fit->GetParameter(0), d_gaus_pol1_fit->GetParameter(1), d_gaus_pol1_fit->GetParameter(2), d_gaus_pol1_fit->GetParameter(3), d_gaus_pol1_fit->GetParameter(4));
-            // note : extract the part of pol1 background
-            draw_pol1_line -> SetParameters(d_gaus_pol1_fit -> GetParameter(5), d_gaus_pol1_fit -> GetParameter(6));
+                // note : fit the background region only by the pol2 function
+                // note : p[0] + p[1]*(x-p[3])+p[2] * (x-p[3])^2
+                bkg_fit_pol2 -> SetParameters(hist_offset, 0, -0.2, 0, signal_region);
+                bkg_fit_pol2 -> FixParameter(4, signal_region);
+                bkg_fit_pol2 -> SetParLimits(2, -100, 0);
+                final_track_delta_phi_1D[i][i1] -> Fit(bkg_fit_pol2,"NQ");
+                // note : extract the background region (which includes the signal region also)
+                draw_pol2_line -> SetParameters(bkg_fit_pol2 -> GetParameter(0), bkg_fit_pol2 -> GetParameter(1), bkg_fit_pol2 -> GetParameter(2), bkg_fit_pol2 -> GetParameter(3));
+            }
 
-            // note : fit the background region only by the pol2 function
-            // note : p[0] + p[1]*(x-p[3])+p[2] * (x-p[3])^2
-            bkg_fit_pol2 -> SetParameters(hist_offset, 0, -0.2, 0, signal_region);
-            bkg_fit_pol2 -> FixParameter(4, signal_region);
-            bkg_fit_pol2 -> SetParLimits(2, -100, 0);
-            if (final_track_delta_phi_1D[i][i1] -> GetEntries() > 0) {final_track_delta_phi_1D[i][i1] -> Fit(bkg_fit_pol2,"NQ");}
-            // note : extract the background region (which includes the signal region also)
-            draw_pol2_line -> SetParameters(bkg_fit_pol2 -> GetParameter(0), bkg_fit_pol2 -> GetParameter(1), bkg_fit_pol2 -> GetParameter(2), bkg_fit_pol2 -> GetParameter(3));
+           
 
             final_track_delta_phi_1D[i][i1] -> SetMinimum(0);
             final_track_delta_phi_1D[i][i1] -> SetMaximum( final_track_delta_phi_1D[i][i1] -> GetBinContent(final_track_delta_phi_1D[i][i1] -> GetMaximumBin()) * 1.5);
@@ -1858,7 +1949,7 @@ void INTTEta::PrintPlots()
             // d_gaus_pol1_fit -> Draw("lsame");
             // draw_d_gaus -> Draw("lsame");
             // draw_pol1_line -> Draw("lsame");
-            draw_pol2_line -> Draw("lsame");
+            if (final_track_delta_phi_1D[i][i1] -> GetEntries() > 0) {draw_pol2_line -> Draw("lsame");}
 
             // gaus_pol1_fit -> Draw("lsame");
             // draw_gaus_line -> SetParameters(fabs(gaus_pol1_fit -> GetParameter(0)), gaus_pol1_fit -> GetParameter(1), fabs(gaus_pol1_fit -> GetParameter(2)), 0);
@@ -1866,17 +1957,17 @@ void INTTEta::PrintPlots()
             // draw_pol1_line -> SetParameters(gaus_pol1_fit -> GetParameter(3), gaus_pol1_fit -> GetParameter(4));
             // draw_pol1_line -> Draw("lsame");
 
-            cout<<" "<<endl;
+            // cout<<" "<<endl;
             // final_eta_entry[i].push_back((draw_gaus_line -> GetParameter(1) - 3 * draw_gaus_line -> GetParameter(2)), draw_gaus_line -> GetParameter(1) + 3 * draw_gaus_line -> GetParameter(2));
             // cout<<i<<" "<<i1<<" gaus fit par  : "<<fabs(gaus_pol1_fit -> GetParameter(0))<<" "<<(gaus_pol1_fit -> GetParameter(1))<<" "<<fabs(gaus_pol1_fit -> GetParameter(2))<<endl;
-            double gaus_integral = fabs(draw_gaus_line -> Integral( (draw_gaus_line -> GetParameter(1) - 3 * fabs(draw_gaus_line -> GetParameter(2))), draw_gaus_line -> GetParameter(1) + 3 * fabs(draw_gaus_line -> GetParameter(2)) )) / final_track_delta_phi_1D[i][i1] -> GetBinWidth(1);
+            // double gaus_integral = fabs(draw_gaus_line -> Integral( (draw_gaus_line -> GetParameter(1) - 3 * fabs(draw_gaus_line -> GetParameter(2))), draw_gaus_line -> GetParameter(1) + 3 * fabs(draw_gaus_line -> GetParameter(2)) )) / final_track_delta_phi_1D[i][i1] -> GetBinWidth(1);
             // cout<<i<<" "<<i1<<" gaus integral : "<< gaus_integral <<endl;
 
-            double d_gaus_integral = fabs(draw_d_gaus -> Integral( -1. * signal_region, signal_region )) / final_track_delta_phi_1D[i][i1] -> GetBinWidth(1);
+            // double d_gaus_integral = fabs(draw_d_gaus -> Integral( -1. * signal_region, signal_region )) / final_track_delta_phi_1D[i][i1] -> GetBinWidth(1);
             // cout<<i<<" "<<i1<<" D-gaus integral : "<< d_gaus_integral <<endl;
             
             double pol2_bkg_integral = fabs(draw_pol2_line -> Integral( -1. * signal_region, signal_region )) / final_track_delta_phi_1D[i][i1] -> GetBinWidth(1);
-            cout<<i<<" "<<i1<<" pol2_bkg integral: "<<pol2_bkg_integral<<endl;
+            // cout<<i<<" "<<i1<<" pol2_bkg integral: "<<pol2_bkg_integral<<endl;
 
             int binID_X = eta_z_convert_inverse_map[i1].first;
             int binID_Y = eta_z_convert_inverse_map[i1].second;
@@ -1892,7 +1983,7 @@ void INTTEta::PrintPlots()
             draw_text -> DrawLatex(0.21, 0.85, Form("MBin: %i, #eta bin: %i, Z bin: %i", i, binID_X, binID_Y));
             // draw_text -> DrawLatex(0.21, 0.85, Form("Guassian integral : %.2f", gaus_integral));
             // draw_text -> DrawLatex(0.21, 0.80, Form("D-Guassian integral : %.2f", d_gaus_integral));
-            draw_text -> DrawLatex(0.21, 0.80, Form("pol2: %.2f + %.2f(x-%.2f) + %.2f(x-%.2f)^{2}", bkg_fit_pol2 -> GetParameter(0), bkg_fit_pol2 -> GetParameter(1), bkg_fit_pol2 -> GetParameter(3), bkg_fit_pol2 -> GetParameter(2), bkg_fit_pol2 -> GetParameter(3)));
+            // draw_text -> DrawLatex(0.21, 0.80, Form("pol2: %.2f + %.2f(x-%.2f) + %.2f(x-%.2f)^{2}", bkg_fit_pol2 -> GetParameter(0), bkg_fit_pol2 -> GetParameter(1), bkg_fit_pol2 -> GetParameter(3), bkg_fit_pol2 -> GetParameter(2), bkg_fit_pol2 -> GetParameter(3)));
             c1 -> Print( Form("%s/final_track_delta_phi_1D_MBin%i.pdf", out_folder_directory.c_str(), i) );
             c1 -> Clear();
         }
@@ -1950,7 +2041,7 @@ void INTTEta::PrintPlots()
             // draw_pol1_line -> SetParameters(gaus_pol1_fit -> GetParameter(3), gaus_pol1_fit -> GetParameter(4));
             // draw_pol1_line -> Draw("lsame");
 
-            cout<<" "<<endl;
+            // cout<<" "<<endl;
             // final_eta_entry[i].push_back((draw_gaus_line -> GetParameter(1) - 3 * draw_gaus_line -> GetParameter(2)), draw_gaus_line -> GetParameter(1) + 3 * draw_gaus_line -> GetParameter(2));
             // cout<<i<<" "<<i1<<" gaus fit par  : "<<fabs(gaus_pol1_fit -> GetParameter(0))<<" "<<(gaus_pol1_fit -> GetParameter(1))<<" "<<fabs(gaus_pol1_fit -> GetParameter(2))<<endl;
             double gaus_integral = fabs(draw_gaus_line -> Integral( (draw_gaus_line -> GetParameter(1) - 3 * fabs(draw_gaus_line -> GetParameter(2))), draw_gaus_line -> GetParameter(1) + 3 * fabs(draw_gaus_line -> GetParameter(2)) )) / final_track_multi_delta_phi_1D[i][i1] -> GetBinWidth(1);
@@ -1960,7 +2051,7 @@ void INTTEta::PrintPlots()
             // cout<<i<<" "<<i1<<" D-gaus integral : "<< d_gaus_integral <<endl;
             
             double pol2_bkg_integral = fabs(draw_pol2_line -> Integral( -1. * signal_region, signal_region )) / final_track_multi_delta_phi_1D[i][i1] -> GetBinWidth(1);
-            cout<<i<<" "<<i1<<" pol2_bkg integral: "<<pol2_bkg_integral<<endl;
+            // cout<<i<<" "<<i1<<" pol2_bkg integral: "<<pol2_bkg_integral<<endl;
 
             // final_dNdeta_multi_1D[i]->SetBinContent(i1 + 1, good_tracklet_multi_counting[i][i1] - pol2_bkg_integral );
             int binID_X = eta_z_convert_inverse_map[i1].first;
@@ -2335,6 +2426,22 @@ void INTTEta::EndRun()
     for (int i = 0; i < dNdeta_1D_MC.size(); i++) {dNdeta_1D_MC[i] -> Write(Form("FineBin_NTrueTrack_MBin%i",i));}
     for (int i = 0; i < dNdeta_1D_MC_edge_eta_cut.size(); i++) {dNdeta_1D_MC_edge_eta_cut[i] -> Write(Form("FineBin_NTrueTrack_EdgeEtaCut_MBin%i",i));}
 
+    exclusive_NClus_inner -> Write("exclusive_NClus_inner");
+    exclusive_NClus_outer -> Write("exclusive_NClus_outer");
+    exclusive_NClus_sum -> Write("exclusive_NClus_sum");
+    
+    exclusive_cluster_inner_eta -> Write("exclusive_cluster_inner_eta");
+    exclusive_cluster_inner_phi -> Write("exclusive_cluster_inner_phi");
+    exclusive_cluster_outer_eta -> Write("exclusive_cluster_outer_eta");
+    exclusive_cluster_outer_phi -> Write("exclusive_cluster_outer_phi");
+    exclusive_cluster_all_eta -> Write("exclusive_cluster_all_eta");
+    exclusive_cluster_all_phi -> Write("exclusive_cluster_all_phi");
+
+    exclusive_tight_tracklet_eta -> Write("exclusive_tight_tracklet_eta");
+    exclusive_tight_tracklet_phi -> Write("exclusive_tight_tracklet_phi");
+    exclusive_loose_tracklet_eta -> Write("exclusive_loose_tracklet_eta");
+    exclusive_loose_tracklet_phi -> Write("exclusive_loose_tracklet_phi");
+
     tree_out -> Write("", TObject::kOverwrite);
 
     out_file -> Close();
@@ -2344,7 +2451,7 @@ void INTTEta::EndRun()
     return;
 }
 
-
+//note : accumulate the number of entries from both sides of the histogram
 double INTTEta::get_dist_offset(TH1F * hist_in, int check_N_bin) // note : check_N_bin 1 to N bins of hist
 {
     if (check_N_bin < 0 || check_N_bin > hist_in -> GetNbinsX()) {cout<<" wrong check_N_bin "<<endl; exit(1);}

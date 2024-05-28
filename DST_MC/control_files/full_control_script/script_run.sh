@@ -15,15 +15,16 @@ used_zvtx_folder=$7
 
 dir_to_runXY_stability="/sphenix/user/ChengWei/INTT/INTT_dNdeta_repo/DST_MC/runXY_stability"
 dir_to_eta_hist_merge="/sphenix/user/ChengWei/INTT/INTT_dNdeta_repo/DST_MC/eta_hist_merge"
-dir_to_ana_map="/sphenix/user/ChengWei/INTT/INTT_dNdeta_repo/DST_MC/ana_map_folder"
 dir_to_DST_MC="/sphenix/user/ChengWei/INTT/INTT_dNdeta_repo/DST_MC"
+
+dir_to_ana_map="/sphenix/user/ChengWei/INTT/INTT_dNdeta_repo/DST_MC/ana_map_folder"
 used_map="ana_map_v1.h"
 
 control_dir_to_data_type=${control_folder_directory}/for_${data_type}
 
 welcome_message_func() {
     echo '=======================================================================================================================================================';
-    echo '| running_argument (5): create_new / hfull                                                                                                            |';
+    echo '| running_argument (5): create_new / hfull / full                                                                                                     |';
     echo '| running_argument (4): condor_submit / run_confirm / get_merged_result / full_clear / clear_ana_file_folder                                          |';
     echo '| running_argument (3): clear_control_file                                                                                                            |';
     echo '| running_argument (1): help / list / condor_monitor / remove_sub_sh                                                                                  |';
@@ -65,7 +66,7 @@ create_new_func() {
         exit 1
     fi
 
-    if [ -z "$5" ]; then 
+    if [ -z "$number_of_jobs" ]; then 
         echo "No number of cores in the argument!"
         exit 1
     fi
@@ -74,6 +75,7 @@ create_new_func() {
     echo "there seems to be a new ${data_type} file! Creating the folders for it under the file_directory"
     echo
     echo the output sub folder name: ${special_name}
+    echo the full output folder name: $dir_to_file_sub_folder
     echo the used zvtx folder name : ${used_zvtx_folder}
     if [ ! -d "${control_dir_to_data_type}/${topic_focus}/condor_outputs" ]; then
         mkdir ${control_dir_to_data_type}/${topic_focus}/condor_outputs
@@ -134,6 +136,7 @@ create_new_func() {
 }
 
 condor_submit_func() {
+    echo
     echo "the script is going to submit the condor jobs"
 
     cd ${control_dir_to_data_type}/${topic_focus}
@@ -144,7 +147,7 @@ condor_submit_func() {
         exit 1
     fi
 
-    if [ -z $6 ]; then 
+    if [ -z $special_name ]; then 
         echo 
         echo '!!! there is no ouput folder name specified'
         echo '!!! the current given output folder is : ' $dir_to_file_sub_folder
@@ -164,27 +167,33 @@ condor_submit_func() {
     fi  
 
     if [[ "$topic_focus" == "avg_vtxXY" ]]; then
-        if [[ `ls -d -1 $dir_to_file_sub_folder/runXY_* | wc -l` -ne 0 ]]; then
-            rm -r $dir_to_file_sub_folder/runXY_*
-        fi
+        # if [[ `ls -d -1 $dir_to_file_sub_folder/runXY_* | wc -l` -ne 0 ]]; then
+        #     rm -r $dir_to_file_sub_folder/runXY_*
+        # fi
+        rm -r $dir_to_file_sub_folder/runXY_*
+        rm -r $dir_to_file_sub_folder/merged_result
+        rm $dir_to_file_sub_folder/file_list.txt
     fi
 
     if [[ "$topic_focus" == "evt_vtxZ" ]]; then
-        if [[ `ls -d -1 $dir_to_file_sub_folder/complete_file/evtZ_* | wc -l` -ne 0 ]]; then
-            rm -r $dir_to_file_sub_folder/complete_file/evtZ_*
-        fi
+        # if [[ `ls -d -1 $dir_to_file_sub_folder/complete_file/evtZ_* | wc -l` -ne 0 ]]; then
+        #     rm -r $dir_to_file_sub_folder/complete_file/evtZ_*
+        # fi
+        rm -r $dir_to_file_sub_folder/complete_file/*
     fi
 
     if [[ "$topic_focus" == "evt_vtxXY" ]]; then
-        if [[ `ls -d -1 $dir_to_file_sub_folder/complete_file/evtXY_* | wc -l` -ne 0 ]]; then
-            rm -r $dir_to_file_sub_folder/complete_file/evtXY_*
-        fi
+        # if [[ `ls -d -1 $dir_to_file_sub_folder/complete_file/evtXY_* | wc -l` -ne 0 ]]; then
+        #     rm -r $dir_to_file_sub_folder/complete_file/evtXY_*
+        # fi
+        rm -r $dir_to_file_sub_folder/complete_file/*
     fi
 
     if [[ "$topic_focus" == "evt_tracklet" || "$topic_focus" == "evt_tracklet_inner_phi_rotate" ]]; then
-        if [[ `ls -d -1 $dir_to_file_sub_folder/complete_file/evtTracklet_* | wc -l` -ne 0 ]]; then
-            rm -r $dir_to_file_sub_folder/complete_file/evtTracklet_*
-        fi
+        # if [[ `ls -d -1 $dir_to_file_sub_folder/complete_file/evtTracklet_* | wc -l` -ne 0 ]]; then
+        #     rm -r $dir_to_file_sub_folder/complete_file/evtTracklet_*
+        # fi
+        rm -r $dir_to_file_sub_folder/complete_file/*
     fi
 
     sh run_condor_copied.sh
@@ -193,12 +202,160 @@ condor_submit_func() {
     condor_monitor_func
 }
 
+evt_tracklet_sub_merge_job_func() {
+    echo there is no final merged files found, so submit the 3 jobs in the background
+    cd ${dir_to_eta_hist_merge}
+    # echo '!!!! you are in the directory:' `pwd`
+    # echo '!!!! for the current safety, please run the followings manually'
+    # echo "./run_merge $dir_to_file_sub_folder/complete_file file_list_full.txt merged_hist_full.root"
+    # echo "./run_merge $dir_to_file_sub_folder/complete_file file_list_half_corr.txt merged_hist_half_corr.root"
+    # echo "./run_merge $dir_to_file_sub_folder/complete_file file_list_half_test.txt merged_hist_half_test.root"
+
+    if [[ -f "$dir_to_file_sub_folder/complete_file/merged_file_folder/merged_hist_full.root" ]]; then rm $dir_to_file_sub_folder/complete_file/merged_file_folder/merged_hist_full.root; fi
+    if [[ -f "$dir_to_file_sub_folder/complete_file/merged_file_folder/merged_hist_half_corr.root" ]]; then rm $dir_to_file_sub_folder/complete_file/merged_file_folder/merged_hist_half_corr.root; fi
+    if [[ -f "$dir_to_file_sub_folder/complete_file/merged_file_folder/merged_hist_half_test.root" ]]; then rm $dir_to_file_sub_folder/complete_file/merged_file_folder/merged_hist_half_test.root; fi
+
+    if [[ -f "$dir_to_file_sub_folder/complete_file/recod_merged_hist_full.txt" ]]; then rm $dir_to_file_sub_folder/complete_file/recod_merged_hist_full.txt; fi
+    if [[ -f "$dir_to_file_sub_folder/complete_file/recod_merged_hist_half_corr.txt" ]]; then rm $dir_to_file_sub_folder/complete_file/recod_merged_hist_half_corr.txt; fi
+    if [[ -f "$dir_to_file_sub_folder/complete_file/recod_merged_hist_half_test.txt" ]]; then rm $dir_to_file_sub_folder/complete_file/recod_merged_hist_half_test.txt; fi
+
+    ./run_merge $dir_to_file_sub_folder/complete_file file_list_full.txt merged_hist_full.root > $dir_to_file_sub_folder/complete_file/recod_merged_hist_full.txt 2>&1 &
+    ./run_merge $dir_to_file_sub_folder/complete_file file_list_half_corr.txt merged_hist_half_corr.root > $dir_to_file_sub_folder/complete_file/recod_merged_hist_half_corr.txt 2>&1 &
+    ./run_merge $dir_to_file_sub_folder/complete_file file_list_half_test.txt merged_hist_half_test.root > $dir_to_file_sub_folder/complete_file/recod_merged_hist_half_test.txt 2>&1 &
+
+    N_merge_finish_tag=100;
+    time while [[ $N_merge_finish_tag -ne 3 ]]; 
+    do 
+        N_merge_finish_tag=`grep "the merged file is closed" $dir_to_file_sub_folder/complete_file/recod_*.txt | wc -l`
+
+        echo N run_merge jobs running: $(( `ps aux | grep run_merge | wc -l` - 1 ))
+        printf '=%.0s' $(seq $N_merge_finish_tag); 
+        echo $N_merge_finish_tag;
+        sleep 2; 
+    done;
+
+    if [[ $N_merge_finish_tag == 3 ]]; then 
+        pkill run_merge
+        # root -l -b -q ${control_dir_to_data_type}/${topic_focus}/merged_tracklet_ana.C
+        echo the root files are ready, you should be moving to the TrackletWrapper folder
+    fi
+}
+
+get_merged_result_func() {
+    source /opt/sphenix/core/bin/sphenix_setup.sh -n ana.410
+
+    if [[ "$topic_focus" == "avg_vtxXY" ]]; then
+        echo running the merged file ana for $topic_focus
+        cd ${dir_to_runXY_stability}
+        ./run_avg_vtxXY_merge_result $data_type_id $dir_to_file_sub_folder
+        cd ${control_folder_directory}  
+    fi
+
+    if [[ "$topic_focus" == "evt_vtxZ" ]]; then
+        echo running the merged file ana for $topic_focus
+        root -l -b -q ${control_dir_to_data_type}/${topic_focus}/MakeEvtZPlots.cpp\(\"${special_name}\"\)
+    fi
+
+    if [[ "$topic_focus" == "evt_vtxXY" ]]; then
+        echo running the merged file ana for $topic_focus
+        mkdir $dir_to_file_sub_folder/complete_file/file_merged_folder
+        cd $dir_to_file_sub_folder/complete_file
+        ls evtXY_*/evt_XY_tree.root > file_list.txt
+        cd ${control_dir_to_data_type}/${topic_focus}
+        root -l -b -q make_evtXY_plot.cpp
+        cd ${control_folder_directory}
+
+        exit 1
+    fi    
+
+    if [[ "$topic_focus" == "evt_tracklet" || "$topic_focus" == "evt_tracklet_inner_phi_rotate" ]]; then
+        echo running the merged file ana for $topic_focus
+        cd $dir_to_file_sub_folder/complete_file
+        
+        if [[ ! -d "merged_file_folder" ]]; then 
+            mkdir merged_file_folder; 
+        fi
+        
+        if [[ ! -f "file_list_full.txt" ]]; then
+            ls $dir_to_file_sub_folder/complete_file/evtTracklet_*/INTT_final_hist_info.root > file_list_full.txt
+        fi
+
+        # if [[ "$topic_focus" == "evt_tracklet" ]]; then
+        #     if [[ ! -f "file_list_full_shuf.txt" ]]; then shuf "file_list_full.txt" > "file_list_full_shuf.txt"; fi
+
+        #     if [[ ! -f "file_list_half_corr.txt" || ! -f "file_list_half_test.txt" ]]; then
+        #         Nhalf_evtTracklet=$(( `grep ".root" file_list_full_shuf.txt | wc -l` / 2 ))
+        #         head -n $Nhalf_evtTracklet "file_list_full_shuf.txt" > "file_list_half_corr.txt"
+        #         tail -n $(( `grep ".root" file_list_full_shuf.txt | wc -l` - Nhalf_evtTracklet )) "file_list_full_shuf.txt" > "file_list_half_test.txt"
+        #     fi
+        # else # note : for the "evt_tracklet_inner_phi_rotate"
+        #     echo for the evt_tracklet_inner_phi_rotate, we copied the file from evt_tracklet
+        #     cp ${file_folder_directory}/evt_tracklet/complete_file/file_list_half_corr.txt $dir_to_file_sub_folder/complete_file
+        #     cp ${file_folder_directory}/evt_tracklet/complete_file/file_list_half_test.txt $dir_to_file_sub_folder/complete_file
+            
+        #     sed -i "s/evt_tracklet/${topic_focus}/g" file_list_half_corr.txt
+        #     sed -i "s/evt_tracklet/${topic_focus}/g" file_list_half_test.txt
+
+        # fi        
+
+        # note : just to make it easy, we use the simple sort for everyone now. 
+        Nhalf_evtTracklet=$(( `grep ".root" file_list_full.txt | wc -l` / 2 ))
+        if [[ ! -f "file_list_half_corr.txt" ]]; then 
+            head -n $Nhalf_evtTracklet "file_list_full.txt" > "file_list_half_corr.txt"
+            tail -n $(( `grep ".root" file_list_full.txt | wc -l` - Nhalf_evtTracklet )) "file_list_full.txt" > "file_list_half_test.txt"
+        fi
+
+        echo N_lines of file_list_full.txt: `grep ".root" file_list_full.txt | wc -l`
+        # if [[ -f "file_list_full_shuf.txt" ]]; then echo N_lines of file_list_full_shuf.txt: `grep ".root" file_list_full_shuf.txt | wc -l`; fi
+        echo N_lines of file_list_half_corr.txt: `grep ".root" file_list_half_corr.txt | wc -l`
+        echo N_lines of file_list_half_test.txt: `grep ".root" file_list_half_test.txt | wc -l`
+
+        sort file_list_half_corr.txt > sorted_corr.txt
+        sort file_list_half_test.txt > sorted_test.txt
+
+        echo "================================================================================================================================"
+        echo "======Check identical lines====================================================================================================="
+        echo "================================================================================================================================"
+        comm -12 sorted_corr.txt sorted_test.txt
+        echo "================================================================================================================================"
+        echo "======Do you got something above ?=============================================================================================="
+        echo "================================================================================================================================"
+
+        if [[ `comm -12 sorted_corr.txt sorted_test.txt | wc -l` -ne 0 ]]; then
+            echo '!!!! something wrong in split the files, please take a look. Abort the program now'
+            exit 1
+        fi
+
+        cd merged_file_folder
+        if [[ -f "merged_hist_half_corr.root" && -f "merged_hist_half_test.root" && -f "merged_hist_full.root" ]]; then 
+            # root -l -b -q ${control_dir_to_data_type}/${topic_focus}/merged_tracklet_ana.C
+            echo the root files are ready, you should be moving to the TrackletWrapper folder
+            echo 
+            read -r -p "The three merged files already exist, do you want to re-run? Type 'yes' to proceed: " response
+            if [[ "$response" != "yes" ]]; then
+                echo "Operation aborted."
+                exit 1
+            fi
+
+            evt_tracklet_sub_merge_job_func
+
+        else 
+            evt_tracklet_sub_merge_job_func
+        fi
+    fi
+}
+
+remove_sub_sh_func() {
+    rm ${control_folder_directory}/for_MC/*/run_root_sub_*.sh
+    rm ${control_folder_directory}/for_data/*/run_root_sub_*.sh
+}
+
 # note : if there is no arguments provided
 if [[ -z $1 ]]; then 
     welcome_message_func
 fi
 
-# note : if there is the directory provided
+# note : if there is the directory provided, remove the trailing slash if it exists
 if [[ ! -z $4 ]]; then 
     file_folder_directory="${file_folder_directory%/}"
 fi 
@@ -208,13 +365,20 @@ if [ -z $6 ]; then
     special_name=${topic_focus}
 fi
 
+# note : just want to change the zvtx input for some reasons
+if [ "$6" == "1" ]; then
+    special_name=${topic_focus}
+fi
+
 # note : if the used_zvtx_folder is not given, then used the defauly zvtx folder
 if [ -z $7 ]; then
     used_zvtx_folder="evt_vtxZ"
 fi
 
 
-if [[ "$running_argument" != "run_confirm" && \
+if [[ "$running_argument" != "full" && \
+      "$running_argument" != "hfull" && \
+      "$running_argument" != "run_confirm" && \
       "$running_argument" != "remove_sub_sh" && \
       "$running_argument" != "clear_control_file" && \
       "$running_argument" != "clear_ana_file_folder" && \
@@ -250,8 +414,7 @@ fi
 
 # note : ===============================================================================================================================================================================
 if [[ "${running_argument}" == "remove_sub_sh" ]]; then 
-    rm for_MC/*/run_root_sub_*.sh
-    rm for_data/*/run_root_sub_*.sh
+    remove_sub_sh_func
 
     exit 1
 fi
@@ -337,7 +500,11 @@ if [ ! -z "$6" ]; then
         echo ${dir_to_DST_MC}/*.h | sed -e "s/ /\n/g"
         echo ${control_dir_to_data_type}/${topic_focus}/*_mother.C | sed -e "s/ /\n/g"
         echo 
-        exit 1
+        read -r -p "Shall we move on ? " response
+        if [[ "$response" != "yes" ]]; then
+            echo "Operation aborted."
+            exit 1
+        fi
     else 
         echo found ${N_found_special_tag} special tags in the followings, please confirm
         grep "special_tag" ${dir_to_ana_map}/${used_map}
@@ -354,11 +521,20 @@ if [ ! -z "$6" ]; then
     dir_to_file_sub_folder=${file_folder_directory}/${special_name}
 else 
     if [[ ${N_found_special_tag} -ne 0 ]]; then
-        echo found ${N_found_special_tag} in the followings, 'but we are in the normal mode!!! please confirm'
+        echo found ${N_found_special_tag} in the followings, 'BUT WE ARE in the NORMAL MODE!!! please confirm'
         grep "special_tag" ${dir_to_ana_map}/${used_map}
         grep "special_tag" ${dir_to_DST_MC}/*.h
         grep "special_tag" ${control_dir_to_data_type}/${topic_focus}/*_mother.C
-        exit 1
+        read -r -p "Are they looking fine? " response
+        if [[ "$response" != "yes" ]]; then
+            echo "Operation aborted."
+            exit 1
+        fi
+        read -r -p "Are you sure about that? " response
+        if [[ "$response" != "yes" ]]; then
+            echo "Operation aborted."
+            exit 1
+        fi
     fi
 
     dir_to_file_sub_folder=${file_folder_directory}/${topic_focus}
@@ -385,124 +561,28 @@ elif [[ "${running_argument}" == "hfull" ]]; then
 
     exit 1
 
+elif [[ "${running_argument}" == "full" ]]; then
+    create_new_func
+
+    condor_submit_func
+
+    get_merged_result_func
+
+    remove_sub_sh_func
+    
+    echo 
+    echo "The full operation is done"
+    echo 'you may move to /sphenix/user/ChengWei/INTT/INTT_dNdeta_repo/DST_MC/multi_file_comp'
+
+    exit 1
+
 # note : ===============================================================================================================================================================================
 elif [[ "${running_argument}" == "get_merged_result" ]]; then 
-    source /opt/sphenix/core/bin/sphenix_setup.sh -n ana.410
-
-    if [[ "$topic_focus" == "avg_vtxXY" ]]; then
-        echo running the merged file ana for $topic_focus
-        cd ${dir_to_runXY_stability}
-        ./run_avg_vtxXY_merge_result $data_type_id $dir_to_file_sub_folder
-        cd ${control_folder_directory}  
-    fi
-
-    if [[ "$topic_focus" == "evt_vtxZ" ]]; then
-        echo running the merged file ana for $topic_focus
-        root -l -b -q ${control_dir_to_data_type}/${topic_focus}/MakeEvtZPlots.cpp\(${special_name}\)
-    fi
-
-    if [[ "$topic_focus" == "evt_vtxXY" ]]; then
-        echo running the merged file ana for $topic_focus
-        mkdir $dir_to_file_sub_folder/complete_file/file_merged_folder
-        cd $dir_to_file_sub_folder/complete_file
-        ls evtXY_*/evt_XY_tree.root > file_list.txt
-        cd ${control_dir_to_data_type}/${topic_focus}
-        root -l -b -q make_evtXY_plot.cpp
-        cd ${control_folder_directory}
-
-        exit 1
-    fi    
-
-    if [[ "$topic_focus" == "evt_tracklet" || "$topic_focus" == "evt_tracklet_inner_phi_rotate" ]]; then
-        echo running the merged file ana for $topic_focus
-        cd $dir_to_file_sub_folder/complete_file
-        
-        if [[ ! -d "merged_file_folder" ]]; then mkdir merged_file_folder; fi
-        
-        if [[ ! -f "file_list_full.txt" ]]; then
-            ls $dir_to_file_sub_folder/complete_file/evtTracklet_*/INTT_final_hist_info.root > file_list_full.txt
-        fi
-
-        if [[ "$topic_focus" == "evt_tracklet" ]]; then
-            if [[ ! -f "file_list_full_shuf.txt" ]]; then shuf "file_list_full.txt" > "file_list_full_shuf.txt"; fi
-
-            if [[ ! -f "file_list_half_corr.txt" || ! -f "file_list_half_test.txt" ]]; then
-                Nhalf_evtTracklet=$(( `grep ".root" file_list_full_shuf.txt | wc -l` / 2 ))
-                head -n $Nhalf_evtTracklet "file_list_full_shuf.txt" > "file_list_half_corr.txt"
-                tail -n $(( `grep ".root" file_list_full_shuf.txt | wc -l` - Nhalf_evtTracklet )) "file_list_full_shuf.txt" > "file_list_half_test.txt"
-            fi
-        else # note : for the "evt_tracklet_inner_phi_rotate"
-            echo for the evt_tracklet_inner_phi_rotate, we copied the file from evt_tracklet
-            cp ${file_folder_directory}/evt_tracklet/complete_file/file_list_half_corr.txt $dir_to_file_sub_folder/complete_file
-            cp ${file_folder_directory}/evt_tracklet/complete_file/file_list_half_test.txt $dir_to_file_sub_folder/complete_file
-            
-            sed -i "s/evt_tracklet/${topic_focus}/g" file_list_half_corr.txt
-            sed -i "s/evt_tracklet/${topic_focus}/g" file_list_half_test.txt
-
-        fi        
-
-        echo N_lines of file_list_full.txt: `grep ".root" file_list_full.txt | wc -l`
-        if [[ -f "file_list_full_shuf.txt" ]]; then echo N_lines of file_list_full_shuf.txt: `grep ".root" file_list_full_shuf.txt | wc -l`; fi
-        echo N_lines of file_list_half_corr.txt: `grep ".root" file_list_half_corr.txt | wc -l`
-        echo N_lines of file_list_half_test.txt: `grep ".root" file_list_half_test.txt | wc -l`
-
-        sort file_list_half_corr.txt > sorted_corr.txt
-        sort file_list_half_test.txt > sorted_test.txt
-
-        echo "================================================================================================================================"
-        echo "======Check identical lines====================================================================================================="
-        echo "================================================================================================================================"
-        comm -12 sorted_corr.txt sorted_test.txt
-        echo "================================================================================================================================"
-        echo "======Do you got something above ?=============================================================================================="
-        echo "================================================================================================================================"
-
-        if [[ `comm -12 sorted_corr.txt sorted_test.txt | wc -l` -ne 0 ]]; then
-            echo '!!!! something wrong in split the files, please take a look. Abort the program now'
-            exit 1
-        fi
-
-        cd merged_file_folder
-        if [[ -f "merged_hist_half_corr.root" && -f "merged_hist_half_test.root" && -f "merged_hist_full.root" ]]; then 
-            root -l -b -q ${control_dir_to_data_type}/${topic_focus}/merged_tracklet_ana.C
-        else 
-            echo there is no final merged files found, so submit the job in the background
-            cd ${dir_to_eta_hist_merge}
-            # echo '!!!! you are in the directory:' `pwd`
-            # echo '!!!! for the current safety, please run the followings manually'
-            # echo "./run_merge $dir_to_file_sub_folder/complete_file file_list_full.txt merged_hist_full.root"
-            # echo "./run_merge $dir_to_file_sub_folder/complete_file file_list_half_corr.txt merged_hist_half_corr.root"
-            # echo "./run_merge $dir_to_file_sub_folder/complete_file file_list_half_test.txt merged_hist_half_test.root"
-
-            if [[ -f "$dir_to_file_sub_folder/complete_file/recod_merged_hist_full.txt" ]]; then rm $dir_to_file_sub_folder/complete_file/recod_merged_hist_full.txt; fi
-            if [[ -f "$dir_to_file_sub_folder/complete_file/recod_merged_hist_half_corr.txt" ]]; then rm $dir_to_file_sub_folder/complete_file/recod_merged_hist_half_corr.txt; fi
-            if [[ -f "$dir_to_file_sub_folder/complete_file/recod_merged_hist_half_test.txt" ]]; then rm $dir_to_file_sub_folder/complete_file/recod_merged_hist_half_test.txt; fi
-
-            ./run_merge $dir_to_file_sub_folder/complete_file file_list_full.txt merged_hist_full.root > $dir_to_file_sub_folder/complete_file/recod_merged_hist_full.txt 2>&1 &
-            ./run_merge $dir_to_file_sub_folder/complete_file file_list_half_corr.txt merged_hist_half_corr.root > $dir_to_file_sub_folder/complete_file/recod_merged_hist_half_corr.txt 2>&1 &
-            ./run_merge $dir_to_file_sub_folder/complete_file file_list_half_test.txt merged_hist_half_test.root > $dir_to_file_sub_folder/complete_file/recod_merged_hist_half_test.txt 2>&1 &
-
-            N_merge_finish_tag=100;
-            time while [[ $N_merge_finish_tag -ne 3 ]]; 
-            do 
-                N_merge_finish_tag=`grep "the merged file is closed" $dir_to_file_sub_folder/complete_file/recod_*.txt | wc -l`
-
-                echo N run_merge jobs running: $(( `ps aux | grep run_merge | wc -l` - 1 ))
-                printf '=%.0s' $(seq $N_merge_finish_tag); 
-                echo $N_merge_finish_tag;
-                sleep 2; 
-            done;
-
-            if [[ $N_merge_finish_tag == 3 ]]; then 
-                pkill run_merge
-                root -l -b -q ${control_dir_to_data_type}/${topic_focus}/merged_tracklet_ana.C
-            fi
-        fi
+        get_merged_result_func
 
         exit 1
         # cd ${control_dir_to_data_type}/${topic_focus}
         # root -l -b -q ${control_dir_to_data_type}/${topic_focus}/MakeEvtZPlots.cpp
-    fi
 
 # note : ===============================================================================================================================================================================
 elif [[ "${running_argument}" == "full_clear" ]]; then 

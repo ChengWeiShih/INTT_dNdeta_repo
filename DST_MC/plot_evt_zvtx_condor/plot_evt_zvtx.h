@@ -93,6 +93,7 @@ class plot_evt_zvtx
 
         TH1F * reco_Zvtx_dist;
         TH2F * NClus_intt_mbd_diff_corre;
+        TH2F * mbdz_intt_mbd_diff_corre_cut;
         TH2F * intt_mbd_reco_z_corre;
         TH2F * intt_mbd_reco_z_corre_cut;
         TH1F * intt_mbd_reco_z_diff;

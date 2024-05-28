@@ -125,8 +125,10 @@ int main(int argc, char *argv[])
             {
                 if (TH1F_map.find(hist_name) == TH1F_map.end())
                 { 
+                    string hist_1D_X_title = ((TH1F *) TFile_in_map[file_name.c_str()] -> Get( hist_name.c_str() ))->GetXaxis()->GetTitle();
+                    string hist_1D_Y_title = ((TH1F *) TFile_in_map[file_name.c_str()] -> Get( hist_name.c_str() ))->GetYaxis()->GetTitle();
                     TH1F_map[hist_name.c_str()] = new TH1F(
-                        (hist_name + "_merge").c_str(), (hist_name+"_merge").c_str(),
+                        (hist_name + "_merge").c_str(), (hist_name + "_merge;" + hist_1D_X_title + ";" + hist_1D_Y_title).c_str(),
                         ((TH1F *) TFile_in_map[file_name.c_str()] -> Get( hist_name.c_str() ))->GetNbinsX(),
                         ((TH1F *) TFile_in_map[file_name.c_str()] -> Get( hist_name.c_str() ))->GetXaxis()->GetXmin(),
                         ((TH1F *) TFile_in_map[file_name.c_str()] -> Get( hist_name.c_str() ))->GetXaxis()->GetXmax()
@@ -143,8 +145,10 @@ int main(int argc, char *argv[])
             {
                 if (TH2F_map.find(hist_name) == TH2F_map.end())
                 { 
+                    string hist_2D_X_title = ((TH2F *) TFile_in_map[file_name.c_str()] -> Get( hist_name.c_str() ))->GetXaxis()->GetTitle();
+                    string hist_2D_Y_title = ((TH2F *) TFile_in_map[file_name.c_str()] -> Get( hist_name.c_str() ))->GetYaxis()->GetTitle();
                     TH2F_map[hist_name.c_str()] = new TH2F(
-                        (hist_name + "_merge").c_str(), (hist_name+"_merge").c_str(),
+                        (hist_name + "_merge").c_str(), (hist_name + "_merge;" + hist_2D_X_title + ";" + hist_2D_Y_title).c_str(),
                         ((TH2F *) TFile_in_map[file_name.c_str()] -> Get( hist_name.c_str() ))->GetNbinsX(),
                         ((TH2F *) TFile_in_map[file_name.c_str()] -> Get( hist_name.c_str() ))->GetXaxis()->GetXmin(),
                         ((TH2F *) TFile_in_map[file_name.c_str()] -> Get( hist_name.c_str() ))->GetXaxis()->GetXmax(),

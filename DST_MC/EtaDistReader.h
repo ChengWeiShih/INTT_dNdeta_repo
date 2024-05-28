@@ -56,7 +56,7 @@ class EtaDistReader : public INTTEta
             DeltaPhi_Multi_Stack.clear();
             SignalNTrack_Single.clear(); 
             SignalNTrack_Multi.clear();
-            N_event_counting            = vector<vector<int>>(N_centrality_bin, vector<int>(included_eta_z_map.size(),0));
+            N_event_counting            = vector<vector<double>>(N_centrality_bin, vector<double>(included_eta_z_map.size(),0));
             N_event_counting_MC         = vector<vector<int>>(N_centrality_bin, vector<int>(included_eta_z_map.size(),0));
             N_event_counting_fulleta_MC = vector<vector<int>>(N_centrality_bin, vector<int>(eta_region.size() - 1, 0)); // note : N centrality_bin x N eta_bin
 
@@ -162,9 +162,9 @@ class EtaDistReader : public INTTEta
         vector<TH1F *> DeltaPhi_Multi_Stack_hist_out_radian;
         map<string,TH1F *> DeltaPhi_Multi_1D_radian;
 
-        map<string, int> SignalNTrack_Single;
-        map<string, int> SignalNTrack_Multi;
-        vector<vector<int>> N_event_counting;
+        map<string, double> SignalNTrack_Single;
+        map<string, double> SignalNTrack_Multi;
+        vector<vector<double>> N_event_counting;
         vector<vector<int>> N_event_counting_MC;
         vector<vector<int>> N_event_counting_fulleta_MC;
 
@@ -594,7 +594,7 @@ void EtaDistReader::MainPreparation()
             
             draw_text -> DrawLatex(0.21, 0.86, Form("MBin: %i, #eta_bin: %i, #Delta#Phi_bin width: %.2f", Mbin, eta_z.first, temp_hist -> GetBinWidth(1)));
             draw_text -> DrawLatex(0.21, 0.82, Form("pol2: %.2f + %.2f(x-%.2f) + %.2f(x-%.2f)^{2}", bkg_fit_pol2 -> GetParameter(0), bkg_fit_pol2 -> GetParameter(1), bkg_fit_pol2 -> GetParameter(3), bkg_fit_pol2 -> GetParameter(2), bkg_fit_pol2 -> GetParameter(3)));
-            draw_text -> DrawLatex(0.21, 0.78, Form("Signal size: %i, pol2 bkg size: %.2f", SignalNTrack_Multi[Form("%i_%i",Mbin,eta_z.first)], pol2_bkg_integral));
+            draw_text -> DrawLatex(0.21, 0.78, Form("Signal size: %.3f, pol2 bkg size: %.2f", SignalNTrack_Multi[Form("%i_%i",Mbin,eta_z.first)], pol2_bkg_integral));
 
             c1 -> Print(Form("%s/Reco_DeltaPhi_Multi_Stack.pdf", out_folder_directory.c_str()));
             c1 -> Clear();

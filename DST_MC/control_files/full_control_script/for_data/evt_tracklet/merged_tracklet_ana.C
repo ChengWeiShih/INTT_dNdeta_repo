@@ -119,7 +119,7 @@ int merged_tracklet_ana()
         dNdeta_1D_reco_single_original_3[i] -> Draw("p same");
 
         draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s",centrality_region[i].c_str()));
-        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} Work-in-progress"));
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} Work-in-progress"));
 
         legend -> AddEntry(dNdeta_1D_fulleta_MC_1[0], "corr. true", "f");
         legend -> AddEntry(dNdeta_1D_reco_single_original_1[0], "corr. reco.", "ep");
@@ -169,7 +169,7 @@ int merged_tracklet_ana()
         legend -> AddEntry(dNdeta_1D_fulleta_MC_2[0], "test true", "f");
         legend -> AddEntry(dNdeta_1D_reco_multi_original_2[0], "test reco.", "ep");
         legend -> AddEntry(dNdeta_1D_reco_multi_original_3[0], "data", "ep");
-        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} Work-in-progress"));
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} Work-in-progress"));
         legend -> Draw("same");
 
         c2 -> Print(Form("%s/dNdeta_comp_multi_original.pdf",out_folder_directory3.c_str()));
@@ -212,7 +212,7 @@ int merged_tracklet_ana()
         dNdeta_1D_reco_single_postalpha_3[i] -> Draw("p same");
 
         draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s",centrality_region[i].c_str()));
-        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} Work-in-progress"));
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} Work-in-progress"));
 
         legend -> AddEntry(dNdeta_1D_fulleta_MC_1[0], "corr. true", "f");
         legend -> AddEntry(dNdeta_1D_reco_single_postalpha_1[0], "corr. reco.", "ep");
@@ -262,7 +262,7 @@ int merged_tracklet_ana()
         legend -> AddEntry(dNdeta_1D_fulleta_MC_2[0], "test true", "f");
         legend -> AddEntry(dNdeta_1D_reco_multi_postalpha_2[0], "test reco.", "ep");
         legend -> AddEntry(dNdeta_1D_reco_multi_postalpha_3[0], "data", "ep");
-        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} Work-in-progress"));
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} Work-in-progress"));
         legend -> Draw("same");
 
         c2 -> Print(Form("%s/dNdeta_comp_multi_postalpha.pdf",out_folder_directory3.c_str()));
