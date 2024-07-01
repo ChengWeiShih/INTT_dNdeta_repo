@@ -113,8 +113,10 @@ void DistComp::Object_init()
         file_in.push_back(TFile::Open(input_file_full_info[file_i][1].c_str()));
         for (string hist_name : checked_hist_name)
         {
+            cout<<"test, working on : "<<hist_name<<endl;
+
             if (rebin_tag){
-            hist_vec[file_i].push_back( (TH1F*)((TH1F*)file_in[file_i]->Get(hist_name.c_str()))->Rebin(rebin_Nbins, ((TH1F*)file_in[file_i]->Get(hist_name.c_str())) -> GetName() ) );
+                hist_vec[file_i].push_back( (TH1F*)((TH1F*)file_in[file_i]->Get(hist_name.c_str()))->Rebin(rebin_Nbins, ((TH1F*)file_in[file_i]->Get(hist_name.c_str())) -> GetName() ) );
             }
             else{
                 hist_vec[file_i].push_back( (TH1F*)file_in[file_i]->Get(hist_name.c_str()) );
@@ -134,6 +136,10 @@ void DistComp::Object_init()
             hist_vec[file_i].back()->SetLineColor(TColor::GetColor(color_code_vec[file_i].c_str()));
             hist_vec[file_i].back()->SetMarkerColor(TColor::GetColor(color_code_vec[file_i].c_str()));
             hist_vec[file_i].back()->SetMarkerSize(0.8);
+            // for (int i = 1; i <= hist_vec[file_i].back()->GetNbinsX(); i++)
+            // {
+            //     if (hist_vec[file_i].back()->GetBinCenter(i) > 1.5) {hist_vec[file_i].back()->SetBinContent(i,0);}
+            // }
             hist_vec[file_i].back()->Scale( 1. / hist_vec[file_i].back() -> Integral(-1,-1) );
             hist_vec[file_i].back()->GetXaxis()->SetNdivisions(705);
         }
@@ -186,8 +192,13 @@ void dist_comparison()
 {
 
     string MC_tracklet_merged_folder_prefix = "/sphenix/user/ChengWei/sPH_dNdeta/Sim_Ntuple_HIJING_new_20240424_HR_test";
+    string MC_tracklet_folder_name = "evt_tracklet_NarrowZvtx_n205mm_to_n195mm";
+
     string tracklet_merged_folder_suffix = "complete_file/merged_file_folder";
+    
     string data_tracklet_merged_folder_prefix = "/sphenix/user/ChengWei/INTT/INTT_commissioning/ZeroField/F4A_20869/2024_05_07/folder_Data_CombinedNtuple_Run20869_HotDead_BCO_ADC_Survey_test";
+    string data_tracklet_folder_name_1 = "evt_tracklet_NarrowZvtx_n205mm_to_n195mm";
+    // string data_tracklet_folder_name_2 = "evt_tracklet_NarrowZvtx_n205mm_to_n195mm";
 
     vector<vector<string>> input_file_full_info = {
         // {
@@ -205,16 +216,45 @@ void dist_comparison()
         //     Form("%s/evt_tracklet_original/%s/merged_hist_full.root", data_tracklet_merged_folder_prefix.c_str(), tracklet_merged_folder_suffix.c_str()),
         //     "Data"
         // }
+
+        // {
+        //     "MC",
+        //     Form("%s/evt_tracklet_Original_MC_zvtxshifted_weighting/%s/merged_hist_full.root",MC_tracklet_merged_folder_prefix.c_str(),tracklet_merged_folder_suffix.c_str()),
+        //     "MC zvtx_shifted weighted"
+        // },
+        // {
+        //     "data",
+        //     Form("%s/evt_tracklet_INTTz_shifted/%s/merged_hist_full.root", data_tracklet_merged_folder_prefix.c_str(), tracklet_merged_folder_suffix.c_str()),
+        //     "Data zvtx_shifted"
+        // }
+
+        // {
+        //     "MC",
+        //     Form("%s/%s/%s/merged_hist_full.root",MC_tracklet_merged_folder_prefix.c_str(), MC_tracklet_folder_name.c_str(), tracklet_merged_folder_suffix.c_str()),
+        //     "MC"
+        // },
+        // {
+        //     "data",
+        //     Form("%s/%s/%s/merged_hist_full.root", data_tracklet_merged_folder_prefix.c_str(), data_tracklet_folder_name_1.c_str(), tracklet_merged_folder_suffix.c_str()),
+        //     "Data, z shifted"
+        // },
+        // {
+        //     "data",
+        //     Form("%s/%s/%s/merged_hist_full.root", data_tracklet_merged_folder_prefix.c_str(), data_tracklet_folder_name_2.c_str(), tracklet_merged_folder_suffix.c_str()),
+        //     "Data, original"
+        // }
+
         {
             "MC",
-            Form("%s/evt_tracklet_Original_MC_zvtxshifted_weighting/%s/merged_hist_full.root",MC_tracklet_merged_folder_prefix.c_str(),tracklet_merged_folder_suffix.c_str()),
-            "MC zvtx_shifted weighted"
+            Form("%s/%s/%s/merged_hist_full.root",MC_tracklet_merged_folder_prefix.c_str(), MC_tracklet_folder_name.c_str(), tracklet_merged_folder_suffix.c_str()),
+            "MC"
         },
         {
             "data",
-            Form("%s/evt_tracklet_INTTz_shifted/%s/merged_hist_full.root", data_tracklet_merged_folder_prefix.c_str(), tracklet_merged_folder_suffix.c_str()),
-            "Data zvtx_shifted"
-        }
+            Form("%s/%s/%s/merged_hist_full.root", data_tracklet_merged_folder_prefix.c_str(), data_tracklet_folder_name_1.c_str(), tracklet_merged_folder_suffix.c_str()),
+            "Data"
+        },
+
     };
 
     vector<string> checked_hist_name = {
@@ -227,15 +267,17 @@ void dist_comparison()
         "exclusive_cluster_inner_phi",
         "exclusive_cluster_outer_eta",
         "exclusive_cluster_outer_phi",
+        "exclusive_cluster_inner_adc",
+        "exclusive_cluster_outer_adc",
         "exclusive_loose_tracklet_eta",
         "exclusive_loose_tracklet_phi",
         "exclusive_tight_tracklet_eta",
         "exclusive_tight_tracklet_phi"
     };
 
-    string output_folder_name = data_tracklet_merged_folder_prefix + "/evt_tracklet_INTTz_shifted/" + tracklet_merged_folder_suffix + "/dist_comparison_folder";
+    string output_folder_name = data_tracklet_merged_folder_prefix + "/" + data_tracklet_folder_name_1 + "/" + tracklet_merged_folder_suffix + "/dist_comparison_folder";
 
-    DistComp * dist_comp = new DistComp(input_file_full_info, checked_hist_name, output_folder_name, true, 2);
+    DistComp * dist_comp = new DistComp(input_file_full_info, checked_hist_name, output_folder_name, false, 2);
 
     return;
 }

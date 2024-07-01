@@ -6,6 +6,7 @@
 #include "../sigmaEff.h"
 #include "gaus_func.h"
 #include "MegaTrackFinder.h"
+#include "../vector_stddev.h"
 // #include "../sPhenixStyle.C"
 
 // note : the centrality is still float here.
@@ -44,7 +45,8 @@ class INTTZvtx
             double zvtx_QA_ratio = 0.00001, 
             bool draw_event_display = true, 
             double peek = 3.32405, 
-            bool print_message_opt = true
+            bool print_message_opt = true,
+            TH1F * delta_phi_inner_correction_hist_in = nullptr // note : special_tag
         );
         void ProcessEvt(
             int event_i, 
@@ -76,15 +78,17 @@ class INTTZvtx
     private : 
         TCanvas * c2;
         TCanvas * c1;
-        TPad *pad_xy;
-        TPad *pad_rz;
-        TPad *pad_z;
-        TPad *pad_z_hist;
-        TPad *pad_z_line;
-        TPad *pad_phi_diff;
-        TPad *pad_track_phi;
-        TPad *pad_inner_outer_phi;
-        TPad *pad_phi_diff_1D;
+        TPad * pad_xy;
+        TPad * pad_rz;
+        TPad * pad_z;
+        TPad * pad_z_hist;
+        TPad * pad_z_line;
+        TPad * pad_phi_diff;
+        TPad * pad_track_phi;
+        TPad * pad_inner_outer_phi;
+        TPad * pad_phi_diff_1D;
+        TPad * pad_EvtZDist;
+        TPad * pad_ZoomIn_EvtZDist;
         
         TH1F * avg_event_zvtx;
         TH1F * zvtx_evt_fitError;
@@ -100,7 +104,9 @@ class INTTZvtx
         TH1F * Z_resolution;          
         TH1F * evt_possible_z;
         TH1F * line_breakdown_hist_cm;            // note : same thing, but with the unit cm 
+        TH1F * line_breakdown_hist_cm_zoomin;     // note : same thing, but with the unit cm 
         TH1F * line_breakdown_hist;               // note : try to fill the line into the histogram
+        TH1F * line_breakdown_hist_zoomin;        // note : try to fill the line into the histogram
         TH1F * line_breakdown_gaus_ratio_hist;    // note : the distribution of the entry/width of gaus fit 
         TH1F * line_breakdown_gaus_width_hist;    // note : the distribution of the gaus fit width 
         TH2F * gaus_width_Nclu;
@@ -131,8 +137,11 @@ class INTTZvtx
         TLine  * coord_line;
         TFile  * out_file;
         TTree  * tree_out;
+        vector<TF1 *> gaus_fit_vec; // note : mm
+        vector<TF1 *> gaus_fit_cm_vec; // note : cm
         TF1    * gaus_fit;
         TF1    * gaus_fit_cm; 
+        TF1    * gaus_fit_width_cm; 
         TF1    * gaus_fit_2;
         TF1    * double_gaus_fit;
         TF1    * zvtx_finder;
@@ -165,6 +174,8 @@ class INTTZvtx
         int N_clu_cut;                // note : if (> N_clu_cut)         -> continue  unit number
         int N_clu_cutl;               // note : if (< N_clu_cutl)        -> continue  unit number
 
+        TH1F * delta_phi_inner_correction_hist; // note : special_tag
+
         vector<vector<pair<bool,clu_info>>> inner_clu_phi_map; // note: phi
         vector<vector<pair<bool,clu_info>>> outer_clu_phi_map; // note: phi
         
@@ -181,6 +192,7 @@ class INTTZvtx
         bool out_good_zvtx_tag;
         int out_eID, N_cluster_outer_out, N_cluster_inner_out, out_ES_N_good, out_mid_cut_Ngroup, out_LB_cut_Ngroup;
         int out_N_cluster_north, out_N_cluster_south;
+        vector<double> out_evtZ_hist_cut_content_vec; // note : this is for the training test
         Long64_t bco_full_out; 
 
         // note : for out parameters
@@ -222,6 +234,26 @@ class INTTZvtx
         int good_comb_id;
         
 
+        // note : for the trapezoidal method for the vertex determination
+        TH1F * combination_zvtx_range_shape;
+        TRandom3 * rand_gen;
+        TH2F * best_fitwidth_NClus;
+        vector<double> fit_mean_mean_vec;
+        vector<double> fit_mean_reducedChi2_vec;
+        vector<double> fit_mean_width_vec;
+        std::vector<std::string> color_code = {
+            "#9e0142",
+            "#d53e4f",
+            "#f46d43",
+            "#fdae61",
+            "#fee08b",
+            "#e6f598",
+            "#abdda4",
+            "#66c2a5",
+            "#3288bd",
+            "#5e4fa2" 
+        };
+
         // note : the class that handles the 3/4-cluster tracklet finder
         MegaTrackFinder * mega_track_finder; 
 
@@ -240,6 +272,7 @@ class INTTZvtx
         std::vector<double> calculateDistanceAndClosestPoint(double x1, double y1, double x2, double y2, double target_x, double target_y);
         pair<double,double> Get_possible_zvtx(double rvtx, vector<double> p0, vector<double> p1);
         vector<double> find_Ngroup(TH1F * hist_in);
+        vector<double> get_half_hist_vec(TH1F * hist_in);
         double get_radius(double x, double y);
         double calculateAngleBetweenVectors(double x1, double y1, double x2, double y2, double targetX, double targetY);
         double Get_extrapolation(double given_y, double p0x, double p0y, double p1x, double p1y);
@@ -247,6 +280,7 @@ class INTTZvtx
         void temp_bkg(TPad * c1, double peek, pair<double,double> beam_origin, InttConversion * ch_pos_DB);
         void Characterize_Pad(TPad *pad, float left = 0.15, float right = 0.1, float top = 0.1, float bottom = 0.12, bool set_logY = false, int setgrid_bool = 0);
         void line_breakdown(TH1F* hist_in, pair<double,double> line_range);
+        void trapezoidal_line_breakdown(TH1F * hist_in, double inner_r, double inner_z, double outer_r, double outer_z);
         int min_width_ID(vector<double> input_width_vec);
         double get_delta_phi(double angle_1, double angle_2);
         double get_track_phi(double inner_clu_phi_in, double delta_phi_in);
@@ -257,12 +291,48 @@ class INTTZvtx
 
 
 
-INTTZvtx::INTTZvtx(string run_type, string out_folder_directory, pair<double,double> beam_origin, int geo_mode_id, double phi_diff_cut, pair<double,double> DCA_cut, int N_clu_cutl, int N_clu_cut, int zvtx_cal_require, pair<double,double> zvtx_QA_width, double zvtx_QA_ratio, bool draw_event_display, double peek, bool print_message_opt)
-:run_type(run_type), out_folder_directory(out_folder_directory), beam_origin(beam_origin), geo_mode_id(geo_mode_id), peek(peek), N_clu_cut(N_clu_cut), N_clu_cutl(N_clu_cutl), phi_diff_cut(phi_diff_cut), DCA_cut(DCA_cut), zvtx_cal_require(zvtx_cal_require), zvtx_QA_width(zvtx_QA_width), zvtx_QA_ratio(zvtx_QA_ratio), draw_event_display(draw_event_display), print_message_opt(print_message_opt)
+INTTZvtx::INTTZvtx(
+    string run_type, 
+    string out_folder_directory, 
+    pair<double,double> beam_origin, 
+    int geo_mode_id, 
+    double phi_diff_cut, 
+    pair<double,double> DCA_cut, 
+    int N_clu_cutl, 
+    int N_clu_cut, 
+    int zvtx_cal_require, 
+    pair<double,double> zvtx_QA_width, 
+    double zvtx_QA_ratio, 
+    bool draw_event_display, 
+    double peek, 
+    bool print_message_opt,
+    TH1F * delta_phi_inner_correction_hist_in // note : special_tag
+)
+:run_type(run_type), 
+out_folder_directory(out_folder_directory), 
+beam_origin(beam_origin), 
+geo_mode_id(geo_mode_id), 
+peek(peek), 
+N_clu_cut(N_clu_cut), 
+N_clu_cutl(N_clu_cutl), 
+phi_diff_cut(phi_diff_cut), 
+DCA_cut(DCA_cut), 
+zvtx_cal_require(zvtx_cal_require), 
+zvtx_QA_width(zvtx_QA_width), 
+zvtx_QA_ratio(zvtx_QA_ratio), 
+draw_event_display(draw_event_display), 
+print_message_opt(print_message_opt),
+delta_phi_inner_correction_hist(delta_phi_inner_correction_hist_in) // note : special_tag
 {
     SetsPhenixStyle();
     system(Form("mkdir %s",out_folder_directory.c_str()));
     gErrorIgnoreLevel = kWarning; // note : To not print the "print plot info."
+
+    fit_mean_mean_vec.clear();
+    fit_mean_reducedChi2_vec.clear();
+    fit_mean_width_vec.clear();
+
+    out_evtZ_hist_cut_content_vec.clear();
 
     temp_event_zvtx_vec.clear();
     temp_event_zvtx_info.clear();
@@ -415,13 +485,54 @@ void INTTZvtx::InitHist()
     line_breakdown_hist = new TH1F("", "line_breakdown_hist", 2*N+1, -1*(width*N + width/2.), width*N + width/2.);
     line_breakdown_hist -> SetLineWidth(1);
     line_breakdown_hist -> GetXaxis() -> SetTitle("Z [mm]");
-    line_breakdown_hist -> GetYaxis() -> SetTitle("Entry");
+    line_breakdown_hist -> GetYaxis() -> SetTitle("Entries [A.U.]");
+    line_breakdown_hist -> GetXaxis() -> SetNdivisions(705);
+
+    line_breakdown_hist_zoomin = new TH1F(
+        "",
+        "line_breakdown_hist_zoomin;Z [mm];Entries [A.U.]",
+        line_breakdown_hist -> GetNbinsX(),
+        line_breakdown_hist -> GetXaxis() -> GetXmin(),
+        line_breakdown_hist -> GetXaxis() -> GetXmax()
+    );
+    line_breakdown_hist_zoomin -> GetXaxis() -> SetNdivisions(705);
+
     if (print_message_opt == true) {cout<<"class INTTZvtx, Line brakdown hist, range : "<<line_breakdown_hist->GetXaxis()->GetXmin()<<" "<<line_breakdown_hist->GetXaxis()->GetXmax()<<" "<<line_breakdown_hist->GetBinWidth(1)<<endl;}
 
-    line_breakdown_hist_cm = new TH1F("", "line_breakdown_hist_cm", line_breakdown_hist -> GetNbinsX(), line_breakdown_hist -> GetXaxis() -> GetXmin() * 0.1, line_breakdown_hist -> GetXaxis() -> GetXmax() * 0.1);
+    line_breakdown_hist_cm = new TH1F(
+        "", 
+        "line_breakdown_hist_cm;Z [cm];Entries [A.U.]", 
+        line_breakdown_hist -> GetNbinsX(), 
+        line_breakdown_hist -> GetXaxis() -> GetXmin() * 0.1, 
+        line_breakdown_hist -> GetXaxis() -> GetXmax() * 0.1
+    );
     line_breakdown_hist_cm -> SetLineWidth(1);
-    line_breakdown_hist_cm -> GetXaxis() -> SetTitle("Z [cm]");
-    line_breakdown_hist_cm -> GetYaxis() -> SetTitle("Entry");
+    line_breakdown_hist_cm -> GetXaxis() -> SetNdivisions(705);
+
+    line_breakdown_hist_cm_zoomin = new TH1F(
+        "",
+        "line_breakdown_hist_cm_zoomin;Z [cm];Entries [A.U.]",
+        line_breakdown_hist -> GetNbinsX(),
+        line_breakdown_hist -> GetXaxis() -> GetXmin() * 0.1,
+        line_breakdown_hist -> GetXaxis() -> GetXmax() * 0.1
+    );
+    line_breakdown_hist_cm_zoomin -> GetXaxis() -> SetNdivisions(705);
+
+    // note : unit : mm
+    combination_zvtx_range_shape = new TH1F(
+        "",
+        "",
+        line_breakdown_hist -> GetNbinsX(),
+        line_breakdown_hist -> GetXaxis() -> GetXmin(),
+        line_breakdown_hist -> GetXaxis() -> GetXmax()
+    );
+
+    best_fitwidth_NClus = new TH2F(
+        "",
+        "best_fitwidth_NClus;N proto-tracklet;Best fit width [mm]",
+        200,0,10000,
+        100,0,200
+    );
 
     line_breakdown_gaus_ratio_hist = new TH1F("","line_breakdown_gaus_ratio_hist",200,0,0.0005);
     line_breakdown_gaus_ratio_hist -> GetXaxis() -> SetTitle("(Norm. size) / width");
@@ -554,6 +665,15 @@ void INTTZvtx::InitCanvas()
 
     c1 = new TCanvas("","",950,800);
     c1 -> cd();
+
+    pad_EvtZDist = new TPad("pad_EvtZDist", "pad_EvtZDist", 0.0, 0.0, 1.0, 1.0);
+    // Characterize_Pad(pad_EvtZDist, 0.15, 0.1, 0.1, 0.2, 0, 0);
+    pad_EvtZDist -> Draw();
+
+    pad_ZoomIn_EvtZDist = new TPad("pad_ZoomIn_EvtZDist", "pad_ZoomIn_EvtZDist", 0.52, 0.15+0.1, 0.82, 0.5+0.1);
+    Characterize_Pad(pad_ZoomIn_EvtZDist, 0.15, 0.1, 0.1, 0.2, 0, 0);
+    pad_ZoomIn_EvtZDist -> SetFillColor(0); // Set background color of the pad to white
+    pad_ZoomIn_EvtZDist -> Draw();
 }
 
 void INTTZvtx::InitTreeOut()
@@ -577,6 +697,9 @@ void INTTZvtx::InitTreeOut()
     tree_out -> Branch("LB_Gaus_Mean_meanE",&out_LB_Gaus_Mean_meanE);            // note : Line break loose offset - gaus mean error
     tree_out -> Branch("LB_Gaus_Mean_chi2", &out_LB_Gaus_Mean_chi2);             // note : Line break loose offset - reduce chi2
     tree_out -> Branch("LB_Gaus_Mean_width",&out_LB_Gaus_Mean_width);            // note : Line break loose offset - width
+    tree_out -> Branch("LB_Gaus_Mean_mean_vec", &fit_mean_mean_vec);                // note : Line break loose offset - the set of mean from the fitting with different fit ranges
+    tree_out -> Branch("LB_Gaus_Mean_width_vec", &fit_mean_width_vec);              // note : Line break loose offset - the set of width from the fitting with different fit ranges
+    tree_out -> Branch("LB_Gaus_Mean_chi2_vec", &fit_mean_reducedChi2_vec);         // note : Line break loose offset - the set of reduced chi2 from the fitting with different fit ranges
     tree_out -> Branch("LB_Gaus_Width_width",&out_LB_Gaus_Width_width);                 // note : Line break tight offset - gaus width
     tree_out -> Branch("LB_Gaus_Width_offset", &out_LB_Gaus_Width_offset);              // note : Line break tight offset - offset
     tree_out -> Branch("LB_Gaus_Width_size_width", &out_LB_Gaus_Width_size_width);      // note : Line break tight offset - norm. height / width
@@ -595,10 +718,27 @@ void INTTZvtx::InitTreeOut()
     tree_out -> Branch("is_min_bias_wozdc", &out_is_min_bias_wozdc);
     tree_out -> Branch("MBD_north_charge_sum", &out_MBD_north_charge_sum);
     tree_out -> Branch("MBD_south_charge_sum", &out_MBD_south_charge_sum);
+    tree_out -> Branch("evtZ_hist_cut_content_vec", &out_evtZ_hist_cut_content_vec); // note : this is for the training test of the z-vertex finder
 }
 
 void INTTZvtx::InitRest()
 {
+    gaus_fit_vec.clear();
+    gaus_fit_cm_vec.clear();
+    for (int i = 0; i < 7; i++)
+    {
+        gaus_fit_vec.push_back(new TF1("gaus_fit_vec",gaus_func,evt_possible_z_range.first,evt_possible_z_range.second,4));
+        gaus_fit_vec[i] -> SetLineColor(TColor::GetColor(color_code[i].c_str()));
+        gaus_fit_vec[i] -> SetLineWidth(1);
+        gaus_fit_vec[i] -> SetNpx(1000);
+
+        gaus_fit_cm_vec.push_back(new TF1("gaus_fit_cm_vec",gaus_func,evt_possible_z_range.first,evt_possible_z_range.second,4));
+        gaus_fit_cm_vec[i] -> SetLineColor(TColor::GetColor(color_code[i].c_str()));
+        gaus_fit_cm_vec[i] -> SetLineWidth(1);
+        gaus_fit_cm_vec[i] -> SetNpx(1000);
+
+    }
+
     gaus_fit = new TF1("gaus_fit",gaus_func,evt_possible_z_range.first,evt_possible_z_range.second,4);
     gaus_fit -> SetLineColor(2);
     gaus_fit -> SetLineWidth(1);
@@ -608,6 +748,12 @@ void INTTZvtx::InitRest()
     gaus_fit_cm -> SetLineColor(2);
     gaus_fit_cm -> SetLineWidth(1);
     gaus_fit_cm -> SetNpx(1000);
+
+    gaus_fit_width_cm = new TF1("gaus_fit_width_cm",gaus_func,evt_possible_z_range.first,evt_possible_z_range.second,4);
+    gaus_fit_width_cm -> SetLineColor(3);
+    gaus_fit_width_cm -> SetLineStyle(9);
+    gaus_fit_width_cm -> SetLineWidth(1);
+    gaus_fit_width_cm -> SetNpx(1000);
 
     gaus_fit_2 = new TF1("gaus_fit_2",gaus_func,evt_possible_z_range.first,evt_possible_z_range.second,4);
     gaus_fit_2 -> SetLineColor(2);
@@ -653,6 +799,8 @@ void INTTZvtx::InitRest()
     coord_line -> SetLineWidth(1);
     coord_line -> SetLineColor(16);
     coord_line -> SetLineStyle(2);
+
+    rand_gen = new TRandom3(0);
 
     ch_pos_DB = new InttConversion(conversion_mode_BD[geo_mode_id], peek);
 }
@@ -726,9 +874,10 @@ void INTTZvtx::ProcessEvt(
     out_N_cluster_north = 0;
     out_N_cluster_south = 0;
 
+    out_evtZ_hist_cut_content_vec.clear();
 
 
-    if (event_i%1000 == 0 && print_message_opt == true) {cout<<"In INTTZvtx class, running event : "<<event_i<<endl;}
+    if (event_i%10 == 0 && print_message_opt == true) {cout<<"In INTTZvtx class, running event : "<<event_i<<endl;}
 
     total_NClus = temp_sPH_inner_nocolumn_vec.size() + temp_sPH_outer_nocolumn_vec.size();
 
@@ -792,12 +941,20 @@ void INTTZvtx::ProcessEvt(
 
                     Clus_OuterPhi_Offset = (outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.y - beam_origin.second < 0) ? atan2(outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.y - beam_origin.second, outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.x - beam_origin.first) * (180./TMath::Pi()) + 360 : atan2(outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.y - beam_origin.second, outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.x - beam_origin.first) * (180./TMath::Pi());
                     double delta_phi = get_delta_phi(Clus_InnerPhi_Offset, Clus_OuterPhi_Offset);
-
-                    evt_phi_diff_inner_phi -> Fill(Clus_InnerPhi_Offset, delta_phi);
-                    evt_inner_outer_phi -> Fill(Clus_InnerPhi_Offset, Clus_OuterPhi_Offset);
-                    evt_phi_diff_1D -> Fill(delta_phi); 
                     
-                    if (fabs(delta_phi) < phi_diff_cut)
+                    double delta_phi_correct;
+                    if (delta_phi_inner_correction_hist != nullptr) {
+                        delta_phi_correct = delta_phi - delta_phi_inner_correction_hist->GetBinContent(delta_phi_inner_correction_hist->GetXaxis()->FindBin(Clus_InnerPhi_Offset)); //note: special_tag
+                    }
+                    else {
+                        delta_phi_correct = delta_phi;
+                    }
+                    
+                    evt_phi_diff_inner_phi -> Fill(Clus_InnerPhi_Offset, delta_phi_correct);
+                    evt_inner_outer_phi -> Fill(Clus_InnerPhi_Offset, Clus_OuterPhi_Offset);
+                    evt_phi_diff_1D -> Fill(delta_phi_correct); 
+                    
+                    if (fabs(delta_phi_correct) < phi_diff_cut)
                     {
                         double DCA_sign = calculateAngleBetweenVectors(
                             outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.x, outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.y,
@@ -830,8 +987,17 @@ void INTTZvtx::ProcessEvt(
 
                                 evt_possible_z -> Fill(z_range_info.first);
 
-                                // note : fill the line_breakdwon histogram as well as a vector for the width determination
-                                line_breakdown(line_breakdown_hist,{z_range_info.first - z_range_info.second, z_range_info.first + z_range_info.second});
+                                // note : fill the line_breakdown histogram as well as a vector for the width determination
+                                // line_breakdown(line_breakdown_hist,{z_range_info.first - z_range_info.second, z_range_info.first + z_range_info.second}); // note: special_tag
+                                trapezoidal_line_breakdown( // note: special_tag
+                                    line_breakdown_hist, // note: special_tag
+                                    // note : inner_r and inner_z
+                                    get_radius(inner_clu_phi_map[inner_phi_i][inner_phi_clu_i].second.x - beam_origin.first, inner_clu_phi_map[inner_phi_i][inner_phi_clu_i].second.y - beam_origin.second), // note: special_tag
+                                    inner_clu_phi_map[inner_phi_i][inner_phi_clu_i].second.z,// note: special_tag
+                                    // note : outer_r and outer_z
+                                    get_radius(outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.x - beam_origin.first, outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.y - beam_origin.second), // note: special_tag
+                                    outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.z// note: special_tag
+                                );
 
                                 good_comb_id += 1;    
                             }
@@ -844,101 +1010,6 @@ void INTTZvtx::ProcessEvt(
         } 
 
     } // note : end of inner clu loop
-
-    // note : the original two-nested loop method
-    // for ( int inner_i = 0; inner_i < temp_sPH_inner_nocolumn_vec.size(); inner_i++ )
-    // {    
-    //     for ( int outer_i = 0; outer_i < temp_sPH_outer_nocolumn_vec.size(); outer_i++ )
-    //     {
-    //         // bool DCA_tag = false;
-    //         // if (used_outer_check[outer_i] == 1) continue; // note : this outer cluster was already used, skip the trial of this combination
-
-    //         // note : The vertex XY is not at zero, which leads to the fact that the angle difference between two clusters (one from inner, one from outer) doesn't have to be zero. (even in the ideal geometry)
-    //         // note : Therefore, apply the vertex offset before calculating the cluster phi angle can actually help us reduce the backgroup as it then is expected to be at zero when calculating the angle difference.  
-    //         Clus_InnerPhi_Offset = (temp_sPH_inner_nocolumn_vec[inner_i].y - beam_origin.second < 0) ? atan2(temp_sPH_inner_nocolumn_vec[inner_i].y - beam_origin.second, temp_sPH_inner_nocolumn_vec[inner_i].x - beam_origin.first) * (180./TMath::Pi()) + 360 : atan2(temp_sPH_inner_nocolumn_vec[inner_i].y - beam_origin.second, temp_sPH_inner_nocolumn_vec[inner_i].x - beam_origin.first) * (180./TMath::Pi());
-    //         Clus_OuterPhi_Offset = (temp_sPH_outer_nocolumn_vec[outer_i].y - beam_origin.second < 0) ? atan2(temp_sPH_outer_nocolumn_vec[outer_i].y - beam_origin.second, temp_sPH_outer_nocolumn_vec[outer_i].x - beam_origin.first) * (180./TMath::Pi()) + 360 : atan2(temp_sPH_outer_nocolumn_vec[outer_i].y - beam_origin.second, temp_sPH_outer_nocolumn_vec[outer_i].x - beam_origin.first) * (180./TMath::Pi());
-
-    //         // note : to see the event-by-event 
-    //         // evt_phi_diff_inner_phi -> Fill(temp_sPH_inner_nocolumn_vec[inner_i].phi, temp_sPH_inner_nocolumn_vec[inner_i].phi - temp_sPH_outer_nocolumn_vec[outer_i].phi);
-    //         // evt_inner_outer_phi -> Fill(temp_sPH_inner_nocolumn_vec[inner_i].phi, temp_sPH_outer_nocolumn_vec[outer_i].phi);
-    //         // evt_phi_diff_1D -> Fill(temp_sPH_inner_nocolumn_vec[inner_i].phi - temp_sPH_outer_nocolumn_vec[outer_i].phi); 
-    //         evt_phi_diff_inner_phi -> Fill(Clus_InnerPhi_Offset, Clus_InnerPhi_Offset - Clus_OuterPhi_Offset);
-    //         evt_inner_outer_phi -> Fill(Clus_InnerPhi_Offset, Clus_OuterPhi_Offset);
-    //         evt_phi_diff_1D -> Fill(Clus_InnerPhi_Offset - Clus_OuterPhi_Offset); 
-
-    //         if (fabs(Clus_InnerPhi_Offset - Clus_OuterPhi_Offset) < phi_diff_cut)
-    //         // if (fabs(temp_sPH_inner_nocolumn_vec[inner_i].phi - temp_sPH_outer_nocolumn_vec[outer_i].phi) < phi_diff_cut)
-    //         {
-    //             // vector<double> DCA_info_vec = calculateDistanceAndClosestPoint(
-    //             //     temp_sPH_inner_nocolumn_vec[inner_i].x, temp_sPH_inner_nocolumn_vec[inner_i].y,
-    //             //     temp_sPH_outer_nocolumn_vec[outer_i].x, temp_sPH_outer_nocolumn_vec[outer_i].y,
-    //             //     beam_origin.first, beam_origin.second
-    //             // );
-
-    //             double DCA_sign = calculateAngleBetweenVectors(
-    //                 temp_sPH_outer_nocolumn_vec[outer_i].x, temp_sPH_outer_nocolumn_vec[outer_i].y,
-    //                 temp_sPH_inner_nocolumn_vec[inner_i].x, temp_sPH_inner_nocolumn_vec[inner_i].y,
-    //                 beam_origin.first, beam_origin.second
-    //             );
-
-    //             // if (DCA_info_vec[0] != fabs(DCA_sign) && fabs( DCA_info_vec[0] - fabs(DCA_sign) ) > 0.1 ){
-    //             //     cout<<"different DCA : "<<DCA_info_vec[0]<<" "<<DCA_sign<<" diff : "<<DCA_info_vec[0] - fabs(DCA_sign)<<endl;
-    //             // }
-
-    //             if (DCA_cut.first < DCA_sign && DCA_sign < DCA_cut.second){
-    //                 // cout<<" "<<endl;
-    //                 // cout<<"good pair : "<<good_pair_count<<" inner: ("<<temp_sPH_inner_nocolumn_vec[inner_i].x<<", "<<temp_sPH_inner_nocolumn_vec[inner_i].y<<", "<<temp_sPH_inner_nocolumn_vec[inner_i].z<<")"<<endl;
-    //                 // cout<<"good pair : "<<good_pair_count<<" outer: ("<<temp_sPH_outer_nocolumn_vec[outer_i].x<<", "<<temp_sPH_outer_nocolumn_vec[outer_i].y<<", "<<temp_sPH_outer_nocolumn_vec[outer_i].z<<")"<<endl;
-    //                 // cout<<"good pair : "<<good_pair_count<<" corrected phi, inner : "<<Clus_InnerPhi_Offset<<" outer : "<<Clus_OuterPhi_Offset<<endl;
-    //                 // cout<<"good pair : "<<good_pair_count<<" DCA : "<<DCA_sign<<endl;
-    //                 // cout<<"good pair : "<<good_pair_count<<" phi diff : "<<fabs(Clus_InnerPhi_Offset - Clus_OuterPhi_Offset)<<endl;
-    //                 good_pair_count += 1;
-    //                 // used_outer_check[outer_i] = 1; //note : this outer cluster was already used!
-
-    //                 // pair<double,double> z_range_info = Get_possible_zvtx( 
-    //                 //     get_radius(beam_origin.first,beam_origin.second), 
-    //                 //     {get_radius(temp_sPH_inner_nocolumn_vec[inner_i].x, temp_sPH_inner_nocolumn_vec[inner_i].y), temp_sPH_inner_nocolumn_vec[inner_i].z}, // note : unsign radius
-    //                 //     {get_radius(temp_sPH_outer_nocolumn_vec[outer_i].x, temp_sPH_outer_nocolumn_vec[outer_i].y), temp_sPH_outer_nocolumn_vec[outer_i].z}  // note : unsign radius
-    //                 // );
-                    
-    //                 // note : we basically transform the coordinate from cartesian to cylinder 
-    //                 // note : we should set the offset first, otherwise it provides the bias
-    //                 // todo : which point should be used, DCA point or vertex xy ? Has to be studied 
-    //                 pair<double,double> z_range_info = Get_possible_zvtx( 
-    //                     0., // get_radius(beam_origin.first,beam_origin.second), 
-    //                     {get_radius(temp_sPH_inner_nocolumn_vec[inner_i].x - beam_origin.first, temp_sPH_inner_nocolumn_vec[inner_i].y - beam_origin.second), temp_sPH_inner_nocolumn_vec[inner_i].z}, // note : unsign radius
-    //                     {get_radius(temp_sPH_outer_nocolumn_vec[outer_i].x - beam_origin.first, temp_sPH_outer_nocolumn_vec[outer_i].y - beam_origin.second), temp_sPH_outer_nocolumn_vec[outer_i].z}  // note : unsign radius
-    //                 );
-
-    //                 // note : try to remove some crazy background candidates. Can be a todo
-    //                 if (evt_possible_z_range.first < z_range_info.first && z_range_info.first < evt_possible_z_range.second) 
-    //                 {
-    //                     N_comb.push_back(good_comb_id);
-    //                     N_comb_e.push_back(0);
-    //                     // N_comb_phi.push_back( (temp_sPH_inner_nocolumn_vec[inner_i].phi + temp_sPH_outer_nocolumn_vec[outer_i].phi)/2. );
-    //                     N_comb_phi.push_back( (Clus_InnerPhi_Offset + Clus_OuterPhi_Offset)/2. );
-    //                     z_mid.push_back(z_range_info.first);
-    //                     z_range.push_back(z_range_info.second);
-
-    //                     evt_possible_z -> Fill(z_range_info.first);
-
-    //                     // note : fill the line_breakdwon histogram as well as a vector for the width determination
-    //                     line_breakdown(line_breakdown_hist,{z_range_info.first - z_range_info.second, z_range_info.first + z_range_info.second});
-
-    //                     good_comb_id += 1;    
-    //                 }
-
-    //                 // DCA_tag = true;
-    //             }
-
-    //             // if(DCA_tag == true) break; // note : since this combination (one inner cluster, one outer cluster) satisfied the reuqiremet, no reason to ask this inner cluster try with other outer clusters
-
-    //             // cout<<"good comb : "<<fabs(temp_sPH_inner_nocolumn_vec[inner_i].phi - temp_sPH_outer_nocolumn_vec[outer_i].phi)<<" radius in : "<<get_radius(temp_sPH_inner_nocolumn_vec[inner_i].x, temp_sPH_inner_nocolumn_vec[inner_i].y)<<" radius out : "<<get_radius(temp_sPH_outer_nocolumn_vec[outer_i].x, temp_sPH_outer_nocolumn_vec[outer_i].y)<<endl;
-    //         } // note : end of if 
-                
-
-    //     } // note : end of outer loop
-    // } // note : end of inner loop
     
     // cout<<"good pair count : "<<good_pair_count<<endl;
 
@@ -953,16 +1024,28 @@ void INTTZvtx::ProcessEvt(
     {   
         N_group_info = find_Ngroup(evt_possible_z);
         N_group_info_detail = find_Ngroup(line_breakdown_hist);
+        out_evtZ_hist_cut_content_vec = get_half_hist_vec(line_breakdown_hist);
+
+        double Half_N_group_half_width = fabs(N_group_info_detail[3] - N_group_info_detail[2]) / 2.;
 
         FakeClone1D(line_breakdown_hist, line_breakdown_hist_cm);
+        FakeClone1D(line_breakdown_hist, line_breakdown_hist_zoomin);
+        FakeClone1D(line_breakdown_hist, line_breakdown_hist_cm_zoomin);
+
+        double line_breakdown_hist_max_content = line_breakdown_hist -> GetBinContent( line_breakdown_hist -> GetMaximumBin() );
+        double line_breakdown_hist_max_center = line_breakdown_hist -> GetBinCenter( line_breakdown_hist -> GetMaximumBin() );
         
         // note : first fit is for the width, so apply the constraints on the Gaussian offset
-        gaus_fit -> SetParameters(line_breakdown_hist -> GetBinContent( line_breakdown_hist -> GetMaximumBin() ), line_breakdown_hist -> GetBinCenter( line_breakdown_hist -> GetMaximumBin() ), 40, 0);
+        gaus_fit -> SetParameters(line_breakdown_hist_max_content, line_breakdown_hist_max_center, Half_N_group_half_width, 0);
         gaus_fit -> SetParLimits(0,0,100000);  // note : size 
         gaus_fit -> SetParLimits(2,5,10000);   // note : Width
         gaus_fit -> SetParLimits(3,0,10000);   // note : offset
+        double width_fit_range_l = line_breakdown_hist_max_center - Half_N_group_half_width * 0.6;
+        double width_fit_range_r = line_breakdown_hist_max_center + Half_N_group_half_width * 0.6;
         // todo : try to use single gaus to fit the distribution, and try to only fit the peak region (peak - 100 mm + peak + 100 mm)
-        line_breakdown_hist -> Fit(gaus_fit, "NQ", "", line_breakdown_hist -> GetBinCenter( line_breakdown_hist -> GetMaximumBin() ) - 90, line_breakdown_hist -> GetBinCenter( line_breakdown_hist -> GetMaximumBin() ) + 90);        
+        line_breakdown_hist -> Fit(gaus_fit, "NQ", "", width_fit_range_l, width_fit_range_r); 
+        gaus_fit_width_cm -> SetParameters(gaus_fit -> GetParameter(0), gaus_fit -> GetParameter(1) * 0.1, gaus_fit -> GetParameter(2) * 0.1, gaus_fit -> GetParameter(3));
+        gaus_fit_width_cm -> SetRange( width_fit_range_l * 0.1, width_fit_range_r * 0.1);
         tight_offset_peak = gaus_fit -> GetParameter(1);
         tight_offset_width = fabs(gaus_fit -> GetParameter(2));
         final_selection_widthU = (tight_offset_peak + tight_offset_width);
@@ -971,22 +1054,69 @@ void INTTZvtx::ProcessEvt(
         gaus_ratio = (fabs(gaus_fit -> GetParameter(0))/gaus_fit->Integral(-600,600)) / fabs(gaus_fit -> GetParameter(2));
         gaus_fit -> SetParameter(3, gaus_fit_offset); // note : put the offset back to the function
 
-        // note : second fit is for the peak position, therefore, loose the constraints on the Gaussian offset
-        gaus_fit -> SetParameters(line_breakdown_hist -> GetBinContent( line_breakdown_hist -> GetMaximumBin() ), line_breakdown_hist -> GetBinCenter( line_breakdown_hist -> GetMaximumBin() ), 40, 0);
-        gaus_fit -> SetParLimits(0,0,100000);  // note : size 
-        gaus_fit -> SetParLimits(2,5,10000);   // note : Width
-        gaus_fit -> SetParLimits(3,-200,10000);   // note : offset
-        // todo : try to use single gaus to fit the distribution, and try to only fit the peak region (peak - 100 mm + peak + 100 mm)
-        line_breakdown_hist -> Fit(gaus_fit, "NQ", "", line_breakdown_hist -> GetBinCenter( line_breakdown_hist -> GetMaximumBin() ) - 90, line_breakdown_hist -> GetBinCenter( line_breakdown_hist -> GetMaximumBin() ) + 90);
-        // line_breakdown_hist -> Fit(gaus_fit, "NQ", "", N_group_info_detail[2]-10, N_group_info_detail[3]+10);
-        loose_offset_peak = gaus_fit -> GetParameter(1);
-        loose_offset_peakE = gaus_fit -> GetParError(1);        
+        for (int fit_i = 0; fit_i < gaus_fit_vec.size(); fit_i++)
+        {
+            gaus_fit_vec[fit_i] -> SetParameters(line_breakdown_hist_max_content, line_breakdown_hist_max_center, Half_N_group_half_width, 0);
+            gaus_fit_vec[fit_i] -> SetParLimits(0,0,100000);  // note : size 
+            gaus_fit_vec[fit_i] -> SetParLimits(2,5,10000);   // note : Width
+            gaus_fit_vec[fit_i] -> SetParLimits(3,-200,10000);   // note : offset
+            double N_width_ratio = 0.2 + 0.15 * fit_i;
+            double mean_fit_range_l = line_breakdown_hist_max_center - Half_N_group_half_width * N_width_ratio;
+            double mean_fit_range_r = line_breakdown_hist_max_center + Half_N_group_half_width * N_width_ratio;
+            // todo : try to use single gaus to fit the distribution, and try to only fit the peak region (peak - 100 mm + peak + 100 mm)
+            line_breakdown_hist -> Fit(gaus_fit_vec[fit_i], "NQ", "", mean_fit_range_l, mean_fit_range_r);
+            gaus_fit_vec[fit_i] -> SetRange(mean_fit_range_l, mean_fit_range_r);
 
+            fit_mean_mean_vec.push_back(gaus_fit_vec[fit_i] -> GetParameter(1));
+            fit_mean_reducedChi2_vec.push_back(gaus_fit_vec[fit_i] -> GetChisquare() / double(gaus_fit_vec[fit_i] -> GetNDF()));
+            fit_mean_width_vec.push_back(fabs(gaus_fit_vec[fit_i] -> GetParameter(2)));
+
+            gaus_fit_cm_vec[fit_i] -> SetParameters(
+                gaus_fit_vec[fit_i] -> GetParameter(0), 
+                gaus_fit_vec[fit_i] -> GetParameter(1) * 0.1, 
+                gaus_fit_vec[fit_i] -> GetParameter(2) * 0.1, 
+                gaus_fit_vec[fit_i] -> GetParameter(3)
+            );
+            gaus_fit_cm_vec[fit_i] -> SetRange(mean_fit_range_l * 0.1, mean_fit_range_r * 0.1);
+        }
+
+
+        // note : second fit is for the peak position, therefore, loose the constraints on the Gaussian offset
+        // gaus_fit -> SetParameters(line_breakdown_hist_max_content, line_breakdown_hist_max_center, Half_N_group_half_width, 0);
+        // gaus_fit -> SetParLimits(0,0,100000);  // note : size 
+        // gaus_fit -> SetParLimits(2,5,10000);   // note : Width
+        // gaus_fit -> SetParLimits(3,-200,10000);   // note : offset
+        // double mean_fit_range_l = line_breakdown_hist_max_center - best_width; // note : special_tag // todo 
+        // double mean_fit_range_r = line_breakdown_hist_max_center + best_width; // note : special_tag // todo change back
+        // // todo : try to use single gaus to fit the distribution, and try to only fit the peak region (peak - 100 mm + peak + 100 mm)
+        // line_breakdown_hist -> Fit(gaus_fit, "NQ", "", mean_fit_range_l, mean_fit_range_r);
+        // gaus_fit -> SetRange(gaus_fit -> GetParameter(1) - gaus_fit -> GetParameter(2), gaus_fit -> GetParameter(1) + gaus_fit -> GetParameter(2));
+        // // line_breakdown_hist -> Fit(gaus_fit, "NQ", "", N_group_info_detail[2]-10, N_group_info_detail[3]+10);
+        // loose_offset_peak = gaus_fit -> GetParameter(1);
+        // loose_offset_peakE = gaus_fit -> GetParError(1);
+
+        loose_offset_peak = vector_average(fit_mean_mean_vec);
+        loose_offset_peakE = vector_stddev(fit_mean_mean_vec);
+
+        line_breakdown_hist_zoomin -> GetXaxis() -> SetRangeUser(
+            line_breakdown_hist_zoomin -> GetBinCenter(line_breakdown_hist_zoomin -> GetMaximumBin()) - Half_N_group_half_width,
+            line_breakdown_hist_zoomin -> GetBinCenter(line_breakdown_hist_zoomin -> GetMaximumBin()) + Half_N_group_half_width
+        );
+        line_breakdown_hist_zoomin -> SetMinimum(line_breakdown_hist_zoomin -> GetBinContent(line_breakdown_hist_zoomin -> GetMaximumBin()) * 0.5);
+        line_breakdown_hist_zoomin -> SetMaximum(line_breakdown_hist_zoomin -> GetBinContent(line_breakdown_hist_zoomin -> GetMaximumBin()) * 1.5);     
         
         // note : ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
         // note : first fit is for the width, so apply the constraints on the Gaussian offset
-        gaus_fit_cm -> SetParameters(gaus_fit -> GetParameter(0), gaus_fit -> GetParameter(1) * 0.1, gaus_fit -> GetParameter(2) * 0.1, gaus_fit -> GetParameter(3));
+        // gaus_fit_cm -> SetParameters(gaus_fit -> GetParameter(0), gaus_fit -> GetParameter(1) * 0.1, gaus_fit -> GetParameter(2) * 0.1, gaus_fit -> GetParameter(3));
+        // gaus_fit_cm -> SetRange( mean_fit_range_l * 0.1, mean_fit_range_r * 0.1);
         // note : ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+        line_breakdown_hist_cm_zoomin -> GetXaxis() -> SetRangeUser(
+            gaus_fit_cm_vec.front() -> GetParameter(1) - Half_N_group_half_width * 0.1,
+            gaus_fit_cm_vec.front() -> GetParameter(1) + Half_N_group_half_width * 0.1
+        );
+        line_breakdown_hist_cm_zoomin -> SetMinimum( gaus_fit_cm_vec.front() -> GetParameter(0) * 0.5);
+        line_breakdown_hist_cm_zoomin -> SetMaximum( gaus_fit_cm_vec.front() -> GetParameter(0) * 1.5);
 
 
         // note : eff sigma method, relatively sensitive to the background
@@ -1022,11 +1152,17 @@ void INTTZvtx::ProcessEvt(
         
         
 
+        // if ( zvtx_QA_width.first < tight_offset_width && tight_offset_width < zvtx_QA_width.second && 100 < fabs(N_group_info_detail[3] - N_group_info_detail[2]) && fabs(N_group_info_detail[3] - N_group_info_detail[2]) < 190){
+        //     if (N_group_info[0] < 4 && N_group_info[1] >= 0.6 && N_group_info_detail[0] < 7 && N_group_info_detail[1] > 0.9) {good_zvtx_tag = true;}
+        //     else {good_zvtx_tag = false;} 
+        // }
+        // else {good_zvtx_tag = false;}
+
         if ( zvtx_QA_width.first < tight_offset_width && tight_offset_width < zvtx_QA_width.second && 100 < fabs(N_group_info_detail[3] - N_group_info_detail[2]) && fabs(N_group_info_detail[3] - N_group_info_detail[2]) < 190){
-            if (N_group_info[0] < 4 && N_group_info[1] >= 0.6 && N_group_info_detail[0] < 7 && N_group_info_detail[1] > 0.9) {good_zvtx_tag = true;}
-            else {good_zvtx_tag = false;} 
+            good_zvtx_tag = true;
         }
         else {good_zvtx_tag = false;}
+
         good_zvtx_tag_int = (good_zvtx_tag == true) ? 1 : 0; // note : so stupid way to convert bool to int...
 
         // if (good_zvtx_tag == false) {
@@ -1047,7 +1183,7 @@ void INTTZvtx::ProcessEvt(
 
         // note : gaus fit on the linebreak
         gaus_width_Nclu -> Fill(total_NClus, tight_offset_width);
-        gaus_rchi2_Nclu -> Fill(total_NClus, gaus_fit -> GetChisquare() / double(gaus_fit -> GetNDF()));
+        gaus_rchi2_Nclu -> Fill(total_NClus, vector_average(fit_mean_reducedChi2_vec));
         line_breakdown_gaus_ratio_hist -> Fill(gaus_ratio);
         line_breakdown_gaus_width_hist -> Fill(tight_offset_width);
 
@@ -1090,9 +1226,9 @@ void INTTZvtx::ProcessEvt(
         out_ES_width_density = width_density_par;
 
         out_LB_Gaus_Mean_mean = loose_offset_peak;
-        out_LB_Gaus_Mean_meanE = gaus_fit -> GetParError(1); // note : -> loose one
-        out_LB_Gaus_Mean_chi2 = gaus_fit -> GetChisquare() / double(gaus_fit -> GetNDF()); // note : -> loose one
-        out_LB_Gaus_Mean_width = fabs(gaus_fit -> GetParameter(2));
+        out_LB_Gaus_Mean_meanE = loose_offset_peakE; // note : -> loose one
+        out_LB_Gaus_Mean_chi2 = vector_average(fit_mean_reducedChi2_vec); // note : -> loose one
+        out_LB_Gaus_Mean_width = vector_average(fit_mean_width_vec); // note : -> loose one
 
         out_LB_Gaus_Width_width = tight_offset_width;
         out_LB_Gaus_Width_offset = gaus_fit_offset;
@@ -1210,13 +1346,13 @@ void INTTZvtx::ProcessEvt(
         line_breakdown_hist -> SetMinimum(0);
         line_breakdown_hist -> SetMaximum(line_breakdown_hist -> GetBinContent( line_breakdown_hist->GetMaximumBin() ) * 2);
         line_breakdown_hist -> Draw("hist");
-        gaus_fit -> Draw("lsame");
+        gaus_fit_vec.back() -> Draw("lsame");
         if (!good_zvtx_tag) {final_fit_range_line -> DrawLine(line_breakdown_hist->GetXaxis()->GetXmin(), line_breakdown_hist -> GetMaximum(), line_breakdown_hist->GetXaxis()->GetXmax(), line_breakdown_hist -> GetMinimum());}
         final_fit_range_line -> DrawLine(final_selection_widthD, line_breakdown_hist -> GetMinimum(),final_selection_widthD, line_breakdown_hist -> GetMaximum());
         final_fit_range_line -> DrawLine(final_selection_widthU, line_breakdown_hist -> GetMinimum(),final_selection_widthU, line_breakdown_hist -> GetMaximum());
         draw_text -> DrawLatex(0.2, 0.82, Form("Gaus mean %.2f mm", loose_offset_peak));
         draw_text -> DrawLatex(0.2, 0.78, Form("Width : %.2f mm", tight_offset_width));
-        draw_text -> DrawLatex(0.2, 0.74, Form("Reduced #chi2 : %.3f", gaus_fit -> GetChisquare() / double(gaus_fit -> GetNDF())));
+        draw_text -> DrawLatex(0.2, 0.74, Form("Reduced #chi2 : %.3f", gaus_fit_vec.back() -> GetChisquare() / double(gaus_fit_vec.back() -> GetNDF())));
         draw_text -> DrawLatex(0.2, 0.70, Form("Norm. entry / Width : %.6f mm",  gaus_ratio  ));
         draw_text -> DrawLatex(0.2, 0.66, Form("LB Geo mean : %.3f mm",  out_LB_geo_mean  ));
 
@@ -1263,17 +1399,6 @@ void INTTZvtx::ProcessEvt(
         else if ( draw_event_display && run_type == "MC" && fabs(final_zvtx - (TrigZvtxMC * 10.)) > 2. && total_NClus > 3000) { cout<<"In INTTZvtx class, event :"<<event_i<<" High NClus, poor Z : "<< fabs(final_zvtx - (TrigZvtxMC * 10.)) <<endl; c2 -> Print(Form("%s/temp_event_display.pdf",out_folder_directory.c_str())); }
         else if ( draw_event_display && run_type == "MC" && fabs(final_zvtx - (TrigZvtxMC * 10.)) > 2.) { cout<<"In INTTZvtx class, event :"<<event_i<<" low NClus, poor Z : "<< fabs(final_zvtx - (TrigZvtxMC * 10.)) <<endl; c2 -> Print(Form("%s/temp_event_display.pdf",out_folder_directory.c_str())); }
 
-        // if(draw_event_display && good_zvtx_tag == true){c2 -> Print(Form("%s/temp_event_display.pdf",out_folder_directory.c_str()));}
-
-        // if(draw_event_display && (event_i % print_rate) == 0){c2 -> Print(Form("%s/temp_event_display.pdf",out_folder_directory.c_str()));}
-        // if(fabs(gaus_fit -> GetParameter(2)) > 40) { 
-        //     cout<<"check event : "<<event_i<<" width : "<<fabs(gaus_fit -> GetParameter(2))<<" NClu : "<<total_NClus<<endl; 
-        //     c2 -> Print(Form("%s/temp_event_display.pdf",out_folder_directory.c_str())); 
-        // }
-        // if (fabs(temp_event_zvtx_info[2] - temp_event_zvtx_info[1])>100){
-        //     cout<<"check event : "<<event_i<<" eff_width : "<<fabs(temp_event_zvtx_info[2] - temp_event_zvtx_info[1])<<" NClu : "<<total_NClus<<endl; 
-        //     c2 -> Print(Form("%s/temp_event_display.pdf",out_folder_directory.c_str()));
-        // }
         pad_xy -> Clear();
         pad_rz -> Clear();
         pad_z  -> Clear();
@@ -1285,23 +1410,44 @@ void INTTZvtx::ProcessEvt(
         pad_phi_diff_1D -> Clear();
 
         c1 -> cd();
-        line_breakdown_hist_cm -> SetMinimum(0);
-        line_breakdown_hist_cm -> SetMaximum(line_breakdown_hist_cm -> GetBinContent( line_breakdown_hist_cm->GetMaximumBin() ) * 2);
-        line_breakdown_hist_cm -> Draw("hist");
-        gaus_fit_cm -> Draw("l same");
-        
-        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
-        draw_text -> DrawLatex(0.2, 0.84, Form("Event ID: %i", event_i));
-        draw_text -> DrawLatex(0.2, 0.80, Form("Reconstructed vertex Z: %.3f cm", gaus_fit_cm -> GetParameter(1)));
-        if (run_type == "MC") {draw_text -> DrawLatex(0.2, 0.76, Form("True vertex Z: %.3f cm",TrigZvtxMC));}
+        pad_EvtZDist -> cd();
 
+        line_breakdown_hist_cm -> SetMinimum(0);
+        line_breakdown_hist_cm -> SetMaximum(line_breakdown_hist_cm -> GetBinContent( line_breakdown_hist_cm->GetMaximumBin() ) * 1.65);
+        line_breakdown_hist_cm -> Draw("hist");
+        // gaus_fit_width_cm -> Draw("l same");
+        for (int fit_i = 0; fit_i < gaus_fit_cm_vec.size(); fit_i++){
+            gaus_fit_cm_vec[gaus_fit_cm_vec.size() - fit_i - 1] -> Draw("l same");
+        }
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
+
+        draw_text -> DrawLatex(0.2, 0.9, Form("Event ID: %i", event_i));
+        draw_text -> DrawLatex(0.2, 0.86, Form("NClus: %li", total_NClus));
+        draw_text -> DrawLatex(0.2, 0.82, Form("Reco. vertex Z: %.3f cm, StdDev: %.3f cm", loose_offset_peak * 0.1, loose_offset_peakE * 0.1));
+        if (run_type == "MC") {
+            draw_text -> DrawLatex(0.2, 0.78, Form("True vertex Z: %.3f cm",TrigZvtxMC));
+            draw_text -> DrawLatex(0.2, 0.74, Form("Difference: %.3f cm", loose_offset_peak * 0.1 - TrigZvtxMC));
+        }
+
+        pad_ZoomIn_EvtZDist -> cd();
+        line_breakdown_hist_cm_zoomin -> Draw("hist");
+        for (int fit_i = 0; fit_i < gaus_fit_cm_vec.size(); fit_i++){
+            gaus_fit_cm_vec[gaus_fit_cm_vec.size() - fit_i - 1] -> Draw("l same");
+        }        
+
+        // todo : the print rate is here
         if(draw_event_display && (event_i % print_rate) == 0 /*&& good_zvtx_tag == true*/){c1 -> Print(Form("%s/evt_linebreak_display.pdf",out_folder_directory.c_str()));}
         else if(draw_event_display && (final_zvtx > 0 || final_zvtx < -450)) {cout<<"In INTTZvtx class, event :"<<event_i<<" weird zvtx "<<endl; c1 -> Print(Form("%s/evt_linebreak_display.pdf",out_folder_directory.c_str()));}
         else if ( draw_event_display && ( (final_zvtx - MBD_reco_z) < -45 || (final_zvtx - MBD_reco_z) > 30 ) && total_NClus > 1500 ) { cout<<"In INTTZvtx class, event :"<<event_i<<" High NClus, poor INTTrecoZ with MBDrecoZ, diff : "<< final_zvtx - MBD_reco_z <<endl; c1 -> Print(Form("%s/evt_linebreak_display.pdf",out_folder_directory.c_str())); }
         else if ( draw_event_display && run_type == "MC" && fabs(final_zvtx - (TrigZvtxMC * 10.)) > 2. && total_NClus > 3000) { cout<<"In INTTZvtx class, event :"<<event_i<<" High NClus, poor Z : "<< fabs(final_zvtx - (TrigZvtxMC * 10.)) <<endl; c1 -> Print(Form("%s/evt_linebreak_display.pdf",out_folder_directory.c_str())); }
         else if ( draw_event_display && run_type == "MC" && fabs(final_zvtx - (TrigZvtxMC * 10.)) > 2.) { cout<<"In INTTZvtx class, event :"<<event_i<<" low NClus, poor Z : "<< fabs(final_zvtx - (TrigZvtxMC * 10.)) <<endl; c1 -> Print(Form("%s/evt_linebreak_display.pdf",out_folder_directory.c_str())); }
-        c1 -> Clear();
+        
+        pad_EvtZDist -> Clear();
+        pad_ZoomIn_EvtZDist -> Clear();
 
+        // if (pad_ZoomIn_EvtZDist) {
+        //     pad_ZoomIn_EvtZDist -> Delete();
+        // }
 
         // temp_event_xy -> Delete();
         // temp_event_rz -> Delete();
@@ -1344,8 +1490,15 @@ void INTTZvtx::ClearEvt()
     N_group_info.clear();
     N_group_info_detail = {-1., -1., -1., -1.};
 
+    fit_mean_mean_vec.clear();
+    fit_mean_reducedChi2_vec.clear();
+    fit_mean_width_vec.clear();
+
     evt_possible_z -> Reset("ICESM");
     line_breakdown_hist -> Reset("ICESM");
+    line_breakdown_hist_zoomin -> Reset("ICESM");
+    line_breakdown_hist_cm -> Reset("ICESM");
+    line_breakdown_hist_cm_zoomin -> Reset("ICESM");
     evt_phi_diff_inner_phi -> Reset("ICESM");
     evt_select_track_phi -> Reset("ICESM");
     evt_inner_outer_phi -> Reset("ICESM");
@@ -1355,6 +1508,8 @@ void INTTZvtx::ClearEvt()
     outer_clu_phi_map.clear();
     inner_clu_phi_map = vector<vector<pair<bool,clu_info>>>(360);
     outer_clu_phi_map = vector<vector<pair<bool,clu_info>>>(360);
+
+    out_evtZ_hist_cut_content_vec.clear();
 
     // mega_track_finder -> ClearEvt();
 
@@ -1590,6 +1745,7 @@ void INTTZvtx::PrintPlots()
     // todo : try to use single gaus to fit the distribution, and try to only fit the peak region (peak - 100 mm + peak + 100 mm)
     line_breakdown_gaus_width_hist -> Fit(gaus_fit, "NQ", "", line_breakdown_gaus_width_hist -> GetBinCenter( line_breakdown_gaus_width_hist -> GetMaximumBin() ) - 100, line_breakdown_gaus_width_hist -> GetBinCenter( line_breakdown_gaus_width_hist -> GetMaximumBin() ) + 100);
     line_breakdown_gaus_width_hist -> Draw("hist"); 
+    gaus_fit -> SetRange(gaus_fit -> GetParameter(1) - gaus_fit -> GetParameter(2) * 1.5, gaus_fit -> GetParameter(1) + gaus_fit -> GetParameter(2) * 1.5);
     gaus_fit -> Draw("lsame");
     
     draw_text -> DrawLatex(0.2, 0.82, Form("Gaus mean %.2f mm", gaus_fit -> GetParameter(1)));
@@ -1618,6 +1774,7 @@ void INTTZvtx::EndRun()
 
     out_file -> cd();
     tree_out -> SetDirectory(out_file);
+    best_fitwidth_NClus -> Write("best_fitwidth_NClus", TObject::kOverwrite);
     tree_out -> Write("", TObject::kOverwrite);
 
     out_file -> Close();
@@ -1844,14 +2001,47 @@ void INTTZvtx::line_breakdown(TH1F* hist_in, pair<double,double> line_range)
     if (last_bin < 1) {last_bin = 0;}
     else if (last_bin > hist_in -> GetNbinsX()) {last_bin = hist_in -> GetNbinsX() + 1;}
 
+    // double fill_weight = 1./fabs(line_range.second - line_range.first); // note : the entry is weitghted by the width of the line, by Akiba san's suggestion // special_tag cancel
+    double fill_weight = 1.; // note : the weight is 1, it's for testing the trapezoidal method // special_tag
+
     // cout<<"Digitize the bin : "<<first_bin<<" "<<last_bin<<endl;
 
     // note : if first:last = (0:0) or (N+1:N+1) -> the subtraction of them euqals to zero.
     for (int i = 0; i < (last_bin - first_bin) + 1; i++){
-        hist_in -> SetBinContent(first_bin + i,  hist_in -> GetBinContent(first_bin + i) + 1 );
+        hist_in -> SetBinContent(first_bin + i,  hist_in -> GetBinContent(first_bin + i) + fill_weight ); // note : special_tag
         // line_breakdown_vec.push_back(hist_in -> GetBinCenter(first_bin + i));
     }
 
+}
+
+// note : for each combination
+// note : corrected inner_r and outer_r
+void INTTZvtx::trapezoidal_line_breakdown(TH1F * hist_in, double inner_r, double inner_z, double outer_r, double outer_z) // note : special_tag
+{
+    combination_zvtx_range_shape -> Reset("ICESM");
+
+    vector<double> inner_edge = { ( fabs( inner_z ) < 130 ) ? inner_z - 8. : inner_z - 10., ( fabs( inner_z ) < 130 ) ? inner_z + 8. : inner_z + 10.}; // note : vector {left edge, right edge}
+    vector<double> outer_edge = { ( fabs( outer_z ) < 130 ) ? outer_z - 8. : outer_z - 10., ( fabs( outer_z ) < 130 ) ? outer_z + 8. : outer_z + 10.}; // note : vector {left edge, right edge}
+
+    for (int possible_i = 0; possible_i < 2001; possible_i++)
+    {
+        // double random_inner_z = rand_gen -> Uniform(inner_edge[0], inner_edge[1]);
+        double random_inner_z = inner_edge[0] + ((inner_edge[1] - inner_edge[0]) / 2000.) * possible_i; 
+        double edge_first  = Get_extrapolation(0, random_inner_z, inner_r, outer_edge[1], outer_r); // note : inner p0, outer p1, vector {r,z}, -> {y,x}
+        double edge_second = Get_extrapolation(0, random_inner_z, inner_r, outer_edge[0], outer_r); // note : inner p0, outer p1, vector {r,z}, -> {y,x}
+
+        double mid_point = (edge_first + edge_second) / 2.;
+        double possible_width = fabs(edge_first - edge_second) / 2.;
+
+        line_breakdown(combination_zvtx_range_shape, {mid_point - possible_width, mid_point + possible_width});
+    }
+
+    combination_zvtx_range_shape -> Scale(1./ combination_zvtx_range_shape -> Integral(-1,-1));
+
+    for (int bin_i = 1; bin_i <= combination_zvtx_range_shape -> GetNbinsX(); bin_i++)
+    {
+        hist_in -> SetBinContent(bin_i, hist_in -> GetBinContent(bin_i) + combination_zvtx_range_shape -> GetBinContent(bin_i));
+    }
 }
 
 // note : search_range : should be the gaus fit range
@@ -1965,6 +2155,21 @@ vector<double> INTTZvtx::find_Ngroup(TH1F * hist_in)
     return {double(group_Nbin_vec.size()), peak_group_ratio, group_widthL_vec[peak_group_ID], group_widthR_vec[peak_group_ID]};
 }
 
+vector<double> INTTZvtx::get_half_hist_vec(TH1F * hist_in)
+{
+    double Highest_bin_Content  = hist_in -> GetBinContent(hist_in -> GetMaximumBin());
+
+    vector<double> output_vec; output_vec.clear();
+
+    for (int i = 0; i < hist_in -> GetNbinsX(); i++){
+        // todo : the background rejection is here : Highest_bin_Content/2. for the time being
+        double bin_content = ( hist_in -> GetBinContent(i+1) <= Highest_bin_Content/2.) ? 0. : ( hist_in -> GetBinContent(i+1) - Highest_bin_Content/2. );
+        output_vec.push_back(bin_content);
+    }
+
+    return output_vec;
+}
+
 double INTTZvtx::get_delta_phi(double angle_1, double angle_2)
 {
     vector<double> vec_abs = {fabs(angle_1 - angle_2), fabs(angle_1 - angle_2 + 360), fabs(angle_1 - angle_2 - 360)};
@@ -1995,106 +2200,3 @@ void INTTZvtx::FakeClone1D(TH1F * hist_in, TH1F * hist_out)
 }
 
 #endif
-
-
-
-// if (N_comb.size() > zvtx_cal_require)
-// {   
-//     gaus_fit -> SetParameters(evt_possible_z -> GetBinContent( evt_possible_z -> GetMaximumBin() ), evt_possible_z -> GetBinCenter( evt_possible_z -> GetMaximumBin() ), 40, 0);
-//     gaus_fit -> SetParLimits(0,0,100000);  // note : size 
-//     gaus_fit -> SetParLimits(2,5,10000);   // note : Width
-//     gaus_fit -> SetParLimits(3,0,10000);   // note : offset
-//     // todo : try to use single gaus to fit the distribution, and try to only fit the peak region (peak - 100 mm + peak + 100 mm)
-//     evt_possible_z -> Fit(gaus_fit, "NQ", "", evt_possible_z -> GetBinCenter( evt_possible_z -> GetMaximumBin() ) - 100, evt_possible_z -> GetBinCenter( evt_possible_z -> GetMaximumBin() ) + 100);
-
-//     if (total_NClus < high_multi_line) {
-//         temp_event_zvtx_info = sigmaEff_avg(z_mid,Integrate_portion);
-//         final_selection_widthU = ( fabs(temp_event_zvtx_info[2] - temp_event_zvtx_info[1]) / 2. < fabs(gaus_fit -> GetParameter(2)) ) ? temp_event_zvtx_info[2] : (gaus_fit -> GetParameter(1) + fabs(gaus_fit -> GetParameter(2)));
-//         final_selection_widthD = ( fabs(temp_event_zvtx_info[2] - temp_event_zvtx_info[1]) / 2. < fabs(gaus_fit -> GetParameter(2)) ) ? temp_event_zvtx_info[1] : (gaus_fit -> GetParameter(1) - fabs(gaus_fit -> GetParameter(2)));
-//     }
-//     else { // note : N clusters >= 1000
-
-//         // note : too many parameters that aren't so easy to control
-//         // double_gaus_fit -> SetParameters(evt_possible_z -> GetBinContent( evt_possible_z -> GetMaximumBin() ), evt_possible_z -> GetBinCenter( evt_possible_z -> GetMaximumBin() ), 40, evt_possible_z -> GetBinContent( evt_possible_z -> GetMaximumBin() ) * 0.5, evt_possible_z -> GetBinCenter( evt_possible_z -> GetMaximumBin() ), 100, 0);
-//         // double_gaus_fit -> SetParLimits(0,0,100000); // note : G1 size
-//         // double_gaus_fit -> SetParLimits(2,5,100000); // note : G1 width
-//         // double_gaus_fit -> SetParLimits(3,0,100000); // note : G2 size
-//         // double_gaus_fit -> SetParLimits(5,5,100000); // note : G2 width
-//         // evt_possible_z -> Fit(double_gaus_fit, "NQ");
-
-//         temp_event_zvtx_info = {0,-1000,-999.99};
-
-//         // note : single gaus fit (only peak region), Di_gaus first gau, Di_gaus second gau
-//         // fit_winner_id = min_width_ID({fabs(gaus_fit -> GetParameter(2)), fabs(double_gaus_fit -> GetParameter(2)), fabs(double_gaus_fit -> GetParameter(5))});
-//         fit_winner_id = 0;
-        
-//         if (fit_winner_id == 0){
-//             final_selection_widthU = (gaus_fit -> GetParameter(1) + fabs(gaus_fit -> GetParameter(2)));
-//             final_selection_widthD = (gaus_fit -> GetParameter(1) - fabs(gaus_fit -> GetParameter(2)));
-//         }
-//         else if (fit_winner_id == 1){
-//             final_selection_widthU = (double_gaus_fit -> GetParameter(1) + fabs(double_gaus_fit -> GetParameter(2)));
-//             final_selection_widthD = (double_gaus_fit -> GetParameter(1) - fabs(double_gaus_fit -> GetParameter(2)));
-//         }
-//         else if (fit_winner_id == 2){
-//             final_selection_widthU = (double_gaus_fit -> GetParameter(4) + fabs(double_gaus_fit -> GetParameter(5)));
-//             final_selection_widthD = (double_gaus_fit -> GetParameter(4) - fabs(double_gaus_fit -> GetParameter(5)));
-//         }
-        
-//     }
-
-
-//     for (int track_i = 0; track_i < N_comb.size(); track_i++) {
-//         if ( final_selection_widthD <= z_mid[track_i] && z_mid[track_i] <= final_selection_widthU ){
-//             eff_N_comb.push_back(N_comb[track_i]);
-//             eff_z_mid.push_back(z_mid[track_i]);
-//             eff_N_comb_e.push_back(N_comb_e[track_i]);
-//             eff_z_range.push_back(z_range[track_i]);
-//         }
-//     }
-
-//     z_range_gr = new TGraphErrors(eff_N_comb.size(),&eff_N_comb[0],&eff_z_mid[0],&eff_N_comb_e[0],&eff_z_range[0]);
-//     z_range_gr -> Fit(zvtx_finder,"NQ","",0,N_comb[N_comb.size() - 1]); // note : not fit all the combination
-
-//     final_fit_width -> Fill(total_NClus, fabs(final_selection_widthU - final_selection_widthD));
-
-//     gaus_width_Nclu -> Fill(total_NClus, fabs(gaus_fit -> GetParameter(2)));
-//     gaus_rchi2_Nclu -> Fill(total_NClus, gaus_fit -> GetChisquare() / double(gaus_fit -> GetNDF()));
-    
-//     // avg_event_zvtx -> Fill(zvtx_finder -> GetParameter(0));
-//     zvtx_evt_fitError -> Fill(fabs( zvtx_finder -> GetParError(0)));
-//     zvtx_evt_fitError_corre -> Fill(total_NClus, fabs( zvtx_finder -> GetParError(0)));
-//     zvtx_evt_width_corre -> Fill(total_NClus, fabs(temp_event_zvtx_info[2] - temp_event_zvtx_info[1]));
-//     width_density -> Fill( width_density_par );
-
-//     if ( ( width_density_par ) > 0.3 ){ // Todo : change the width density here
-
-//         zvtx_evt_nclu_corre -> Fill(total_NClus, zvtx_finder -> GetParameter(0));
-//         avg_event_zvtx -> Fill(zvtx_finder -> GetParameter(0));
-//         avg_event_zvtx_vec.push_back(zvtx_finder -> GetParameter(0));
-//         if (run_type == "MC")
-//         {
-//             Z_resolution -> Fill( zvtx_finder -> GetParameter(0) - (TrigZvtxMC * 10.) );
-//             Z_resolution_vec.push_back( zvtx_finder -> GetParameter(0) - (TrigZvtxMC * 10.) );
-//             Z_resolution_Nclu -> Fill( total_NClus , zvtx_finder -> GetParameter(0) - (TrigZvtxMC * 10.) );
-//             Z_resolution_pos -> Fill(TrigZvtxMC * 10., zvtx_finder -> GetParameter(0) - (TrigZvtxMC * 10.));
-//             if (total_NClus > high_multi_line) {Z_resolution_pos_cut -> Fill(TrigZvtxMC * 10., zvtx_finder -> GetParameter(0) - (TrigZvtxMC * 10.));}
-//         }
-
-//     }
-    
-//     out_eID = event_i;
-//     N_cluster_inner_out = temp_sPH_inner_nocolumn_vec.size();
-//     N_cluster_outer_out = temp_sPH_outer_nocolumn_vec.size();
-//     out_zvtx = zvtx_finder -> GetParameter(0);
-//     out_zvtxE = zvtx_finder -> GetParError(0);
-//     out_rangeL = temp_event_zvtx_info[1];
-//     out_rangeR = temp_event_zvtx_info[2];
-//     out_N_good = eff_N_comb.size();
-//     bco_full_out = bco_full;
-//     MC_true_zvtx = TrigZvtxMC * 10.;
-//     out_width_density = width_density_par;
-//     tree_out -> Fill();
-
-// } // note : if N good tracks in xy found > certain value
-// cout<<"test tag 2"<<endl;

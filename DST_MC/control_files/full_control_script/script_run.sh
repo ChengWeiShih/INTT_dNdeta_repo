@@ -114,7 +114,7 @@ create_new_func() {
     # todo : and the default topic_focus is still hard_written in the code, therefore, ${control_dir_to_data_type} is used in the following
     sed -i "s|control_file_to_be_updated|${control_dir_to_data_type}|g" run_root_mother_copied.sh
     
-    if [[ "$topic_focus" == "evt_vtxZ" || "$topic_focus" == "evt_tracklet" || "$topic_focus" == "evt_tracklet_inner_phi_rotate" ]]; then
+    if [[ "$topic_focus" == "avg_vtxXY" || "$topic_focus" == "evt_vtxZ" || "$topic_focus" == "evt_tracklet" || "$topic_focus" == "evt_tracklet_inner_phi_rotate" ]]; then
         sed -i "s|output_sub_folder_name_to_be_updated|${special_name}|g" run_root_mother_copied.sh
     fi
 
@@ -350,6 +350,32 @@ remove_sub_sh_func() {
     rm ${control_folder_directory}/for_data/*/run_root_sub_*.sh
 }
 
+full_clear_func() {
+    if [[ ${#file_folder_directory} -eq 0 ]]; then
+        echo no file directory input abort the program
+        exit 1
+    fi
+
+    echo deleting the following items
+    echo ${control_dir_to_data_type}/${topic_focus}/condor_outputs
+    echo ${control_dir_to_data_type}/${topic_focus}/run_condor_job_mother_copied.job
+    echo ${control_dir_to_data_type}/${topic_focus}/run_root_mother_copied.sh
+    echo ${control_dir_to_data_type}/${topic_focus}/run_condor_copied.sh
+    echo $dir_to_file_sub_folder
+
+    read -r -p "Do you want to continue? Type 'yes' to proceed: " response
+    if [[ "$response" != "yes" ]]; then
+        echo "Operation aborted."
+        exit 1
+    fi
+
+    rm -r ${control_dir_to_data_type}/${topic_focus}/condor_outputs
+    rm ${control_dir_to_data_type}/${topic_focus}/run_condor_job_mother_copied.job
+    rm ${control_dir_to_data_type}/${topic_focus}/run_root_mother_copied.sh
+    rm ${control_dir_to_data_type}/${topic_focus}/run_condor_copied.sh
+    rm -r $dir_to_file_sub_folder
+}
+
 # note : if there is no arguments provided
 if [[ -z $1 ]]; then 
     welcome_message_func
@@ -473,6 +499,15 @@ if [ ! -z "$4" ]; then
     fi
 fi
 
+echo
+grep "${data_type}_beam_origin" ${dir_to_ana_map}/${used_map}
+echo
+read -r -p "The average vertex XY was printed above, are they ok? " response
+if [[ "$response" != "yes" ]]; then
+    echo "Operation aborted."
+    exit 1
+fi
+
 # note : ===============================================================================================================================================================================
 N_found_special_tag=$(( `grep "special_tag" ${dir_to_ana_map}/${used_map} | wc -l` + `grep "special_tag" ${dir_to_DST_MC}/*.h | wc -l` + `grep "special_tag" ${control_dir_to_data_type}/${topic_focus}/*_mother.C | wc -l` ))
 
@@ -492,10 +527,26 @@ if [ ! -z "$6" ]; then
         exit 1
     fi
 
+    # note : check whether it's the post run
+    if [[ `echo $special_name | grep "post" | wc -l` -eq 1 ]]; then
+        echo it seems to be the post run for something!
+
+        if [[ ${topic_focus} == "avg_vtxXY" ]]; then 
+            echo
+            grep "${data_type}_beam_origin" ${dir_to_ana_map}/${used_map}
+            echo
+            read -r -p "The average vertex XY was printed above, are they ok? " response
+            if [[ "$response" != "yes" ]]; then
+                echo "Operation aborted."
+                exit 1
+            fi
+        fi
+    fi
+
     # note : check the speical tag
     if [[ ${N_found_special_tag} -eq 0 ]]; then 
         echo
-        echo '!!!! we do not see any special_tag in the following files, pleaes check'
+        echo '!!!! we do not see any special_tag in the following files, please check'
         echo ${dir_to_ana_map}/${used_map}
         echo ${dir_to_DST_MC}/*.h | sed -e "s/ /\n/g"
         echo ${control_dir_to_data_type}/${topic_focus}/*_mother.C | sed -e "s/ /\n/g"
@@ -506,11 +557,24 @@ if [ ! -z "$6" ]; then
             exit 1
         fi
     else 
+        echo
         echo found ${N_found_special_tag} special tags in the followings, please confirm
+        echo "================================================================================================================================"
+        echo special_tag in ${dir_to_ana_map}/${used_map} 
+        echo 
         grep "special_tag" ${dir_to_ana_map}/${used_map}
+
+        echo "================================================================================================================================"
+        echo special_tag in ${dir_to_DST_MC}/"*.h"
+        echo
         grep "special_tag" ${dir_to_DST_MC}/*.h
+
+        echo "================================================================================================================================"
+        echo special_tag in ${control_dir_to_data_type}/${topic_focus}/"*_mother.C"
+        echo 
         grep "special_tag" ${control_dir_to_data_type}/${topic_focus}/*_mother.C
         echo 
+
         read -r -p "Are they looking fine ? " response
         if [[ "$response" != "yes" ]]; then
             echo "Operation aborted."
@@ -555,6 +619,8 @@ elif [[ "${running_argument}" == "condor_submit" ]]; then
     exit 1
 
 elif [[ "${running_argument}" == "hfull" ]]; then
+    full_clear_func
+
     create_new_func
 
     condor_submit_func
@@ -562,6 +628,8 @@ elif [[ "${running_argument}" == "hfull" ]]; then
     exit 1
 
 elif [[ "${running_argument}" == "full" ]]; then
+    full_clear_func
+
     create_new_func
 
     condor_submit_func
@@ -586,29 +654,7 @@ elif [[ "${running_argument}" == "get_merged_result" ]]; then
 
 # note : ===============================================================================================================================================================================
 elif [[ "${running_argument}" == "full_clear" ]]; then 
-    if [[ ${#file_folder_directory} -eq 0 ]]; then
-        echo no file directory input abort the program
-        exit 1
-    fi
-
-    echo deleting the following items
-    echo ${control_dir_to_data_type}/${topic_focus}/condor_outputs
-    echo ${control_dir_to_data_type}/${topic_focus}/run_condor_job_mother_copied.job
-    echo ${control_dir_to_data_type}/${topic_focus}/run_root_mother_copied.sh
-    echo ${control_dir_to_data_type}/${topic_focus}/run_condor_copied.sh
-    echo $dir_to_file_sub_folder
-
-    read -r -p "Do you want to continue? Type 'yes' to proceed: " response
-    if [[ "$response" != "yes" ]]; then
-        echo "Operation aborted."
-        exit 1
-    fi
-
-    rm -r ${control_dir_to_data_type}/${topic_focus}/condor_outputs
-    rm ${control_dir_to_data_type}/${topic_focus}/run_condor_job_mother_copied.job
-    rm ${control_dir_to_data_type}/${topic_focus}/run_root_mother_copied.sh
-    rm ${control_dir_to_data_type}/${topic_focus}/run_condor_copied.sh
-    rm -r $dir_to_file_sub_folder
+    full_clear_func
 
     exit 1
 

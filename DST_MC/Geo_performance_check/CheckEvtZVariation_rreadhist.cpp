@@ -51,9 +51,9 @@ int main (/*int argc, char* argv[]*/)
     // // note : Convert the second argument (argv[1]) to an integer
     // int folder_index = std::atoi(argv[1]);
 
-    string input_directory = "/sphenix/user/ChengWei/sPH_dNdeta/HIJING_ana398_xvtx-0p04cm_yvtx0p24cm_zvtx-20cm_dummyAlignParams/Geo_Z_scan_trial_3/complete_file";
-    string input_file_name = "file_list_zvtx_dist.txt"; 
-    string output_directory = input_directory + "/final_merged_result";
+    string input_directory = "/sphenix/user/ChengWei/sPH_dNdeta/Sim_Ntuple_HIJING_new_20240424_HR_test/Geo_test/evt_vtxZ/complete_file/merged_result";
+    string input_file_name = "file_list.txt"; 
+    string output_directory = input_directory;
     pair<double,double> true_vtxXY = {-0.4, 2.4}; // note : [mm]
 
     double in_reco_avgX;
@@ -75,27 +75,29 @@ int main (/*int argc, char* argv[]*/)
 
     int file_counting = 0; 
 
-    TChain * chain_in = new TChain("tree");
-    for (int i = 0; i < 450; i++)
-    {
-        vector<string> folder_file_list = read_list((input_directory + "/folder_"+ to_string(i)).c_str(), input_file_name);
-        cout<<"folder_"<<i<<" N ready files : "<<folder_file_list.size()<<endl;
-        file_counting += folder_file_list.size();
-        for(string file_name : folder_file_list) {chain_in -> Add(file_name.c_str());}
-    }
-    
-    cout<<"Expected total files : "<<file_counting<<endl;
-    cout<<"total events : "<<chain_in -> GetEntries()<<endl;
+    vector<string> file_list = read_list(input_directory, input_file_name);
 
-    chain_in -> SetBranchAddress("reco_avgX", &in_reco_avgX);
-    chain_in -> SetBranchAddress("reco_avgY", &in_reco_avgY);
-    chain_in -> SetBranchAddress("zvtx_dist_mean", &in_zvtx_dist_mean);
-    chain_in -> SetBranchAddress("zvtx_dist_width", &in_zvtx_dist_width);
+    // TChain * chain_in = new TChain("tree");
+    // for (int i = 0; i < 450; i++)
+    // {
+        
+    //     cout<<"folder_"<<i<<" N ready files : "<<folder_file_list.size()<<endl;
+    //     file_counting += folder_file_list.size();
+    //     for(string file_name : folder_file_list) {chain_in -> Add(file_name.c_str());}
+    // }
+    
+    // cout<<"Expected total files : "<<file_counting<<endl;
+    // cout<<"total events : "<<chain_in -> GetEntries()<<endl;
+
+    // chain_in -> SetBranchAddress("reco_avgX", &in_reco_avgX);
+    // chain_in -> SetBranchAddress("reco_avgY", &in_reco_avgY);
+    // chain_in -> SetBranchAddress("zvtx_dist_mean", &in_zvtx_dist_mean);
+    // chain_in -> SetBranchAddress("zvtx_dist_width", &in_zvtx_dist_width);
 
     TH1F * zvtx_peak_variation_1D = new TH1F("zvtx_peak_variation_1D", "zvtx_peak_variation_1D;zvtx_diff dist peak [mm];Entry", 100, -3,3); // note : unit [mm]
-    TH1F * zvtx_width_variation_1D = new TH1F("zvtx_width_variation_1D", "zvtx_width_variation_1D:zvtx_diff dist width [mm];Entry", 100, -6, 6); // note : unit [mm]
+    TH1F * zvtx_width_variation_1D = new TH1F("zvtx_width_variation_1D", "zvtx_width_variation_1D;zvtx_diff dist width [mm];Entry", 100, 0, 4); // note : unit [mm]
     TH2F * recoXY_distance_zvtx_peak_2D = new TH2F("recoXY_distance_zvtx_peak_2D", "recoXY_distance_zvtx_peak_2D;vtxXY deviation [mm];zvtx_diff dist peak [mm]",    100, -0.5, 2, 100, -3, 3);
-    TH2F * recoXY_distance_zvtx_width_2D = new TH2F("recoXY_distance_zvtx_width_2D", "recoXY_distance_zvtx_width_2D;vtxXY deviation [mm];zvtx_diff dist width [mm]", 100, -0.5, 2, 100, -6, 6);
+    TH2F * recoXY_distance_zvtx_width_2D = new TH2F("recoXY_distance_zvtx_width_2D", "recoXY_distance_zvtx_width_2D;vtxXY deviation [mm];zvtx_diff dist width [mm]", 100, -0.5, 2, 100, 0, 4);
     
     // map<int,int> centrality_map = {
     //     {5, 0},
@@ -118,9 +120,20 @@ int main (/*int argc, char* argv[]*/)
     //     zvtx_diff[i] = new TH1F(("zvtx_diff_M_" + to_string(i)).c_str(), ("zvtx_diff_M_" + to_string(i)+";Reco Z - True Z [mm];Entry").c_str(), 100, -30, 30); // note : unit mm
     // }
 
-    for (int event_i = 0; event_i < chain_in -> GetEntries(); event_i++)
+    for (int event_i = 0; event_i < file_list.size(); event_i++)
     {
-        chain_in -> GetEntry(event_i);
+
+        if (event_i % 50 == 0) {cout<<"event_i : "<<event_i<<endl;}
+
+        TFile * file_in = TFile::Open(file_list[event_i].c_str());
+        TTree * tree_in = (TTree*)file_in -> Get("tree");
+
+        tree_in -> SetBranchAddress("reco_avgX", &in_reco_avgX);
+        tree_in -> SetBranchAddress("reco_avgY", &in_reco_avgY);
+        tree_in -> SetBranchAddress("zvtx_dist_mean", &in_zvtx_dist_mean);
+        tree_in -> SetBranchAddress("zvtx_dist_width", &in_zvtx_dist_width);
+
+        tree_in -> GetEntry(0);
 
         double vtxXY_deviation = sqrt(pow(in_reco_avgX - true_vtxXY.first, 2) + pow(in_reco_avgY - true_vtxXY.second,2));
 
@@ -129,6 +142,8 @@ int main (/*int argc, char* argv[]*/)
         recoXY_distance_zvtx_peak_2D -> Fill(vtxXY_deviation, in_zvtx_dist_mean);
         recoXY_distance_zvtx_width_2D -> Fill(vtxXY_deviation, in_zvtx_dist_width);
 
+
+        file_in -> Close();
         // if (nclu_inner == -1 || nclu_outer == -1) {continue;}
         // if (good_zvtx_tag == false) {continue;}
         // zvtx_diff[centrality_map[centrality_bin]] -> Fill(reco_zvtx - true_zvtx);

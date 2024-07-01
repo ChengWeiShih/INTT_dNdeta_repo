@@ -223,6 +223,15 @@ class INTTEta : public INTTXYvtxEvt
         TH1F * exclusive_NClus_outer;
         TH1F * exclusive_NClus_sum;
 
+        TH1F * exclusive_cluster_inner_adc;
+        TH1F * exclusive_cluster_outer_adc;
+
+        TH2F * exclusive_cluster_inner_eta_adc_2D;
+        TH2F * exclusive_cluster_outer_eta_adc_2D;
+
+        TH2F * exclusive_cluster_inner_eta_phi_2D;
+        TH2F * exclusive_cluster_outer_eta_phi_2D;
+
         TH1F * exclusive_cluster_inner_eta;
         TH1F * exclusive_cluster_inner_phi;
         TH1F * exclusive_cluster_outer_eta;
@@ -345,7 +354,7 @@ class INTTEta : public INTTXYvtxEvt
         double convertTo360(double radian);
         void print_evt_plot(int event_i, int NTrueTrack, int innerNClu, int outerNClu);
         double get_clu_eta(vector<double> vertex, vector<double> clu_pos);
-        double get_dist_offset(TH1F * hist_in, int check_N_bin);
+        // double get_dist_offset(TH1F * hist_in, int check_N_bin);
         double get_delta_phi(double angle_1, double angle_2);
         double get_track_phi(double inner_clu_phi_in, double delta_phi_in);
         pair<int,int> GetTH2BinXY(int histNbinsX, int histNbinsY, int binglobal);
@@ -649,14 +658,40 @@ void INTTEta::InitHist()
 
     exclusive_NClus_inner        = new TH1F("","exclusive_NClus_inner;NClus inner barrel;Entry",50, 0, 5000);
     exclusive_NClus_outer        = new TH1F("","exclusive_NClus_outer;NClus outer barrel;Entry",50,0,5000);
-    exclusive_NClus_sum          = new TH1F("","exclusive_NClus_sum;NClus total;Entry",50,0,9000);
-    
+    exclusive_NClus_sum          = new TH1F("","exclusive_NClus_sum;NClus total;Entry",50,0,9000);    
+
     exclusive_cluster_inner_eta  = new TH1F("","exclusive_cluster_inner_eta;Cluster inner #eta;Entry",50,-3.5,3.5);
     exclusive_cluster_inner_phi  = new TH1F("","exclusive_cluster_inner_phi;Cluster inner #phi [radian];Entry",50,-3.5,3.5);
     exclusive_cluster_outer_eta  = new TH1F("","exclusive_cluster_outer_eta;Cluster outer #eta;Entry",50,-3.5,3.5);
     exclusive_cluster_outer_phi  = new TH1F("","exclusive_cluster_outer_phi;Cluster outer #phi [radian];Entry",50,-3.5,3.5);
     exclusive_cluster_all_eta    = new TH1F("","exclusive_cluster_all_eta;Cluster #eta;Entry",50,-3.5,3.5);
     exclusive_cluster_all_phi    = new TH1F("","exclusive_cluster_all_phi;Cluster #phi [radian];Entry",50,-3.5,3.5);
+
+    exclusive_cluster_inner_adc  = new TH1F("","exclusive_cluster_inner_adc;Cluster inner adc;Entry",50,0,400);
+    exclusive_cluster_outer_adc  = new TH1F("","exclusive_cluster_outer_adc;Cluster outer adc;Entry",50,0,400);
+
+    exclusive_cluster_inner_eta_adc_2D = new TH2F("","exclusive_cluster_inner_eta_adc_2D;Cluster inner #eta; Cluster ADC",
+        2000, exclusive_cluster_inner_eta -> GetXaxis() -> GetXmin(), exclusive_cluster_inner_eta -> GetXaxis() -> GetXmax(), 
+        exclusive_cluster_inner_adc -> GetNbinsX(), exclusive_cluster_inner_adc -> GetXaxis() -> GetXmin(), exclusive_cluster_inner_adc -> GetXaxis() -> GetXmax()
+    );
+
+    exclusive_cluster_outer_eta_adc_2D = new TH2F("","exclusive_cluster_outer_eta_adc_2D;Cluster outer #eta; Cluster ADC",
+        2000, exclusive_cluster_outer_eta -> GetXaxis() -> GetXmin(), exclusive_cluster_outer_eta -> GetXaxis() -> GetXmax(), 
+        exclusive_cluster_outer_adc -> GetNbinsX(), exclusive_cluster_outer_adc -> GetXaxis() -> GetXmin(), exclusive_cluster_outer_adc -> GetXaxis() -> GetXmax()
+    );
+
+    exclusive_cluster_inner_eta_phi_2D = new TH2F(
+        "",
+        "exclusive_cluster_inner_eta_phi_2D;Cluster inner #eta; Cluster inner #phi",
+        2000, exclusive_cluster_inner_eta -> GetXaxis() -> GetXmin(), exclusive_cluster_inner_eta -> GetXaxis() -> GetXmax(),
+        2000, exclusive_cluster_inner_phi -> GetXaxis() -> GetXmin(), exclusive_cluster_inner_phi -> GetXaxis() -> GetXmax()
+    );
+    exclusive_cluster_outer_eta_phi_2D = new TH2F(
+        "",
+        "exclusive_cluster_outer_eta_phi_2D;Cluster outer #eta; Cluster outer #phi",
+        2000, exclusive_cluster_outer_eta -> GetXaxis() -> GetXmin(), exclusive_cluster_outer_eta -> GetXaxis() -> GetXmax(),
+        2000, exclusive_cluster_outer_phi -> GetXaxis() -> GetXmin(), exclusive_cluster_outer_phi -> GetXaxis() -> GetXmax()
+    );
     
     exclusive_tight_tracklet_eta = new TH1F("","exclusive_tight_tracklet_eta;Tracklet #eta;Entry",50,-3.5,3.5);
     exclusive_tight_tracklet_phi = new TH1F("","exclusive_tight_tracklet_phi;Tracklet #phi [radian];Entry",50,-3.5,3.5);
@@ -1204,8 +1239,15 @@ void INTTEta::ProcessEvt(
         if (evt_z.first > z_region[selected_z_region_id.first] && evt_z.first < z_region[selected_z_region_id.second]){
             exclusive_cluster_inner_eta -> Fill(clu_eta, zvtx_weighting);
             exclusive_cluster_inner_phi -> Fill(Clus_InnerPhi_Offset_radian, zvtx_weighting);
+
+            exclusive_cluster_inner_eta_phi_2D -> Fill(clu_eta, Clus_InnerPhi_Offset_radian, zvtx_weighting);
+
+            exclusive_cluster_inner_eta_adc_2D -> Fill(clu_eta, temp_sPH_inner_nocolumn_vec[inner_i].sum_adc, zvtx_weighting);
+
             exclusive_cluster_all_eta   -> Fill(clu_eta, zvtx_weighting);
             exclusive_cluster_all_phi   -> Fill(Clus_InnerPhi_Offset_radian, zvtx_weighting);
+
+            exclusive_cluster_inner_adc -> Fill(temp_sPH_inner_nocolumn_vec[inner_i].sum_adc, zvtx_weighting);
         }
 
         if (clu_eta > INTT_eta_acceptance_l && clu_eta < INTT_eta_acceptance_r) {effective_total_NClus += 1;}
@@ -1222,8 +1264,15 @@ void INTTEta::ProcessEvt(
         if (evt_z.first > z_region[selected_z_region_id.first] && evt_z.first < z_region[selected_z_region_id.second]){
             exclusive_cluster_outer_eta -> Fill(clu_eta, zvtx_weighting);
             exclusive_cluster_outer_phi -> Fill(Clus_OuterPhi_Offset_radian, zvtx_weighting);
+
+            exclusive_cluster_outer_eta_phi_2D -> Fill(clu_eta, Clus_OuterPhi_Offset_radian, zvtx_weighting);
+
+            exclusive_cluster_outer_eta_adc_2D -> Fill(clu_eta, temp_sPH_outer_nocolumn_vec[outer_i].sum_adc, zvtx_weighting);
+
             exclusive_cluster_all_eta   -> Fill(clu_eta, zvtx_weighting);
             exclusive_cluster_all_phi   -> Fill(Clus_OuterPhi_Offset_radian, zvtx_weighting);
+
+            exclusive_cluster_outer_adc -> Fill(temp_sPH_outer_nocolumn_vec[outer_i].sum_adc, zvtx_weighting);
         }
        
         if (clu_eta > INTT_eta_acceptance_l && clu_eta < INTT_eta_acceptance_r) {effective_total_NClus += 1;}
@@ -2437,10 +2486,19 @@ void INTTEta::EndRun()
     exclusive_cluster_all_eta -> Write("exclusive_cluster_all_eta");
     exclusive_cluster_all_phi -> Write("exclusive_cluster_all_phi");
 
+    exclusive_cluster_inner_eta_phi_2D -> Write("exclusive_cluster_inner_eta_phi_2D");
+    exclusive_cluster_outer_eta_phi_2D -> Write("exclusive_cluster_outer_eta_phi_2D");
+
     exclusive_tight_tracklet_eta -> Write("exclusive_tight_tracklet_eta");
     exclusive_tight_tracklet_phi -> Write("exclusive_tight_tracklet_phi");
     exclusive_loose_tracklet_eta -> Write("exclusive_loose_tracklet_eta");
     exclusive_loose_tracklet_phi -> Write("exclusive_loose_tracklet_phi");
+
+    exclusive_cluster_inner_eta_adc_2D -> Write("exclusive_cluster_inner_eta_adc_2D");
+    exclusive_cluster_outer_eta_adc_2D -> Write("exclusive_cluster_outer_eta_adc_2D");
+
+    exclusive_cluster_inner_adc -> Write("exclusive_cluster_inner_adc");
+    exclusive_cluster_outer_adc -> Write("exclusive_cluster_outer_adc");
 
     tree_out -> Write("", TObject::kOverwrite);
 
@@ -2452,18 +2510,18 @@ void INTTEta::EndRun()
 }
 
 //note : accumulate the number of entries from both sides of the histogram
-double INTTEta::get_dist_offset(TH1F * hist_in, int check_N_bin) // note : check_N_bin 1 to N bins of hist
-{
-    if (check_N_bin < 0 || check_N_bin > hist_in -> GetNbinsX()) {cout<<" wrong check_N_bin "<<endl; exit(1);}
-    double total_entry = 0;
-    for (int i = 0; i < check_N_bin; i++)
-    {
-        total_entry += hist_in -> GetBinContent(i+1); // note : 1, 2, 3.....
-        total_entry += hist_in -> GetBinContent(hist_in -> GetNbinsX() - i);
-    }
+// double INTTEta::get_dist_offset(TH1F * hist_in, int check_N_bin) // note : check_N_bin 1 to N bins of hist
+// {
+//     if (check_N_bin < 0 || check_N_bin > hist_in -> GetNbinsX()) {cout<<" wrong check_N_bin "<<endl; exit(1);}
+//     double total_entry = 0;
+//     for (int i = 0; i < check_N_bin; i++)
+//     {
+//         total_entry += hist_in -> GetBinContent(i+1); // note : 1, 2, 3.....
+//         total_entry += hist_in -> GetBinContent(hist_in -> GetNbinsX() - i);
+//     }
 
-    return total_entry/double(2. * check_N_bin);
-}
+//     return total_entry/double(2. * check_N_bin);
+// }
 
 
 double INTTEta::grEY_stddev(TGraphErrors * input_grr)

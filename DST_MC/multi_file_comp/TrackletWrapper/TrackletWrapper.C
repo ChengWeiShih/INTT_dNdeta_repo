@@ -386,41 +386,54 @@ void TrackletWrapper()
     string data_mother_folder = "/sphenix/user/ChengWei/INTT/INTT_commissioning/ZeroField/F4A_20869/2024_05_07/folder_Data_CombinedNtuple_Run20869_HotDead_BCO_ADC_Survey_test";
 
     vector<vector<string>> input_file_full_info = {
+        // {
+        //     "MC",
+        //     Form("%s/merged_file_folder/merged_hist_half_corr.root",MC_tracklet_complete_folder.c_str()),
+        //     Form("%s/merged_file_folder/Half_corr_Eta_DistReader_output",MC_tracklet_complete_folder.c_str()),
+        //     "Corr."
+        // },
+        // {
+        //     "MC",
+        //     Form("%s/merged_file_folder/merged_hist_half_test.root",MC_tracklet_complete_folder.c_str()),
+        //     Form("%s/merged_file_folder/Half_test_Eta_DistReader_output",MC_tracklet_complete_folder.c_str()),
+        //     "Test"
+        // },
+        // {
+        //     "MC",
+        //     Form("%s/merged_file_folder/merged_hist_half_corr.root",MC_tracklet_original_reweight_complete_folder.c_str()),
+        //     Form("%s/merged_file_folder/Half_corr_Eta_DistReader_output",MC_tracklet_original_reweight_complete_folder.c_str()),
+        //     "Corr. Orig. weighted"
+        // },
+        // {
+        //     "data",
+        //     Form("%s/evt_tracklet/complete_file/merged_file_folder/merged_hist_full.root",data_mother_folder.c_str()),
+        //     Form("%s/evt_tracklet/complete_file/merged_file_folder/Full_data_Eta_DistReader_output",data_mother_folder.c_str()),
+        //     "Data original"
+        // },
+        // {
+        //     "data",
+        //     Form("%s/evt_tracklet_INTTz_shifted/complete_file/merged_file_folder/merged_hist_full.root",data_mother_folder.c_str()),
+        //     Form("%s/evt_tracklet_INTTz_shifted/complete_file/merged_file_folder/Full_data_Eta_DistReader_output",data_mother_folder.c_str()),
+        //     "Data INTTz shifted"
+        // }
+
         {
             "MC",
-            Form("%s/merged_file_folder/merged_hist_half_corr.root",MC_tracklet_complete_folder.c_str()),
-            Form("%s/merged_file_folder/Half_corr_Eta_DistReader_output",MC_tracklet_complete_folder.c_str()),
-            "Corr."
-        },
-        {
-            "MC",
-            Form("%s/merged_file_folder/merged_hist_half_test.root",MC_tracklet_complete_folder.c_str()),
-            Form("%s/merged_file_folder/Half_test_Eta_DistReader_output",MC_tracklet_complete_folder.c_str()),
-            "Test"
-        },
-        {
-            "MC",
-            Form("%s/merged_file_folder/merged_hist_half_corr.root",MC_tracklet_original_reweight_complete_folder.c_str()),
-            Form("%s/merged_file_folder/Half_corr_Eta_DistReader_output",MC_tracklet_original_reweight_complete_folder.c_str()),
-            "Corr. Orig. weighted"
+            Form("/sphenix/user/ChengWei/sPH_dNdeta/Sim_Ntuple_HIJING_new_20240424_HR_test/evt_tracklet_ZvtxRange_n300mm_to_n60mm/complete_file/merged_file_folder/merged_hist_full.root"),
+            Form("/sphenix/user/ChengWei/sPH_dNdeta/Sim_Ntuple_HIJING_new_20240424_HR_test/evt_tracklet_ZvtxRange_n300mm_to_n60mm/complete_file/merged_file_folder/EtaDistReader_output"),
+            "MC"
         },
         {
             "data",
-            Form("%s/evt_tracklet/complete_file/merged_file_folder/merged_hist_full.root",data_mother_folder.c_str()),
-            Form("%s/evt_tracklet/complete_file/merged_file_folder/Full_data_Eta_DistReader_output",data_mother_folder.c_str()),
-            "Data original"
-        },
-        {
-            "data",
-            Form("%s/evt_tracklet_INTTz_shifted/complete_file/merged_file_folder/merged_hist_full.root",data_mother_folder.c_str()),
-            Form("%s/evt_tracklet_INTTz_shifted/complete_file/merged_file_folder/Full_data_Eta_DistReader_output",data_mother_folder.c_str()),
-            "Data INTTz shifted"
+            Form("/sphenix/user/ChengWei/INTT/INTT_commissioning/ZeroField/F4A_20869/2024_05_07/folder_Data_CombinedNtuple_Run20869_HotDead_BCO_ADC_Survey_test/evt_tracklet_ZvtxRange_n300mm_to_n60mm/complete_file/merged_file_folder/merged_hist_full.root"),
+            Form("/sphenix/user/ChengWei/INTT/INTT_commissioning/ZeroField/F4A_20869/2024_05_07/folder_Data_CombinedNtuple_Run20869_HotDead_BCO_ADC_Survey_test/evt_tracklet_ZvtxRange_n300mm_to_n60mm/complete_file/merged_file_folder/EtaDistReader_output"),
+            "data"
         }
 
     };
     
-    string final_full_output_folder_directory = Form("%s/evt_tracklet_INTTz_shifted/complete_file/merged_file_folder/TrackletWrapper_output",data_mother_folder.c_str());
+    // string final_full_output_folder_directory = Form("%s/evt_tracklet_INTTz_shifted/complete_file/merged_file_folder/TrackletWrapper_output",data_mother_folder.c_str());
+    string final_full_output_folder_directory = "/sphenix/user/ChengWei/INTT/INTT_commissioning/ZeroField/F4A_20869/2024_05_07/folder_Data_CombinedNtuple_Run20869_HotDead_BCO_ADC_Survey_test/evt_tracklet_ZvtxRange_n300mm_to_n60mm/complete_file/merged_file_folder/EtaDistReader_output";
 
-
-    main_code(ana_mode, input_file_full_info, final_full_output_folder_directory);
+    main_code(3, input_file_full_info, final_full_output_folder_directory);
 }

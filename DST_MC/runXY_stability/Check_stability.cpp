@@ -459,6 +459,56 @@ int main(int argc, char* argv[])
     c1 -> Print((output_directory + "/line_filled_covariance_1D.pdf").c_str());
     c1 -> Clear();
 
+    double out_quadrant_avgX;
+    double out_quadrant_avgXE;
+    double out_quadrant_avgY;
+    double out_quadrant_avgYE;
+    double out_linefilled_avgX;
+    double out_linefilled_avgXE;
+    double out_linefilled_avgY;
+    double out_linefilled_avgYE;
+    double out_final_num_avgX;
+    double out_final_num_avgY;
+    double out_final_fit_avgX;
+    double out_final_fit_avgY;
+
+    TFile * file_out = new TFile (Form("%s/determined_avg_vtxXY.root",output_directory.c_str()),"recreate");
+    TTree * tree_out = new TTree("tree","tree");
+    tree_out -> Branch("quadrant_avgX",   &out_quadrant_avgX);
+    tree_out -> Branch("quadrant_avgXE",    &out_quadrant_avgXE);
+    tree_out -> Branch("quadrant_avgY",   &out_quadrant_avgY);
+    tree_out -> Branch("quadrant_avgYE",    &out_quadrant_avgYE);
+    tree_out -> Branch("linefilled_avgX",  &out_linefilled_avgX);
+    tree_out -> Branch("linefilled_avgXE", &out_linefilled_avgXE);
+    tree_out -> Branch("linefilled_avgY",  &out_linefilled_avgY);
+    tree_out -> Branch("linefilled_avgYE", &out_linefilled_avgYE);
+    tree_out -> Branch("final_num_avgX",   &out_final_num_avgX);
+    tree_out -> Branch("final_num_avgY",   &out_final_num_avgY);
+    tree_out -> Branch("final_fit_avgX",   &out_final_fit_avgX);
+    tree_out -> Branch("final_fit_avgY",   &out_final_fit_avgY);
+
+    out_quadrant_avgX = vector_average(quadrant_VtxX_vec); 
+    out_quadrant_avgXE = vector_stddev(quadrant_VtxX_vec); 
+    out_quadrant_avgY = vector_average(quadrant_VtxY_vec); 
+    out_quadrant_avgYE = vector_stddev(quadrant_VtxY_vec); 
+    
+    out_linefilled_avgX = vector_average(line_filled_mean_X_vec);
+    out_linefilled_avgXE = vector_stddev(line_filled_mean_X_vec);
+    out_linefilled_avgY = vector_average(line_filled_mean_Y_vec);
+    out_linefilled_avgYE = vector_stddev(line_filled_mean_Y_vec);
+
+    out_final_num_avgX = ( vector_average(line_filled_mean_X_vec) + vector_average(quadrant_VtxX_vec) )/2.;
+    out_final_num_avgY = ( vector_average(line_filled_mean_Y_vec) + vector_average(quadrant_VtxY_vec) )/2.;
+    out_final_fit_avgX = pol0_fit_X->GetParameter(0);
+    out_final_fit_avgY = pol0_fit_Y->GetParameter(0);
+
+    tree_out -> Fill();
+    file_out -> cd();
+    // tree_out->SetDirectory(file_out);
+    tree_out -> Write("", TObject::kOverwrite);
+    file_out -> Close();
+
+
     cout<<"unit : "<<unit_text<<endl;
     cout<<"line filled covariance info : "<<line_filled_covariance_1D->GetMean()<<" "<<line_filled_covariance_1D->GetStdDev()<<endl;
     cout<<"line filled vairance X info : "<<line_filled_variance_X_1D->GetMean()<<" "<<line_filled_variance_X_1D->GetStdDev()<<endl;
@@ -472,7 +522,7 @@ int main(int argc, char* argv[])
     cout<<"line filled Y : "<<vector_average(line_filled_mean_Y_vec)<<" +/- "<<vector_stddev(line_filled_mean_Y_vec)<<endl;
     cout<<"quadrant X : "<<vector_average(quadrant_VtxX_vec)<<" +/- "<<vector_stddev(quadrant_VtxX_vec)<<endl;
     cout<<"quadrant Y : "<<vector_average(quadrant_VtxY_vec)<<" +/- "<<vector_stddev(quadrant_VtxY_vec)<<endl;
-    cout<<"avg: {"<<( vector_average(line_filled_mean_X_vec) + vector_average(quadrant_VtxX_vec) )/2.<<Form(" * %s, ",unit_text.c_str())<<( vector_average(line_filled_mean_Y_vec) + vector_average(quadrant_VtxY_vec) )/2.<<Form(" * %s}",unit_text.c_str())<<endl;
-    cout<<"Fit avg: {"<<pol0_fit_X->GetParameter(0)<<Form(" * %s, ",unit_text.c_str())<<pol0_fit_Y->GetParameter(0)<<Form(" * %s}",unit_text.c_str())<<endl;
+    cout<<"avg: {"<< out_final_num_avgX <<Form(" * %s, ",unit_text.c_str())<< out_final_num_avgY <<Form(" * %s}",unit_text.c_str())<<endl;
+    cout<<"Fit avg: {"<< out_final_fit_avgX <<Form(" * %s, ",unit_text.c_str())<< out_final_fit_avgY <<Form(" * %s}",unit_text.c_str())<<endl;
     return 0;
 }

@@ -17,7 +17,20 @@ class INTTReadTree
         vector<vector<double>> temp_sPH_nocolumn_vec;
         vector<vector<double>> temp_sPH_nocolumn_rz_vec;
         
-        INTTReadTree(int data_type, string input_directory, string MC_list_name, string tree_name, int clu_size_cut, int clu_sum_adc_cut, int random_seed = 65539, int N_ladder = 14, double offset_range = 0.2, vector<string> included_ladder_vec = {}, int apply_geo_offset = 1, vector<pair<double,double>> ladder_offset_vec = {});
+        INTTReadTree(
+            int data_type, 
+            string input_directory, 
+            string MC_list_name, 
+            string tree_name, 
+            int clu_size_cut, 
+            int clu_sum_adc_cut, 
+            int random_seed = 65539, 
+            int N_ladder = 14, 
+            double offset_range = 0.2, 
+            vector<string> included_ladder_vec = {}, 
+            int apply_geo_offset = 1, 
+            vector<vector<double>> ladder_offset_vec = {}
+        );
         void EvtInit(long long event_i);
         void EvtSetCluGroup();
         long long GetNEvt();
@@ -37,12 +50,12 @@ class INTTReadTree
         double GetMBDNorthChargeSum();
         double GetMBDSouthChargeSum();
         void EvtClear();
-        map<string, pair<double,double>> GetLadderOffsetMap();
+        map<string, vector<double>> GetLadderOffsetMap();
         void EndRun();
         void gen_ladder_offset();
         void clear_ladder_offset_map() {ladder_offset_map.clear();}
         void set_random_seed(int random_seed_in) {random_seed = random_seed_in;}
-        void set_ladder_offset(map<string, pair<double,double>> input_map) {ladder_offset_map = input_map;}
+        void set_ladder_offset(map<string, vector<double>> input_map) {ladder_offset_map = input_map;}
 
     private : 
         string data_type_list[9] = {
@@ -82,8 +95,8 @@ class INTTReadTree
 
         vector<vector<float>>  true_track_info;
         vector<string> included_ladder_vec;
-        vector<pair<double,double>> ladder_offset_vec;
-        map<string, pair<double,double>> ladder_offset_map;
+        vector<vector<double>> ladder_offset_vec;
+        map<string, vector<double>> ladder_offset_map;
 
         TChain * chain_in;
         PrivateCluReader * inttCluData; // note : the class to read the private gen cluster file
@@ -116,13 +129,13 @@ class INTTReadTree
         void TTreeInit_data_F4A();
         double get_radius(double x, double y);
         pair<double,double> rotatePoint(double x, double y);
-        pair<double, double> offset_correction(map<string,pair<double,double>> input_map);
+        vector<double> offset_correction(map<string,vector<double>> input_map);
         void read_centrality_cut();        // note : for the selfgen MC
         int get_centrality_bin(int NClus); // note : for the selfgen MC
 
 };
 
-INTTReadTree::INTTReadTree(int data_type, string input_directory, string MC_list_name, string tree_name, int clu_size_cut, int clu_sum_adc_cut, int random_seed, int N_ladder, double offset_range, vector<string> included_ladder_vec, int apply_geo_offset, vector<pair<double,double>> ladder_offset_vec)
+INTTReadTree::INTTReadTree(int data_type, string input_directory, string MC_list_name, string tree_name, int clu_size_cut, int clu_sum_adc_cut, int random_seed, int N_ladder, double offset_range, vector<string> included_ladder_vec, int apply_geo_offset, vector<vector<double>> ladder_offset_vec)
 :data_type(data_type), input_directory(input_directory), MC_list_name(MC_list_name), tree_name(tree_name), clu_size_cut(clu_size_cut), clu_sum_adc_cut(clu_sum_adc_cut), random_seed(random_seed), N_ladder(N_ladder), offset_range(offset_range), included_ladder_vec(included_ladder_vec), apply_geo_offset(apply_geo_offset), ladder_offset_vec(ladder_offset_vec)
 {
     temp_sPH_inner_nocolumn_vec.clear();
@@ -384,7 +397,7 @@ vector<double> INTTReadTree::GetTrigvtxMC() {return {TrigXvtxMC,TrigYvtxMC,TrigZ
 int INTTReadTree::GetNvtxMC() {return NvtxMC;}
 string INTTReadTree::GetRunType() { return run_type_out; }
 Long64_t INTTReadTree::GetBCOFull() {return bco_full;}
-map<string, pair<double,double>> INTTReadTree::GetLadderOffsetMap() {return ladder_offset_map;}
+map<string, vector<double>> INTTReadTree::GetLadderOffsetMap() {return ladder_offset_map;}
 float INTTReadTree::GetCentralityBin() {return Centrality_bimp;}
 vector<vector<float>> INTTReadTree::GetTrueTrackInfo() {return true_track_info;}
 double INTTReadTree::GetMBDRecoZ() {return MBD_reco_z;}
@@ -398,20 +411,22 @@ unsigned long INTTReadTree::GetEvtNClusPost()
     return temp_sPH_inner_nocolumn_vec.size() + temp_sPH_outer_nocolumn_vec.size(); 
 }
 
-pair<double, double> INTTReadTree::offset_correction(map<string,pair<double,double>> input_map)
+vector<double> INTTReadTree::offset_correction(map<string,vector<double>> input_map)
 {
     double N_pair = 0;
     double sum_x = 0;
     double sum_y = 0;
+    double sum_z = 0;
 
     for (const auto& pair : input_map)
     {
         N_pair += 1;
-        sum_x += pair.second.first;
-        sum_y += pair.second.second;
+        sum_x += pair.second[0];
+        sum_y += pair.second[1];
+        sum_z += pair.second[2];
     }
 
-    return {sum_x/N_pair, sum_y/N_pair};
+    return {sum_x/N_pair, sum_y/N_pair, sum_z/N_pair};
 }
 
 void INTTReadTree::EvtSetCluGroup()
@@ -524,98 +539,98 @@ void INTTReadTree::EvtSetCluGroup()
         }
     }
 
-    else if (data_type_list[data_type] == "data_private_geo1"){
-        for (int clu_i = 0; clu_i < evt_length; clu_i++)
-        {
-            if (int(inttCluData -> size -> at(clu_i)) > clu_size_cut) {continue;} 
-            if (int(inttCluData -> sum_adc_conv -> at(clu_i)) <= clu_sum_adc_cut) {continue;}
+    // else if (data_type_list[data_type] == "data_private_geo1"){
+    //     for (int clu_i = 0; clu_i < evt_length; clu_i++)
+    //     {
+    //         if (int(inttCluData -> size -> at(clu_i)) > clu_size_cut) {continue;} 
+    //         if (int(inttCluData -> sum_adc_conv -> at(clu_i)) <= clu_sum_adc_cut) {continue;}
 
-            string ladder_name = inttConv -> GetLadderName(Form("intt%i_%i", inttCluData -> server -> at(clu_i) - 3001, inttCluData -> module -> at(clu_i)));
+    //         string ladder_name = inttConv -> GetLadderName(Form("intt%i_%i", inttCluData -> server -> at(clu_i) - 3001, inttCluData -> module -> at(clu_i)));
 
-            // note : the following selections only keeps a small portion of INTT clusters
-            // if (inttCluData -> server -> at(clu_i) - 3001 > 3) {continue;} // note : only the 3001, 3002, 3003, 3004 are included in the study (south)
-            if ((ladder_name).substr(0,4) == "B0L1") {continue;}
-            if ((ladder_name).substr(0,4) == "B1L1") {continue;}
-            // if (inttCluData -> column -> at(clu_i) > 5) {continue;} // note : only the column 1, 2, 3, 4, 5 are included in the study (south type B sensor only)
+    //         // note : the following selections only keeps a small portion of INTT clusters
+    //         // if (inttCluData -> server -> at(clu_i) - 3001 > 3) {continue;} // note : only the 3001, 3002, 3003, 3004 are included in the study (south)
+    //         if ((ladder_name).substr(0,4) == "B0L1") {continue;}
+    //         if ((ladder_name).substr(0,4) == "B1L1") {continue;}
+    //         // if (inttCluData -> column -> at(clu_i) > 5) {continue;} // note : only the column 1, 2, 3, 4, 5 are included in the study (south type B sensor only)
 
-            if ( (ladder_name).substr(0,6) == "B0L001") {continue;}
-            if ( (ladder_name).substr(0,6) == "B0L004") {continue;}
-            if ( (ladder_name).substr(0,6) == "B0L007") {continue;}
-            if ( (ladder_name).substr(0,6) == "B0L010") {continue;}
+    //         if ( (ladder_name).substr(0,6) == "B0L001") {continue;}
+    //         if ( (ladder_name).substr(0,6) == "B0L004") {continue;}
+    //         if ( (ladder_name).substr(0,6) == "B0L007") {continue;}
+    //         if ( (ladder_name).substr(0,6) == "B0L010") {continue;}
 
-            if ( (ladder_name).substr(0,6) == "B1L001") {continue;}
-            if ( (ladder_name).substr(0,6) == "B1L002") {continue;}
-            if ( (ladder_name).substr(0,6) == "B1L005") {continue;}
-            if ( (ladder_name).substr(0,6) == "B1L006") {continue;}
-            if ( (ladder_name).substr(0,6) == "B1L009") {continue;}
-            if ( (ladder_name).substr(0,6) == "B1L010") {continue;}
-            if ( (ladder_name).substr(0,6) == "B1L013") {continue;}
-            if ( (ladder_name).substr(0,6) == "B1L014") {continue;}
+    //         if ( (ladder_name).substr(0,6) == "B1L001") {continue;}
+    //         if ( (ladder_name).substr(0,6) == "B1L002") {continue;}
+    //         if ( (ladder_name).substr(0,6) == "B1L005") {continue;}
+    //         if ( (ladder_name).substr(0,6) == "B1L006") {continue;}
+    //         if ( (ladder_name).substr(0,6) == "B1L009") {continue;}
+    //         if ( (ladder_name).substr(0,6) == "B1L010") {continue;}
+    //         if ( (ladder_name).substr(0,6) == "B1L013") {continue;}
+    //         if ( (ladder_name).substr(0,6) == "B1L014") {continue;}
 
-            // note : because the corresponding hald-ladder of this one, the B1L015S, has no data
-            if ( (ladder_name).substr(0,6) == "B0L011") {continue;}
-            if ( (ladder_name).substr(0,6) == "B1L015") {continue;}
+    //         // note : because the corresponding hald-ladder of this one, the B1L015S, has no data
+    //         if ( (ladder_name).substr(0,6) == "B0L011") {continue;}
+    //         if ( (ladder_name).substr(0,6) == "B1L015") {continue;}
 
-            // note : for the hypothesis test
-            // if ( (ladder_name).substr(0,6) == "B1L004") {continue;}
-            // if ( (ladder_name).substr(0,6) == "B0L003") {continue;} // note : pair
-            // if ( (ladder_name).substr(0,6) == "B1L007") {continue;}
-            // if ( (ladder_name).substr(0,6) == "B0L005") {continue;} // note : pair
-            // if ( (ladder_name).substr(0,6) == "B1L011") {continue;}
-            // if ( (ladder_name).substr(0,6) == "B0L008") {continue;} // note : pair
-            // if ( (ladder_name).substr(0,6) == "B1L012") {continue;}
-            // if ( (ladder_name).substr(0,6) == "B0L009") {continue;} // note : pair
-            // if ( (ladder_name).substr(0,6) == "B0L000") {continue;}
-            // if ( (ladder_name).substr(0,6) == "B1L000") {continue;} // note : pair
+    //         // note : for the hypothesis test
+    //         // if ( (ladder_name).substr(0,6) == "B1L004") {continue;}
+    //         // if ( (ladder_name).substr(0,6) == "B0L003") {continue;} // note : pair
+    //         // if ( (ladder_name).substr(0,6) == "B1L007") {continue;}
+    //         // if ( (ladder_name).substr(0,6) == "B0L005") {continue;} // note : pair
+    //         // if ( (ladder_name).substr(0,6) == "B1L011") {continue;}
+    //         // if ( (ladder_name).substr(0,6) == "B0L008") {continue;} // note : pair
+    //         // if ( (ladder_name).substr(0,6) == "B1L012") {continue;}
+    //         // if ( (ladder_name).substr(0,6) == "B0L009") {continue;} // note : pair
+    //         // if ( (ladder_name).substr(0,6) == "B0L000") {continue;}
+    //         // if ( (ladder_name).substr(0,6) == "B1L000") {continue;} // note : pair
 
-            double clu_x_offset = ladder_offset_map[(ladder_name).substr(0,6)].first;
-            double clu_y_offset = ladder_offset_map[(ladder_name).substr(0,6)].second;
+    //         double clu_x_offset = ladder_offset_map[(ladder_name).substr(0,6)].first;
+    //         double clu_y_offset = ladder_offset_map[(ladder_name).substr(0,6)].second;
 
-            double clu_x = inttCluData -> x -> at(clu_i) + clu_x_offset;
-            double clu_y = inttCluData -> y -> at(clu_i) + clu_y_offset;
-            double clu_z = inttCluData -> z -> at(clu_i);
-            double clu_phi = (clu_y < 0) ? atan2(clu_y,clu_x) * (180./TMath::Pi()) + 360 : atan2(clu_y,clu_x) * (180./TMath::Pi());
-            int    clu_layer = inttCluData -> layer -> at(clu_i); // note : should be 0 or 1
-            double clu_radius = get_radius(clu_x, clu_y);
+    //         double clu_x = inttCluData -> x -> at(clu_i) + clu_x_offset;
+    //         double clu_y = inttCluData -> y -> at(clu_i) + clu_y_offset;
+    //         double clu_z = inttCluData -> z -> at(clu_i);
+    //         double clu_phi = (clu_y < 0) ? atan2(clu_y,clu_x) * (180./TMath::Pi()) + 360 : atan2(clu_y,clu_x) * (180./TMath::Pi());
+    //         int    clu_layer = inttCluData -> layer -> at(clu_i); // note : should be 0 or 1
+    //         double clu_radius = get_radius(clu_x, clu_y);
 
-            temp_sPH_nocolumn_vec[0].push_back( clu_x );
-            temp_sPH_nocolumn_vec[1].push_back( clu_y );
+    //         temp_sPH_nocolumn_vec[0].push_back( clu_x );
+    //         temp_sPH_nocolumn_vec[1].push_back( clu_y );
             
-            temp_sPH_nocolumn_rz_vec[0].push_back( clu_z );
-            temp_sPH_nocolumn_rz_vec[1].push_back( ( clu_phi > 180 ) ? clu_radius * -1 : clu_radius );
+    //         temp_sPH_nocolumn_rz_vec[0].push_back( clu_z );
+    //         temp_sPH_nocolumn_rz_vec[1].push_back( ( clu_phi > 180 ) ? clu_radius * -1 : clu_radius );
             
 
-            if (clu_layer == 0) {// note : inner
-                temp_sPH_inner_nocolumn_vec.push_back({
-                    -1, 
-                    -1, 
-                    int(inttCluData -> sum_adc_conv -> at(clu_i)), 
-                    int(inttCluData -> sum_adc_conv -> at(clu_i)), 
-                    int(inttCluData -> size -> at(clu_i)), 
-                    clu_x, 
-                    clu_y, 
-                    clu_z, 
-                    clu_layer, 
-                    clu_phi
-                });
-            }
+    //         if (clu_layer == 0) {// note : inner
+    //             temp_sPH_inner_nocolumn_vec.push_back({
+    //                 -1, 
+    //                 -1, 
+    //                 int(inttCluData -> sum_adc_conv -> at(clu_i)), 
+    //                 int(inttCluData -> sum_adc_conv -> at(clu_i)), 
+    //                 int(inttCluData -> size -> at(clu_i)), 
+    //                 clu_x, 
+    //                 clu_y, 
+    //                 clu_z, 
+    //                 clu_layer, 
+    //                 clu_phi
+    //             });
+    //         }
             
-            if (clu_layer == 1) {// note : outer
-                temp_sPH_outer_nocolumn_vec.push_back({
-                    -1, 
-                    -1, 
-                    int(inttCluData -> sum_adc_conv -> at(clu_i)), 
-                    int(inttCluData -> sum_adc_conv -> at(clu_i)), 
-                    int(inttCluData -> size -> at(clu_i)), 
-                    clu_x, 
-                    clu_y, 
-                    clu_z, 
-                    clu_layer, 
-                    clu_phi
-                });            
-            }        
-        }
-    }
+    //         if (clu_layer == 1) {// note : outer
+    //             temp_sPH_outer_nocolumn_vec.push_back({
+    //                 -1, 
+    //                 -1, 
+    //                 int(inttCluData -> sum_adc_conv -> at(clu_i)), 
+    //                 int(inttCluData -> sum_adc_conv -> at(clu_i)), 
+    //                 int(inttCluData -> size -> at(clu_i)), 
+    //                 clu_x, 
+    //                 clu_y, 
+    //                 clu_z, 
+    //                 clu_layer, 
+    //                 clu_phi
+    //             });            
+    //         }        
+    //     }
+    // }
 
     else if (data_type_list[data_type] == "MC_geo_test"){
         for (int clu_i = 0; clu_i < evt_length; clu_i++)
@@ -624,12 +639,13 @@ void INTTReadTree::EvtSetCluGroup()
             if (int(inttDSTMC -> ClusPhiSize -> at(clu_i)) > clu_size_cut) continue; 
             if (int(inttDSTMC -> ClusAdc -> at(clu_i)) <= clu_sum_adc_cut) continue;
 
-            double clu_x_offset = ladder_offset_map[Form("%i_%i",inttDSTMC -> ClusLayer -> at(clu_i), inttDSTMC -> ClusLadderPhiId -> at(clu_i))].first;
-            double clu_y_offset = ladder_offset_map[Form("%i_%i",inttDSTMC -> ClusLayer -> at(clu_i), inttDSTMC -> ClusLadderPhiId -> at(clu_i))].second;
+            double clu_x_offset = ladder_offset_map[Form("%i_%i",inttDSTMC -> ClusLayer -> at(clu_i), inttDSTMC -> ClusLadderPhiId -> at(clu_i))][0];
+            double clu_y_offset = ladder_offset_map[Form("%i_%i",inttDSTMC -> ClusLayer -> at(clu_i), inttDSTMC -> ClusLadderPhiId -> at(clu_i))][1];
+            double clu_z_offset = ladder_offset_map[Form("%i_%i",inttDSTMC -> ClusLayer -> at(clu_i), inttDSTMC -> ClusLadderPhiId -> at(clu_i))][2];
 
             double clu_x = inttDSTMC -> ClusX -> at(clu_i) * 10 + clu_x_offset; // note : change the unit from cm to mm
             double clu_y = inttDSTMC -> ClusY -> at(clu_i) * 10 + clu_y_offset;
-            double clu_z = inttDSTMC -> ClusZ -> at(clu_i) * 10;
+            double clu_z = inttDSTMC -> ClusZ -> at(clu_i) * 10 + clu_z_offset;
             double clu_phi = (clu_y < 0) ? atan2(clu_y,clu_x) * (180./TMath::Pi()) + 360 : atan2(clu_y,clu_x) * (180./TMath::Pi());
             int    clu_layer = (inttDSTMC -> ClusLayer -> at(clu_i) == 3 || inttDSTMC -> ClusLayer -> at(clu_i) == 4) ? 0 : 1;
             double clu_radius = get_radius(clu_x, clu_y);
@@ -821,16 +837,16 @@ void INTTReadTree::gen_ladder_offset()
 
             for (int phi_i = 0; phi_i < N_layer_ladder; phi_i++)
             {
-                ladder_offset_map[Form("%i_%i", layer_i, phi_i)] = {rand -> Uniform(-offset_range, offset_range), rand -> Uniform(-offset_range, offset_range)};
+                ladder_offset_map[Form("%i_%i", layer_i, phi_i)] = {rand -> Uniform(-offset_range, offset_range), rand -> Uniform(-offset_range, offset_range), rand -> Uniform(-offset_range, offset_range)};
                 // ladder_offset_map[Form("%i_%i", layer_i, phi_i)] = {100., 100.};
             }
         }
 
         // note : it's possible that the whole system has a systematic offset, so we need to correct it
-        pair<double,double> XY_correction = offset_correction(ladder_offset_map);
+        vector<double> XYZ_correction = offset_correction(ladder_offset_map);
         for (const auto& pair : ladder_offset_map)
         {
-            ladder_offset_map[pair.first] = {pair.second.first - XY_correction.first, pair.second.second - XY_correction.second};
+            ladder_offset_map[pair.first] = {pair.second[0] - XYZ_correction[0], pair.second[1] - XYZ_correction[1], pair.second[2] - XYZ_correction[2]};
         }
         
     }

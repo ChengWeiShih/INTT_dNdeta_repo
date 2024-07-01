@@ -90,6 +90,7 @@ class plot_evt_zvtx
         TLegend * leg_inc;
         TLegend * leg_single;
         TCanvas * c1;
+        TLine * coord_line;
 
         TH1F * reco_Zvtx_dist;
         TH2F * NClus_intt_mbd_diff_corre;
@@ -107,6 +108,7 @@ class plot_evt_zvtx
         vector<TH1F *> reco_Zvtx_dist_Mbin; 
         vector<TH1F *> reco_Zvtx_dist_Mbin_zoomin; 
         vector<TH1F *> Z_resolution; 
+        TH1F * high_NClus_Z_resolution;
 
         TH2F * true_zvtx_Mbin_Truezpos;
         TH2F * reco_zvtx_Mbin_Truezpos;

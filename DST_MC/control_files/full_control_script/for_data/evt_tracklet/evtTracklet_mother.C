@@ -95,6 +95,10 @@ void evtTracklet_mother(int index, string output_sub_folder_name = "evt_tracklet
         // note : the INTTrecoZ, MBDrecoZ diff cut
         if ( (RecoZ -> LB_Gaus_Mean_mean - RecoZ -> MBD_reco_z) < ana_map_version::INTTz_MBDz_diff_cut_l || (RecoZ -> LB_Gaus_Mean_mean - RecoZ -> MBD_reco_z) > ana_map_version::INTTz_MBDz_diff_cut_r ) {MCEta -> ClearEvt(); INTTClu -> EvtClear(); continue;}
 
+        double INTT_reco_z = RecoZ -> LB_Gaus_Mean_mean; // note : unit : mm
+
+        // if (INTT_reco_z < -205 || INTT_reco_z > -195) {MCEta -> ClearEvt(); INTTClu -> EvtClear(); continue;} // note : special_tag cancel
+
         INTTClu -> EvtInit(event_i);
         INTTClu -> EvtSetCluGroup();
 
@@ -104,7 +108,7 @@ void evtTracklet_mother(int index, string output_sub_folder_name = "evt_tracklet
             exit(1);
         }
 
-        cout<<"bco_full diff : "<<RecoZ -> bco_full - INTTClu -> GetBCOFull()<<" original bcofull : "<< INTTClu -> GetBCOFull()<< " zvtx file bcofull : "<< RecoZ -> bco_full <<" Z check, recoZ: "<<RecoZ -> LB_Gaus_Mean_mean<<endl;
+        cout<<"bco_full diff : "<<RecoZ -> bco_full - INTTClu -> GetBCOFull()<<" original bcofull : "<< INTTClu -> GetBCOFull()<< " zvtx file bcofull : "<< RecoZ -> bco_full <<" Z check, recoZ: "<<INTT_reco_z<<endl;
 
         int Centrality_bin = ana_map_version::convert_centrality_bin(RecoZ -> Centrality_float);
         // note : the centrality bin rejection
@@ -120,7 +124,7 @@ void evtTracklet_mother(int index, string output_sub_folder_name = "evt_tracklet
             INTTClu -> GetTrigvtxMC(), 
             INTTClu -> GetPhiCheckTag(), 
             INTTClu -> GetBCOFull(), 
-            {RecoZ -> LB_Gaus_Mean_mean, ana_map_version::reco_Z_resolution[Centrality_bin]},
+            {INTT_reco_z, ana_map_version::reco_Z_resolution[Centrality_bin]},
             Centrality_bin, 
             INTTClu->GetTrueTrackInfo()
         );

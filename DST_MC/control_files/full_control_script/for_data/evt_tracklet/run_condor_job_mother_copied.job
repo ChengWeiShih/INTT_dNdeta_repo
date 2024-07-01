@@ -9,9 +9,9 @@ nEvents            = NEVENTS
 InputfilelistIdx   = INPUTFILELISTIDX
 FileName           = FILENAME
 skipEvt            = 0
-Output             = /sphenix/user/ChengWei/INTT/INTT_commissioning/ZeroField/F4A_20869/2024_05_07/folder_Data_CombinedNtuple_Run20869_HotDead_BCO_ADC_Survey_test/evt_tracklet_original/CW_log/condor_the_file_number.out
-Error              = /sphenix/user/ChengWei/INTT/INTT_commissioning/ZeroField/F4A_20869/2024_05_07/folder_Data_CombinedNtuple_Run20869_HotDead_BCO_ADC_Survey_test/evt_tracklet_original/CW_log/condor_the_file_number.err
-Log                = /sphenix/user/ChengWei/INTT/INTT_commissioning/ZeroField/F4A_20869/2024_05_07/folder_Data_CombinedNtuple_Run20869_HotDead_BCO_ADC_Survey_test/evt_tracklet_original/CW_log/condor_the_file_number.log
+Output             = /sphenix/user/ChengWei/INTT/INTT_commissioning/ZeroField/F4A_20869/2024_05_07/folder_Data_CombinedNtuple_Run20869_HotDead_BCO_ADC_Survey_test/evt_tracklet_ZvtxRange_n300mm_to_n60mm/CW_log/condor_the_file_number.out
+Error              = /sphenix/user/ChengWei/INTT/INTT_commissioning/ZeroField/F4A_20869/2024_05_07/folder_Data_CombinedNtuple_Run20869_HotDead_BCO_ADC_Survey_test/evt_tracklet_ZvtxRange_n300mm_to_n60mm/CW_log/condor_the_file_number.err
+Log                = /sphenix/user/ChengWei/INTT/INTT_commissioning/ZeroField/F4A_20869/2024_05_07/folder_Data_CombinedNtuple_Run20869_HotDead_BCO_ADC_Survey_test/evt_tracklet_ZvtxRange_n300mm_to_n60mm/CW_log/condor_the_file_number.log
 Arguments          = "$(nEvents) $(InputfilelistIdx) $(FileName) $(skipEvt)"
 Queue 1
 

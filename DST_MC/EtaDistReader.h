@@ -82,8 +82,8 @@ class EtaDistReader : public INTTEta
             InitHist();
             MainPreparation();
             HistDivision();
+            PrintPlots_exclusive();
             // FinaldNdEta();
-
 
             return;
         };
@@ -104,6 +104,7 @@ class EtaDistReader : public INTTEta
         void Set_alpha_corr_map(TH2F * hist_in_loose, TH2F * hist_in_tight);
         void ApplyAlphaCorrection();
         void PrintPlots();
+        void PrintPlots_exclusive();
         // void FinaldNdEta();
         void EndRun();
 
@@ -140,6 +141,21 @@ class EtaDistReader : public INTTEta
         TH2F * eta_z_ref_cm;
         TH2F * eta_z_ref_used_check_cm;
         TH2F * eta_z_ref_used_check_binID_cm;
+        TH2F * exclusive_cluster_inner_eta_phi_2D;
+        TH2F * exclusive_cluster_outer_eta_phi_2D;
+
+        TH2F * exclusive_cluster_inner_eta_adc_2D;
+        TH2F * exclusive_cluster_outer_eta_adc_2D;
+        TH2F * exclusive_cluster_inner_eta_adc_2D_bkgrm;
+        TH2F * exclusive_cluster_outer_eta_adc_2D_bkgrm;
+        TProfile * exclusive_cluster_inner_eta_adc_2D_bkgrm_profile;
+        TProfile * exclusive_cluster_outer_eta_adc_2D_bkgrm_profile;
+        TGraphErrors * exclusive_cluster_inner_eta_adc_2D_bkgrm_profile_graph;
+        TGraphErrors * exclusive_cluster_outer_eta_adc_2D_bkgrm_profile_graph;
+
+
+        TH1F * exclusive_cluster_inner_adc;
+        TH1F * exclusive_cluster_outer_adc;
 
         TH2F * eta_Mbin_correction_tight;
         TH2F * eta_Mbin_correction_loose;
@@ -320,6 +336,63 @@ void EtaDistReader::ReadFileHist()
 
     // note : the reference map of Eta-Z 2D histogram
     eta_z_ref = (TH2F *) file_in -> Get("Eta_Z_reference");
+
+    exclusive_cluster_inner_eta_phi_2D = (TH2F *) file_in -> Get("exclusive_cluster_inner_eta_phi_2D");
+    exclusive_cluster_outer_eta_phi_2D = (TH2F *) file_in -> Get("exclusive_cluster_outer_eta_phi_2D");
+    exclusive_cluster_inner_eta_adc_2D = (TH2F *) file_in -> Get("exclusive_cluster_inner_eta_adc_2D");
+    exclusive_cluster_outer_eta_adc_2D = (TH2F *) file_in -> Get("exclusive_cluster_outer_eta_adc_2D");
+    
+    exclusive_cluster_inner_eta_adc_2D_bkgrm = (TH2F *) file_in -> Get("exclusive_cluster_inner_eta_adc_2D");
+    // TH2F_threshold_advanced_2(exclusive_cluster_inner_eta_adc_2D_bkgrm, 0.5);
+    vector<double> hist_row_content_inner = SumTH2FColumnContent_row(exclusive_cluster_inner_eta_adc_2D_bkgrm);
+    
+    exclusive_cluster_inner_eta_adc_2D_bkgrm_profile = (TProfile *) exclusive_cluster_inner_eta_adc_2D_bkgrm -> ProfileY("exclusive_cluster_inner_eta_adc_2D_bkgrm_profile");
+    exclusive_cluster_inner_eta_adc_2D_bkgrm_profile_graph = new TGraphErrors(); 
+    int point_index_inner = 0;
+    for (int i = 0; i < hist_row_content_inner.size(); i++){
+        if (hist_row_content_inner[i] < 5){continue;} // note : in order to remove some remaining background
+        exclusive_cluster_inner_eta_adc_2D_bkgrm_profile_graph -> SetPoint(
+            point_index_inner, 
+            exclusive_cluster_inner_eta_adc_2D_bkgrm_profile->GetBinContent(i+1), 
+            exclusive_cluster_inner_eta_adc_2D_bkgrm_profile->GetBinCenter(i+1)
+        );
+        
+        exclusive_cluster_inner_eta_adc_2D_bkgrm_profile_graph -> SetPointError(
+            point_index_inner, 
+            exclusive_cluster_inner_eta_adc_2D_bkgrm_profile->GetBinError(i+1), 
+            exclusive_cluster_inner_eta_adc_2D_bkgrm_profile->GetBinWidth(i+1)/2.
+        );
+        
+        point_index_inner += 1;   
+    }
+
+    exclusive_cluster_outer_eta_adc_2D_bkgrm = (TH2F *) file_in -> Get("exclusive_cluster_outer_eta_adc_2D");
+    // TH2F_threshold_advanced_2(exclusive_cluster_outer_eta_adc_2D_bkgrm, 0.5);
+    vector<double> hist_row_content_outer = SumTH2FColumnContent_row(exclusive_cluster_outer_eta_adc_2D_bkgrm);
+    
+    exclusive_cluster_outer_eta_adc_2D_bkgrm_profile = (TProfile *) exclusive_cluster_outer_eta_adc_2D_bkgrm -> ProfileY("exclusive_cluster_outer_eta_adc_2D_bkgrm_profile");
+    exclusive_cluster_outer_eta_adc_2D_bkgrm_profile_graph = new TGraphErrors(); 
+    int point_index_outer = 0;
+    for (int i = 0; i < hist_row_content_outer.size(); i++){
+        if (hist_row_content_outer[i] < 5){continue;} // note : in order to remove some remaining background
+        exclusive_cluster_outer_eta_adc_2D_bkgrm_profile_graph -> SetPoint(
+            point_index_outer, 
+            exclusive_cluster_outer_eta_adc_2D_bkgrm_profile->GetBinContent(i+1), 
+            exclusive_cluster_outer_eta_adc_2D_bkgrm_profile->GetBinCenter(i+1)
+        );
+        exclusive_cluster_outer_eta_adc_2D_bkgrm_profile_graph -> SetPointError(
+            point_index_outer, 
+            exclusive_cluster_outer_eta_adc_2D_bkgrm_profile->GetBinError(i+1), 
+            exclusive_cluster_outer_eta_adc_2D_bkgrm_profile->GetBinWidth(i+1)/2.
+        );
+        
+        point_index_outer += 1;   
+    }
+
+    
+
+    exclusive_cluster_inner_adc = (TH1F *) file_in -> Get("exclusive_cluster_inner_adc");
+    exclusive_cluster_outer_adc = (TH1F *) file_in -> Get("exclusive_cluster_outer_adc");
 
     eta_z_ref_used_check = (TH2F*) eta_z_ref -> Clone("eta_z_ref_used_check");
     eta_z_ref_used_check_binID = (TH2F*) eta_z_ref -> Clone("eta_z_ref_used_check");
@@ -797,6 +870,62 @@ void EtaDistReader::ApplyAlphaCorrection()
     std::cout<<"finish the alpha correction application"<<std::endl;
 
     return;
+
+}
+
+void EtaDistReader::PrintPlots_exclusive()
+{
+    c1 ->cd();
+    exclusive_cluster_inner_adc -> SetMinimum(0);
+    exclusive_cluster_inner_adc -> Draw("hist");
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
+    c1 -> Print(Form("%s/exclusive_cluster_inner_adc.pdf", out_folder_directory.c_str()));
+    c1 -> Clear();
+
+    c1 ->cd();
+    exclusive_cluster_outer_adc -> SetMinimum(0);
+    exclusive_cluster_outer_adc -> Draw("hist");
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
+    c1 -> Print(Form("%s/exclusive_cluster_outer_adc.pdf", out_folder_directory.c_str()));
+    c1 -> Clear();
+
+    c1 ->cd();
+    exclusive_cluster_inner_eta_phi_2D -> Draw("colz0");
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
+    c1 -> Print(Form("%s/exclusive_cluster_inner_eta_phi_2D.pdf", out_folder_directory.c_str()));
+    c1 -> Clear();
+
+    c1 ->cd();
+    exclusive_cluster_outer_eta_phi_2D -> Draw("colz0");
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
+    c1 -> Print(Form("%s/exclusive_cluster_outer_eta_phi_2D.pdf", out_folder_directory.c_str()));
+    c1 -> Clear();
+
+    c1 ->cd();
+    exclusive_cluster_inner_eta_adc_2D -> Draw("colz0");
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
+    c1 -> Print(Form("%s/exclusive_cluster_inner_eta_adc_2D.pdf", out_folder_directory.c_str()));
+    c1 -> Clear();
+
+    c1 ->cd();
+    exclusive_cluster_outer_eta_adc_2D -> Draw("colz0");
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
+    c1 -> Print(Form("%s/exclusive_cluster_outer_eta_adc_2D.pdf", out_folder_directory.c_str()));
+    c1 -> Clear();
+
+    c1 ->cd();
+    exclusive_cluster_inner_eta_adc_2D_bkgrm -> Draw("colz0");
+    exclusive_cluster_inner_eta_adc_2D_bkgrm_profile_graph -> Draw("p same");
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
+    c1 -> Print(Form("%s/exclusive_cluster_inner_eta_adc_2D_bkgrm.pdf", out_folder_directory.c_str()));
+    c1 -> Clear();
+
+    c1 ->cd();
+    exclusive_cluster_outer_eta_adc_2D_bkgrm -> Draw("colz0");
+    exclusive_cluster_outer_eta_adc_2D_bkgrm_profile_graph -> Draw("p same");
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
+    c1 -> Print(Form("%s/exclusive_cluster_outer_eta_adc_2D_bkgrm.pdf", out_folder_directory.c_str()));
+    c1 -> Clear();
 
 }
 

@@ -275,6 +275,14 @@ void plot_evt_zvtx::Hist_init()
 
     LB_hist_gaus_width = new TH1F("",Form("LB_hist_gaus_width;Width [%s];Entry",unit_text.c_str()), 100, 0, 120 * unit_correction);
     LB_hist_cut_group_width = new TH1F("",Form("LB_hist_cut_group_width;Width [%s];Entry",unit_text.c_str()), 100, 0, 200 * unit_correction);
+
+    high_NClus_Z_resolution = new TH1F(
+        "",
+        Form("high_NClus_Z_resolution;#DeltaZ (Reco. - True) [%s];Entry", unit_text.c_str()),
+        200,
+        -25 * unit_correction, 
+        25 * unit_correction
+    );
 }
 
 void plot_evt_zvtx::Rest_init()
@@ -331,6 +339,11 @@ void plot_evt_zvtx::Rest_init()
     Z_mean_centrality_gr_num -> SetMarkerSize(1.5);
     Z_mean_centrality_gr_num -> GetXaxis()->SetTitle("Centrality bin"); 
     Z_mean_centrality_gr_num -> GetYaxis()->SetTitle(Form("#DeltaZ dist. mean [%s]", unit_text.c_str()));
+
+    coord_line = new TLine();
+    coord_line -> SetLineWidth(1);
+    coord_line -> SetLineColor(16);
+    coord_line -> SetLineStyle(2);
 
     cout<<"confirmation, centrality_region size : "<<centrality_region.size()<<endl;
 
@@ -415,12 +428,13 @@ void plot_evt_zvtx::LoopEvent()
         Z_resolution_pos  -> Fill(MC_true_zvtx, INTT_reco_zvtx - MC_true_zvtx);
         Z_correlation     -> Fill(MC_true_zvtx, INTT_reco_zvtx);
         
-        if ((in_nclu_inner + in_nclu_outer) > zvtx_dist_NClus_cut) {Z_resolution_pos_cut -> Fill(MC_true_zvtx, INTT_reco_zvtx - MC_true_zvtx);}
+        if ((in_nclu_inner + in_nclu_outer) > zvtx_dist_NClus_cut) {
+            Z_resolution_pos_cut -> Fill(MC_true_zvtx, INTT_reco_zvtx - MC_true_zvtx);
+            high_NClus_Z_resolution -> Fill(INTT_reco_zvtx - MC_true_zvtx);
+        }
 
         Z_resolution[ centrality_map[Centrality_bin] ]                   -> Fill( INTT_reco_zvtx - MC_true_zvtx );
         if ( centrality_map[Centrality_bin] < ana_map_version::inclusive_Mbin_cut ) {Z_resolution[ Z_resolution.size() - 1 ] -> Fill( INTT_reco_zvtx - MC_true_zvtx );} // note : the inclusive
-        
-
 
         // note : for the passing rate
         true_zvtx_Mbin_Truezpos -> Fill(centrality_map[Centrality_bin], MC_true_zvtx);
@@ -689,15 +703,22 @@ void plot_evt_zvtx::PrintPlot()
         for (int i = 0; i < Z_resolution.size(); i++)
         {
             Z_resolution[i] -> SetMinimum(0);
+            Z_resolution[i] -> SetMaximum(Z_resolution[i] -> GetMaximum() * 1.7);
 
             gaus_fit_2 -> SetParameters(Z_resolution[i] -> GetBinContent( Z_resolution[i] -> GetMaximumBin() ), Z_resolution[i] -> GetBinCenter( Z_resolution[i] -> GetMaximumBin() ), Z_resolution[i] -> GetStdDev(), 0);
             gaus_fit_2 -> SetParLimits(0,0,100000);  // note : size 
             gaus_fit_2 -> SetParLimits(2,0,10000);   // note : Width
             gaus_fit_2 -> SetParLimits(3,0,10000);   // note : offset
-            Z_resolution[i] -> Fit(gaus_fit_2, "N", "", Z_resolution[i] -> GetBinCenter( Z_resolution[i] -> GetMaximumBin() ) - (2 * Z_resolution[i] -> GetStdDev() ), Z_resolution[i] -> GetBinCenter( Z_resolution[i] -> GetMaximumBin() ) + (2 * Z_resolution[i] -> GetStdDev() ) );
+
+            double fit_range_l = Z_resolution[i] -> GetBinCenter( Z_resolution[i] -> GetMaximumBin() ) - (2 * Z_resolution[i] -> GetStdDev() );
+            double fit_range_r = Z_resolution[i] -> GetBinCenter( Z_resolution[i] -> GetMaximumBin() ) + (2 * Z_resolution[i] -> GetStdDev() );
+
+            Z_resolution[i] -> Fit(gaus_fit_2, "N", "", fit_range_l, fit_range_r);
             cout<<"fit reduced chi2 : "<<i<<" "<<gaus_fit_2 -> GetChisquare() / double(gaus_fit_2 -> GetNDF())<<endl;
             Z_resolution[i] -> Draw("hist"); 
-            gaus_fit_2 -> SetRange( gaus_fit_2->GetParameter(1) - gaus_fit_2->GetParameter(2) * 2.5, gaus_fit_2->GetParameter(1) + gaus_fit_2->GetParameter(2) * 2.5 ); 
+            coord_line -> DrawLine(fit_range_l, 0, fit_range_l, Z_resolution[i] -> GetMaximum());
+            coord_line -> DrawLine(fit_range_r, 0, fit_range_r, Z_resolution[i] -> GetMaximum());
+            gaus_fit_2 -> SetRange( gaus_fit_2->GetParameter(1) - gaus_fit_2->GetParameter(2) * 1.5, gaus_fit_2->GetParameter(1) + gaus_fit_2->GetParameter(2) * 1.5); 
             gaus_fit_2 -> Draw("lsame");
             draw_text -> DrawLatex(0.21, 0.75, Form("Centrality: %s", centrality_region[i].c_str()));
             draw_text -> DrawLatex(0.21, 0.71, Form("Gaus mean  : %.3f %s",gaus_fit_2 -> GetParameter(1), unit_text.c_str()));
@@ -738,6 +759,41 @@ void plot_evt_zvtx::PrintPlot()
         {
             cout<<i<<" fit: "<<fit_width_vec[i]<<Form(" %s, num: ",unit_text.c_str())<<num_width_vec[i]<<Form(" %s, avg: ", unit_text.c_str())<<avg_width_vec[i]<<Form(" %s", unit_text.c_str())<<endl;
         }
+    }
+
+    if (run_type == 1) // note : MC
+    {
+        c1 -> cd();
+        high_NClus_Z_resolution -> SetMinimum(0);
+        high_NClus_Z_resolution -> SetMaximum(high_NClus_Z_resolution -> GetMaximum() * 1.7);
+        high_NClus_Z_resolution -> Draw("hist");
+
+        gaus_fit_2 -> SetParameters(
+            high_NClus_Z_resolution -> GetBinContent( high_NClus_Z_resolution -> GetMaximumBin() ), 
+            high_NClus_Z_resolution -> GetBinCenter( high_NClus_Z_resolution -> GetMaximumBin() ), 
+            high_NClus_Z_resolution -> GetStdDev(), 
+            0
+        );
+
+        gaus_fit_2 -> SetParLimits(0,0,100000);  // note : size 
+        gaus_fit_2 -> SetParLimits(2,0,10000);   // note : Width
+        gaus_fit_2 -> SetParLimits(3,0,10000);   // note : offset
+
+        double fit_range_l = high_NClus_Z_resolution -> GetBinCenter( high_NClus_Z_resolution -> GetMaximumBin() ) - (2. * high_NClus_Z_resolution -> GetStdDev() );
+        double fit_range_r = high_NClus_Z_resolution -> GetBinCenter( high_NClus_Z_resolution -> GetMaximumBin() ) + (2. * high_NClus_Z_resolution -> GetStdDev() );
+
+        high_NClus_Z_resolution -> Fit(gaus_fit_2, "N", "", fit_range_l, fit_range_r);
+        gaus_fit_2 -> SetRange( gaus_fit_2->GetParameter(1) - gaus_fit_2->GetParameter(2) * 1.5, gaus_fit_2->GetParameter(1) + gaus_fit_2->GetParameter(2) * 1.5);
+        coord_line -> DrawLine(fit_range_l, 0, fit_range_l, high_NClus_Z_resolution -> GetMaximum());
+        coord_line -> DrawLine(fit_range_r, 0, fit_range_r, high_NClus_Z_resolution -> GetMaximum()); 
+        gaus_fit_2 -> Draw("lsame");
+        draw_text -> DrawLatex(0.21, 0.87, Form("NClus > %i", zvtx_dist_NClus_cut));
+        draw_text -> DrawLatex(0.21, 0.71, Form("Gaus mean  : %.3f %s",gaus_fit_2 -> GetParameter(1), unit_text.c_str()));
+        draw_text -> DrawLatex(0.21, 0.67, Form("Gaus width : %.3f %s",fabs(gaus_fit_2 -> GetParameter(2)), unit_text.c_str()));
+
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
+        c1 -> Print(Form("%s/high_NClus_Z_resolution.pdf", out_folder_directory.c_str()));
+        c1 -> Clear();
     }
 
     if (run_type == 1) // note: MC

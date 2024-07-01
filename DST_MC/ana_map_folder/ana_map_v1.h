@@ -38,6 +38,13 @@ namespace ANA_MAP_V3
     int avg_vtxXY_quadrant_Niteration = 8;
 
     int avg_vtxXY_Nevt_per_core = 15000;
+
+    int final_angle_diff_inner_phi_radian_coarseX_XNbins = 50;
+    double final_angle_diff_inner_phi_radian_coarseX_Xmin = -M_PI;
+    double final_angle_diff_inner_phi_radian_coarseX_Xmax = M_PI;
+    int final_angle_diff_inner_phi_radian_coarseX_YNbins = 120;
+    double final_angle_diff_inner_phi_radian_coarseX_Ymin = -0.03;
+    double final_angle_diff_inner_phi_radian_coarseX_Ymax = 0.03;
     
     // note : -------------------------------- common for topic, evt_vtxZ --------------------------------
     pair<double, double> evt_vtxZ_DCA_cut ={-1., 1.}; // note : for run20869
@@ -99,10 +106,10 @@ namespace ANA_MAP_V3
     double signal_region = 1.;
 
     double MBD_assy_ratio_cut = 0.75;
-    double INTT_zvtx_recohist_gaus_fit_width_cut_l = 30;
-    double INTT_zvtx_recohist_gaus_fit_width_cut_r = 80;
-    double INTT_zvtx_recohist_cutgroup_width_cut_l = 40;
-    double INTT_zvtx_recohist_cutgroup_width_cut_r = 110;
+    double INTT_zvtx_recohist_gaus_fit_width_cut_l =  20; // note : for the trapezoidal method special_tag  //30;
+    double INTT_zvtx_recohist_gaus_fit_width_cut_r =  55; // note : for the trapezoidal method special_tag //80;
+    double INTT_zvtx_recohist_cutgroup_width_cut_l =  20; // note : for the trapezoidal method special_tag //40;
+    double INTT_zvtx_recohist_cutgroup_width_cut_r = 80; // note : for the trapezoidal method special_tag //110;
     double INTTz_MBDz_diff_cut_l = -50;
     double INTTz_MBDz_diff_cut_r = 30;
     double INTTz_MBDz_diff_cut_MC_l = -40;
