@@ -1,6 +1,5 @@
 #!/bin/bash
 
-#todo : the script should be copied to the corresponding control folder
 
 # note : full directory
 
@@ -94,35 +93,41 @@ create_new_func() {
     fi
     cp run_condor_job_mother.job ${control_dir_to_data_type}/${topic_focus}/run_condor_job_mother_copied.job
 
-    # note : the run_root_mother.sh is currently in each topic_focus folder
-    if [ -f "${control_dir_to_data_type}/${topic_focus}/run_root_mother_copied.sh" ]; then
-        rm ${control_dir_to_data_type}/${topic_focus}/run_root_mother_copied.sh
-    fi
-    cp ${control_dir_to_data_type}/${topic_focus}/run_root_mother.sh ${control_dir_to_data_type}/${topic_focus}/run_root_mother_copied.sh
+    # # note : the run_root_mother.sh is currently in each topic_focus folder
+    # if [ -f "${control_dir_to_data_type}/${topic_focus}/run_root_mother_copied.sh" ]; then
+    #     rm ${control_dir_to_data_type}/${topic_focus}/run_root_mother_copied.sh
+    # fi
+    # cp ${control_dir_to_data_type}/${topic_focus}/run_root_mother.sh ${control_dir_to_data_type}/${topic_focus}/run_root_mother_copied.sh
 
-    if [ -f "${control_dir_to_data_type}/${topic_focus}/run_condor_copied.sh" ]; then
-        rm ${control_dir_to_data_type}/${topic_focus}/run_condor_copied.sh
-    fi
-    cp run_condor.sh ${control_dir_to_data_type}/${topic_focus}/run_condor_copied.sh 
+    # if [ -f "${control_dir_to_data_type}/${topic_focus}/run_condor_copied.sh" ]; then
+    #     rm ${control_dir_to_data_type}/${topic_focus}/run_condor_copied.sh
+    # fi
+    # cp run_condor.sh ${control_dir_to_data_type}/${topic_focus}/run_condor_copied.sh 
 
 
     cd ${control_dir_to_data_type}/${topic_focus}
     sed -i "s|control_file_to_be_updated|${control_dir_to_data_type}/${topic_focus}|g" run_condor_job_mother_copied.job
     sed -i "s|condor_output_to_be_updated|${dir_to_file_sub_folder}|g" run_condor_job_mother_copied.job
     
-    # todo : for the case of the run_root_mother.sh, it is still in each topic_focus folder
-    # todo : and the default topic_focus is still hard_written in the code, therefore, ${control_dir_to_data_type} is used in the following
-    sed -i "s|control_file_to_be_updated|${control_dir_to_data_type}|g" run_root_mother_copied.sh
-    
-    if [[ "$topic_focus" == "avg_vtxXY" || "$topic_focus" == "evt_vtxZ" || "$topic_focus" == "evt_tracklet" || "$topic_focus" == "evt_tracklet_inner_phi_rotate" ]]; then
-        sed -i "s|output_sub_folder_name_to_be_updated|${special_name}|g" run_root_mother_copied.sh
-    fi
+    sed -i "s|data_type_to_be_updated|${data_type}|g" run_condor_job_mother_copied.job
 
-    if [[ "$topic_focus" == "evt_tracklet" || "$topic_focus" == "evt_tracklet_inner_phi_rotate" ]]; then
-        sed -i "s|used_zvtx_folder_name_to_be_updated|${used_zvtx_folder}|g" run_root_mother_copied.sh
-    fi
+    # # todo : for the case of the run_root_mother.sh, it is still in each topic_focus folder
+    # # todo : and the default topic_focus is still hard_written in the code, therefore, ${control_dir_to_data_type} is used in the following
+    # sed -i "s|control_file_to_be_updated|${control_dir_to_data_type}|g" run_condor_job_mother_copied.job
     
-    sed -i "s/number_of_jobs_to_be_updated/${number_of_jobs}/g" run_condor_copied.sh
+    sed -i "s|output_sub_folder_name_to_be_updated|${special_name}|g" run_condor_job_mother_copied.job
+
+    # if [[ "$topic_focus" == "avg_vtxXY" || "$topic_focus" == "evt_vtxZ" || "$topic_focus" == "evt_tracklet" || "$topic_focus" == "evt_tracklet_inner_phi_rotate" ]]; then
+    #     sed -i "s|output_sub_folder_name_to_be_updated|${special_name}|g" run_condor_job_mother_copied.job
+    # fi
+
+    sed -i "s|used_zvtx_folder_name_to_be_updated|${used_zvtx_folder}|g" run_condor_job_mother_copied.job
+
+    # if [[ "$topic_focus" == "evt_tracklet" || "$topic_focus" == "evt_tracklet_inner_phi_rotate" ]]; then
+    #     sed -i "s|used_zvtx_folder_name_to_be_updated|${used_zvtx_folder}|g" run_condor_job_mother_copied.job
+    # fi
+    
+    sed -i "s/number_of_jobs_to_be_updated/${number_of_jobs}/g" run_condor_job_mother_copied.job
     
     #for evt_tracklet: control_file_to_be_updated/output_sub_folder_name_to_be_updated/used_zvtx_folder_name_to_be_updated
     #for evt_vtxZ: control_file_to_be_updated/output_sub_folder_name_to_be_updated
@@ -140,7 +145,7 @@ condor_submit_func() {
     echo "the script is going to submit the condor jobs"
 
     cd ${control_dir_to_data_type}/${topic_focus}
-    echo '-----> check number of jobs!: ~~'"`grep \"i<=\" run_condor_copied.sh`"'~~'  
+    echo '-----> check number of jobs!: ~~'"`grep \"Queue\" run_condor_job_mother_copied.job`"'~~'  
     read -r -p "The number of jobs has been printed out above, are you sure about that? Type 'yes' to proceed: " response
     if [[ "$response" != "yes" ]]; then
         echo "Operation aborted."
@@ -196,7 +201,8 @@ condor_submit_func() {
         rm -r $dir_to_file_sub_folder/complete_file/*
     fi
 
-    sh run_condor_copied.sh
+    # sh run_condor_copied.sh
+    condor_submit run_condor_job_mother_copied.job
     cd ${control_folder_directory}
 
     condor_monitor_func
@@ -352,15 +358,15 @@ remove_sub_sh_func() {
 
 full_clear_func() {
     if [[ ${#file_folder_directory} -eq 0 ]]; then
-        echo no file directory input abort the program
+        echo no file directory input, abort the program
         exit 1
     fi
 
     echo deleting the following items
     echo ${control_dir_to_data_type}/${topic_focus}/condor_outputs
     echo ${control_dir_to_data_type}/${topic_focus}/run_condor_job_mother_copied.job
-    echo ${control_dir_to_data_type}/${topic_focus}/run_root_mother_copied.sh
-    echo ${control_dir_to_data_type}/${topic_focus}/run_condor_copied.sh
+    # echo ${control_dir_to_data_type}/${topic_focus}/run_root_mother_copied.sh
+    # echo ${control_dir_to_data_type}/${topic_focus}/run_condor_copied.sh
     echo $dir_to_file_sub_folder
 
     read -r -p "Do you want to continue? Type 'yes' to proceed: " response
@@ -371,8 +377,8 @@ full_clear_func() {
 
     rm -r ${control_dir_to_data_type}/${topic_focus}/condor_outputs
     rm ${control_dir_to_data_type}/${topic_focus}/run_condor_job_mother_copied.job
-    rm ${control_dir_to_data_type}/${topic_focus}/run_root_mother_copied.sh
-    rm ${control_dir_to_data_type}/${topic_focus}/run_condor_copied.sh
+    # rm ${control_dir_to_data_type}/${topic_focus}/run_root_mother_copied.sh
+    # rm ${control_dir_to_data_type}/${topic_focus}/run_condor_copied.sh
     rm -r $dir_to_file_sub_folder
 }
 
@@ -664,8 +670,8 @@ elif [[ "${running_argument}" == "clear_control_file" ]]; then
     echo deleting the following items
     echo ${control_dir_to_data_type}/${topic_focus}/condor_outputs
     echo ${control_dir_to_data_type}/${topic_focus}/run_condor_job_mother_copied.job
-    echo ${control_dir_to_data_type}/${topic_focus}/run_root_mother_copied.sh
-    echo ${control_dir_to_data_type}/${topic_focus}/run_condor_copied.sh
+    # echo ${control_dir_to_data_type}/${topic_focus}/run_root_mother_copied.sh
+    # echo ${control_dir_to_data_type}/${topic_focus}/run_condor_copied.sh
 
     read -r -p "Do you want to continue? Type 'yes' to proceed: " response
     if [[ "$response" != "yes" ]]; then
@@ -675,8 +681,8 @@ elif [[ "${running_argument}" == "clear_control_file" ]]; then
 
     rm -r ${control_dir_to_data_type}/${topic_focus}/condor_outputs
     rm ${control_dir_to_data_type}/${topic_focus}/run_condor_job_mother_copied.job
-    rm ${control_dir_to_data_type}/${topic_focus}/run_root_mother_copied.sh
-    rm ${control_dir_to_data_type}/${topic_focus}/run_condor_copied.sh
+    # rm ${control_dir_to_data_type}/${topic_focus}/run_root_mother_copied.sh
+    # rm ${control_dir_to_data_type}/${topic_focus}/run_condor_copied.sh
 
     exit 1
 

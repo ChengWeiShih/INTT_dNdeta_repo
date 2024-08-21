@@ -2,10 +2,14 @@
 source /opt/sphenix/core/bin/sphenix_setup.sh -n ana.410
 # source /opt/sphenix/core/bin/setup_local.sh /sphenix/user/ChengWei/sPH_dNdeta/build_folder/build_HR_ntuple/install
 
-core_i=the_file_number
-root -l -b -q control_file_to_be_updated/evt_vtxXY/evtXY_mother.C\(${core_i}\)
+data_type=${1}
+control_file=${2}
+core_i=${3}
+output_sub_folder=${4}
+used_zvtx_folder=${5}
+root -l -b -q ${control_file}/evtXY_mother.C\(${core_i},\"${output_sub_folder}\",\"${used_zvtx_folder}\"\)
 
-# core_i=the_file_number
+# core_i=${1}
 
 # for i in {0..19};
 # do
@@ -14,6 +18,6 @@ root -l -b -q control_file_to_be_updated/evt_vtxXY/evtXY_mother.C\(${core_i}\)
 #     sleep 3
 # done
 
-# i=the_file_number
+# i=${1}
 
 # root.exe -l -b -q /sphenix/user/ChengWei/sPH_dNdeta/dNdEta_Run2023/macros/Fun4All_G4_sPHENIX.C\(0,0,\"/sphenix/user/ChengWei/sPH_dNdeta/dNdEta_INTT_MC_388_000/INTTRecoClusters_test_400_$i.root\",\"/sphenix/user/ChengWei/sPH_dNdeta/dNdEta_Run2023/macros/list/dNdEta_INTT/list_folder_388_000/dst_INTTdNdEta_400_$i.list\",0\)

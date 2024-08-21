@@ -19,7 +19,7 @@ namespace ANA_MAP_V3
     string               MC_file_name = "ntuple_merged";
     string               MC_tree_name = "EventTree";
     string               MC_tracklet_merged_folder = "merged_file_folder";
-    pair<double, double> MC_beam_origin = {-0.0399914 * cm, 0.240108 * cm}; // note : unit : mm 
+    pair<double, double> MC_beam_origin = {-0.04029 * cm, 0.239851 * cm}; // note : unit : mm 
     int                  MC_data_type = 0; // note : MC
 
     // note : ------------------------------------ special for data ----------------------------------- 

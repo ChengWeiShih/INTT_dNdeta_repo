@@ -466,7 +466,12 @@ void INTTReadTree::EvtSetCluGroup()
                     clu_y, 
                     clu_z, 
                     inttDSTMC -> ClusLayer -> at(clu_i), // note : should be 3 or 4, for the inner layer, this is for the mega cluster search
-                    clu_phi
+                    clu_phi,
+                    int(inttDSTMC -> ClusLayer       -> at(clu_i)), // note : raw_layer_id
+                    int(inttDSTMC -> ClusLadderPhiId -> at(clu_i)), // note : raw_ladder_id
+                    int(inttDSTMC -> ClusLadderZId   -> at(clu_i)), // note : raw_Z_id
+                    int(inttDSTMC -> ClusPhiSize     -> at(clu_i)), // note : raw_phi_size
+                    int(inttDSTMC -> ClusZSize       -> at(clu_i))  // note : raw_z_size
                 });
             }
             
@@ -481,7 +486,12 @@ void INTTReadTree::EvtSetCluGroup()
                     clu_y, 
                     clu_z, 
                     inttDSTMC -> ClusLayer -> at(clu_i), // note : should be 5 or 6, for the outer layer, this is for the mega cluster search
-                    clu_phi
+                    clu_phi,
+                    int(inttDSTMC -> ClusLayer       -> at(clu_i)), // note : raw_layer_id
+                    int(inttDSTMC -> ClusLadderPhiId -> at(clu_i)), // note : raw_ladder_id
+                    int(inttDSTMC -> ClusLadderZId   -> at(clu_i)), // note : raw_Z_id
+                    int(inttDSTMC -> ClusPhiSize     -> at(clu_i)), // note : raw_phi_size
+                    int(inttDSTMC -> ClusZSize       -> at(clu_i))  // note : raw_z_size
                 });            
             }        
         }
@@ -780,7 +790,12 @@ void INTTReadTree::EvtSetCluGroup()
                     clu_y, 
                     clu_z, 
                     inttDSTData -> ClusLayer -> at(clu_i), // note : should be 3 or 4, for the inner layer, this is for the mega cluster search
-                    clu_phi
+                    clu_phi,
+                    int(inttDSTData -> ClusLayer       -> at(clu_i)), // note : raw_layer_id
+                    int(inttDSTData -> ClusLadderPhiId -> at(clu_i)), // note : raw_ladder_id
+                    int(inttDSTData -> ClusLadderZId   -> at(clu_i)), // note : raw_Z_id
+                    int(inttDSTData -> ClusPhiSize     -> at(clu_i)), // note : raw_phi_size
+                    int(inttDSTData -> ClusZSize       -> at(clu_i))  // note : raw_z_size
                 });
             }
             
@@ -795,7 +810,12 @@ void INTTReadTree::EvtSetCluGroup()
                     clu_y, 
                     clu_z, 
                     inttDSTData -> ClusLayer -> at(clu_i), // note : should be 5 or 6, for the outer layer, this is for the mega cluster search
-                    clu_phi
+                    clu_phi,
+                    int(inttDSTData -> ClusLayer       -> at(clu_i)), // note : raw_layer_id
+                    int(inttDSTData -> ClusLadderPhiId -> at(clu_i)), // note : raw_ladder_id
+                    int(inttDSTData -> ClusLadderZId   -> at(clu_i)), // note : raw_Z_id
+                    int(inttDSTData -> ClusPhiSize     -> at(clu_i)), // note : raw_phi_size
+                    int(inttDSTData -> ClusZSize       -> at(clu_i))  // note : raw_z_size
                 });            
             }        
         }

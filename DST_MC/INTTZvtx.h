@@ -1022,6 +1022,14 @@ void INTTZvtx::ProcessEvt(
 
     if (N_comb.size() > zvtx_cal_require)
     {   
+        // note : this is for data, basically there is some background candidates that are not from the z-vertex
+        // todo : it's  forcaibly written here. Will need to be revisited
+        for (int bin_i; bin_i < line_breakdown_hist->GetNbinsX(); bin_i++){ // note : special_tag
+            if (line_breakdown_hist -> GetBinCenter(bin_i+1) < -500){ // note : special_tag
+                line_breakdown_hist -> SetBinContent(bin_i+1,0); // note : special_tag
+            } // note : special_tag
+        } // note : special_tag
+
         N_group_info = find_Ngroup(evt_possible_z);
         N_group_info_detail = find_Ngroup(line_breakdown_hist);
         out_evtZ_hist_cut_content_vec = get_half_hist_vec(line_breakdown_hist);

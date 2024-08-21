@@ -6,18 +6,18 @@ namespace ana_map_version = ANA_MAP_V3;
 
 // todo : check used namespace
 
-void evtXY_mother(int index)
+void evtXY_mother(int index, string output_sub_folder_name = "evt_vtxXY", string used_zvtx_folder_name = "evt_vtxZ")
 {
     string input_directory           = ana_map_version::data_input_directory;
     string file_name                 = ana_map_version::data_file_name;
     string tree_name                 = ana_map_version::data_tree_name;
     pair<double, double> beam_origin = ana_map_version::data_beam_origin;
 
-    string input_directory_zvtx = input_directory + "/evt_vtxZ/complete_file";
+    string input_directory_zvtx = input_directory + "/" + used_zvtx_folder_name + "/complete_file";
     string file_name_zvtx = "merged_file.root";
 
     string file_name_index = to_string(index); file_name_index = string(5 - file_name_index.length(), '0') + file_name_index;
-    string out_folder_mother_directory = input_directory + "/evt_vtxXY";
+    string out_folder_mother_directory = input_directory + "/" + output_sub_folder_name;
     string out_folder_directory = out_folder_mother_directory + Form("/evtXY_%s", file_name_index.c_str());
 
     int clu_sum_adc_cut = ana_map_version::clu_sum_adc_cut;

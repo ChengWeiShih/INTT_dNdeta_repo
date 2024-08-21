@@ -129,7 +129,7 @@ class INTTEta : public INTTXYvtxEvt
             return;
         };
         
-        void ProcessEvt(
+        virtual void ProcessEvt(
             int event_i, 
             vector<clu_info> temp_sPH_inner_nocolumn_vec, 
             vector<clu_info> temp_sPH_outer_nocolumn_vec, 
