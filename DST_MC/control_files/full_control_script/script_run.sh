@@ -268,7 +268,7 @@ get_merged_result_func() {
         cd $dir_to_file_sub_folder/complete_file
         ls evtXY_*/evt_XY_tree.root > file_list.txt
         cd ${control_dir_to_data_type}/${topic_focus}
-        root -l -b -q make_evtXY_plot.cpp
+        root -l -b -q make_evtXY_plot.cpp\(\"${special_name}\"\)
         cd ${control_folder_directory}
 
         exit 1

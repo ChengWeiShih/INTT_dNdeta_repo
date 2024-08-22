@@ -17,4 +17,4 @@ Output             = /sphenix/user/ChengWei/INTT/INTT_commissioning/ZeroField/F4
 Error              = /sphenix/user/ChengWei/INTT/INTT_commissioning/ZeroField/F4A_20869/2024_05_07/folder_Data_CombinedNtuple_Run20869_HotDead_BCO_ADC_Survey_test/evt_vtxZ_trapezoidal/CW_log/condor_$(process).err
 Log                = /sphenix/user/ChengWei/INTT/INTT_commissioning/ZeroField/F4A_20869/2024_05_07/folder_Data_CombinedNtuple_Run20869_HotDead_BCO_ADC_Survey_test/evt_vtxZ_trapezoidal/CW_log/condor_$(process).log
 Arguments          = "$(data_type) $(control_file) $(process) $(output_sub_folder) $(used_zvtx_folder)"
-Queue 58
+Queue 1160

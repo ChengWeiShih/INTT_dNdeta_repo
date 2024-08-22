@@ -564,6 +564,36 @@ void plot_evt_zvtx::PrintPlot()
 
     c1 -> Print(Form("%s/reco_Zvtx_dist.pdf",out_folder_directory.c_str()));
     c1 -> Clear();
+    leg -> Clear();
+
+    // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+    if (run_type == 1) // note : MC
+    {
+        true_Zvtx_dist -> SetMaximum(true_Zvtx_dist -> GetBinContent(true_Zvtx_dist -> GetMaximumBin()) * 1.4);
+        true_Zvtx_dist -> GetXaxis() -> SetTitle(Form("Vertex Z [%s]", unit_text.c_str()));
+        true_Zvtx_dist -> Draw("hist");
+        
+        leg -> AddEntry(reco_Zvtx_dist, "Reco. Z", "f");
+        leg -> AddEntry(true_Zvtx_dist, "True Z", "f");
+        
+        draw_text -> DrawLatex(0.21, 0.71, Form("True Entries: %.0f", true_Zvtx_dist -> GetEntries()));
+        draw_text -> DrawLatex(0.21, 0.67, Form("True Mean: %.3f %s", true_Zvtx_dist -> GetMean(), unit_text.c_str()));
+        draw_text -> DrawLatex(0.21, 0.63, Form("True Width: %.3f %s", true_Zvtx_dist -> GetStdDev(), unit_text.c_str()));
+
+        leg -> Draw("same");
+        
+        
+        reco_Zvtx_dist -> Draw("hist same"); 
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
+        // draw_text -> DrawLatex(0.21, 0.87, Form("NClus > %i", zvtx_dist_NClus_cut));
+        draw_text -> DrawLatex(0.21, 0.83, Form("Reco. Entries: %.0f", reco_Zvtx_dist -> GetEntries()));
+        draw_text -> DrawLatex(0.21, 0.79, Form("Reco. Mean: %.3f %s", reco_Zvtx_dist -> GetMean(), unit_text.c_str()));
+        draw_text -> DrawLatex(0.21, 0.75, Form("Reco. Width: %.3f %s", reco_Zvtx_dist -> GetStdDev(), unit_text.c_str()));
+
+        c1 -> Print(Form("%s/true_Zvtx_overlap_dist.pdf",out_folder_directory.c_str()));
+        c1 -> Clear();
+        leg -> Clear();
+    }
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     c1 -> cd();

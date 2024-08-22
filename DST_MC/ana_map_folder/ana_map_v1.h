@@ -62,7 +62,7 @@ namespace ANA_MAP_V3
     double evt_vtxZ_data_required_zvtx_diff = 10.; // note : mm
     int    evt_vtxZ_data_zvtx_dist_NClus_cut = 1000;
 
-    int    evt_vtxZ_data_Nevt_per_core = 10000; // note : only for data, as it has different way to run the evt_vtxZ
+    int    evt_vtxZ_data_Nevt_per_core = 500; // note : only for data, as it has different way to run the evt_vtxZ
 
     // note : -------------------------------- common for topic, evt_vtxXY --------------------------------
     int evt_vtxXY_N_clu_cut  = 10000;

@@ -1024,8 +1024,8 @@ void INTTZvtx::ProcessEvt(
     {   
         // note : this is for data, basically there is some background candidates that are not from the z-vertex
         // todo : it's  forcaibly written here. Will need to be revisited
-        for (int bin_i; bin_i < line_breakdown_hist->GetNbinsX(); bin_i++){ // note : special_tag
-            if (line_breakdown_hist -> GetBinCenter(bin_i+1) < -500){ // note : special_tag
+        for (int bin_i = 0; bin_i < line_breakdown_hist->GetNbinsX(); bin_i++){ // note : special_tag
+            if (line_breakdown_hist -> GetBinCenter(bin_i+1) < -500 || line_breakdown_hist -> GetBinCenter(bin_i+1) > 500){ // note : special_tag
                 line_breakdown_hist -> SetBinContent(bin_i+1,0); // note : special_tag
             } // note : special_tag
         } // note : special_tag

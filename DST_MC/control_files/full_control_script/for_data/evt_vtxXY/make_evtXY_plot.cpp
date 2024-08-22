@@ -4,10 +4,10 @@
 #include "../../../../ana_map_folder/ana_map_v1.h"
 namespace ana_map_version = ANA_MAP_V3;
 
-int make_evtXY_plot()
+int make_evtXY_plot(string evt_vtxXY_name = "evt_vtxXY")
 {
 
-    string mother_folder_directory = ana_map_version::data_input_directory + "/evt_vtxXY/complete_file";
+    string mother_folder_directory = ana_map_version::data_input_directory + "/" + evt_vtxXY_name + "/complete_file";
     string input_file_list = "file_list.txt";
     string out_folder_directory = mother_folder_directory + "/file_merged_folder";
     std::pair<double, double> beam_origin = ana_map_version::data_beam_origin;
