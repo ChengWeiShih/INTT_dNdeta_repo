@@ -82,7 +82,7 @@ class TrackletHistogram{
 
         // note : MBD & centrality relevant
         float MBD_z_vtx;
-        int is_min_bias;
+        bool is_min_bias;
         float MBD_centrality;
         float MBD_south_charge_sum;
         float MBD_north_charge_sum;

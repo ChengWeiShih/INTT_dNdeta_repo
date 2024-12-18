@@ -34,10 +34,10 @@ class TrackletHistogramFill{
 
         void SetVtxZReweightHist(TH1D * input_hist) {h1D_vtxZReweightFactor = (TH1D*)input_hist->Clone();}
 
-        void PrepareOutPutFileName();
+        virtual void PrepareOutPutFileName();
         std::string GetOutputFileName() {return output_filename;}
-        void PrepareOutPutRootFile();
-        void PrepareHistograms();
+        virtual void PrepareOutPutRootFile();
+        virtual void PrepareHistograms();
         void FillHistogram(
             // note : MBD & centrality relevant
             float MBD_z_vtx,
@@ -112,12 +112,15 @@ class TrackletHistogramFill{
         // note : ----------------- for the loop -----------------
         void EvtCleanUp();
         std::map<int,int> Used_Clus_index_map;
-        std::vector<double> Pair_DeltaR_vec;
+        std::vector<double> Pair_DeltaPhi_vec;
 
 
         // note : ----------------- for the histogram -----------------
         std::map<std::string,TH1D*> h1D_map;
         std::map<std::string, TH2D*> h2D_map;
+        
+        TH1D * h1D_PairDeltaEta_inclusive;
+        TH1D * h1D_PairDeltaPhi_inclusive;
 
         // note : ----------------- for the centrality -----------------
         TH1D * h1D_centrality_bin;
@@ -150,13 +153,18 @@ class TrackletHistogramFill{
         TH1D * h1D_vtxz_template;
 
         // note : for deta_phi
-        double DeltaPhiEdge_min = -0.05; // note : rad ~ -4 degree
-        double DeltaPhiEdge_max = 0.05;  // note : rad ~ 4 degree
-        int    nDeltaPhiBin = 100;
+        double DeltaPhiEdge_min = -0.07; // note : rad ~ -4 degree
+        double DeltaPhiEdge_max = 0.07;  // note : rad ~ 4 degree
+        int    nDeltaPhiBin = 140;
+
+        // note : for deta_eta
+        double DeltaEtaEdge_min = -1.; // note : rad ~ -4 degree
+        double DeltaEtaEdge_max = 1.;  // note : rad ~ 4 degree
+        int    nDeltaEtaBin = 100;
 
         std::vector<int> typeA_sensorZID = {0,2}; // note : sensor Z ID for type A // note -> 1, 0, 2, 3        
 
-        std::pair<double, double> cut_MBDvtxZ    = {-10., 10.};
+        std::pair<double, double> cut_MBDvtxZ    = {-80,80};
         std::pair<double, double> cut_vtxZDiff = {-2, 3.};
         std::pair<double, double> cut_TrapezoidalFitWidth = {1.5, 5.5};
         std::pair<double, double> cut_TrapezoidalFWHM = {2,8};
@@ -164,7 +172,8 @@ class TrackletHistogramFill{
         int cut_InttBcoFullDIff_next = 188;
 
         // note : for the best pair
-        std::pair<double, double> cut_bestPair_DeltaR = {0, 0.05}; // note : rad
+        std::pair<double, double> cut_bestPair_DeltaPhi = {0,0.01}; // note : rad
+        std::pair<double, double> cut_GoodProtoTracklet_DeltaPhi = {-0.017,0.017}; // note : rad
 };
 
 #endif // TRACKLETHISTOGRAMFILL_H

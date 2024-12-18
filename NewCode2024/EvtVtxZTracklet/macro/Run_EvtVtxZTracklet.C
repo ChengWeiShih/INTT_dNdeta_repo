@@ -11,9 +11,10 @@ void Run_EvtVtxZTracklet(
   string output_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280/completed/BCO_check",
   
   // todo : modify here
-  std::string output_file_name_suffix = "_test20241210",
+  std::string output_file_name_suffix = "_FirstRun20241218",
 
-  std::pair<double, double> vertexXYIncm = {-0.02204, 0.2229}, // note : in cm
+  // std::pair<double, double> vertexXYIncm = {-0.02204, 0.2229}, // note : in cm // note : MC
+  std::pair<double, double> vertexXYIncm = {-0.0215087, 0.223197}, // note : in cm // note : data
   bool IsFieldOn = false,
   bool IsDCACutApplied = 1,
   std::pair<std::pair<double,double>,std::pair<double,double>> DeltaPhiCutInDegree = {{-0.5, 0.5},{-1000.,1000.}}, // note : in degree

@@ -364,14 +364,20 @@ void EvtVtxZProtoTracklet::PrepareClusterVec()
 
 void EvtVtxZProtoTracklet::GetINTTvtxZ()
 {
-  for (int inner_i = 0; inner_i < int(evt_sPH_inner_nocolumn_vec_PostCut.size()); inner_i++) {
-      double Clus_InnerPhi_Offset = (evt_sPH_inner_nocolumn_vec_PostCut[inner_i].y - vertexXYIncm.second < 0) ? atan2(evt_sPH_inner_nocolumn_vec_PostCut[inner_i].y - vertexXYIncm.second, evt_sPH_inner_nocolumn_vec_PostCut[inner_i].x - vertexXYIncm.first) * (180./TMath::Pi()) + 360 : atan2(evt_sPH_inner_nocolumn_vec_PostCut[inner_i].y - vertexXYIncm.second, evt_sPH_inner_nocolumn_vec_PostCut[inner_i].x - vertexXYIncm.first) * (180./TMath::Pi());
-      inner_clu_phi_map_PostCut[ int(Clus_InnerPhi_Offset) ].push_back({false,evt_sPH_inner_nocolumn_vec_PostCut[inner_i]});
-  }
-  for (int outer_i = 0; outer_i < int(evt_sPH_outer_nocolumn_vec_PostCut.size()); outer_i++) {
-      double Clus_OuterPhi_Offset = (evt_sPH_outer_nocolumn_vec_PostCut[outer_i].y - vertexXYIncm.second < 0) ? atan2(evt_sPH_outer_nocolumn_vec_PostCut[outer_i].y - vertexXYIncm.second, evt_sPH_outer_nocolumn_vec_PostCut[outer_i].x - vertexXYIncm.first) * (180./TMath::Pi()) + 360 : atan2(evt_sPH_outer_nocolumn_vec_PostCut[outer_i].y - vertexXYIncm.second, evt_sPH_outer_nocolumn_vec_PostCut[outer_i].x - vertexXYIncm.first) * (180./TMath::Pi());
-      outer_clu_phi_map_PostCut[ int(Clus_OuterPhi_Offset) ].push_back({false,evt_sPH_outer_nocolumn_vec_PostCut[outer_i]});
-  }
+
+    inner_clu_phi_map_PostCut.clear();
+    outer_clu_phi_map_PostCut.clear();
+    inner_clu_phi_map_PostCut = std::vector<std::vector<std::pair<bool,EvtVtxZProtoTracklet::clu_info>>>(360);
+    outer_clu_phi_map_PostCut = std::vector<std::vector<std::pair<bool,EvtVtxZProtoTracklet::clu_info>>>(360);
+
+    for (int inner_i = 0; inner_i < int(evt_sPH_inner_nocolumn_vec_PostCut.size()); inner_i++) {
+        double Clus_InnerPhi_Offset = (evt_sPH_inner_nocolumn_vec_PostCut[inner_i].y - vertexXYIncm.second < 0) ? atan2(evt_sPH_inner_nocolumn_vec_PostCut[inner_i].y - vertexXYIncm.second, evt_sPH_inner_nocolumn_vec_PostCut[inner_i].x - vertexXYIncm.first) * (180./TMath::Pi()) + 360 : atan2(evt_sPH_inner_nocolumn_vec_PostCut[inner_i].y - vertexXYIncm.second, evt_sPH_inner_nocolumn_vec_PostCut[inner_i].x - vertexXYIncm.first) * (180./TMath::Pi());
+        inner_clu_phi_map_PostCut[ int(Clus_InnerPhi_Offset) ].push_back({false,evt_sPH_inner_nocolumn_vec_PostCut[inner_i]});
+    }
+    for (int outer_i = 0; outer_i < int(evt_sPH_outer_nocolumn_vec_PostCut.size()); outer_i++) {
+        double Clus_OuterPhi_Offset = (evt_sPH_outer_nocolumn_vec_PostCut[outer_i].y - vertexXYIncm.second < 0) ? atan2(evt_sPH_outer_nocolumn_vec_PostCut[outer_i].y - vertexXYIncm.second, evt_sPH_outer_nocolumn_vec_PostCut[outer_i].x - vertexXYIncm.first) * (180./TMath::Pi()) + 360 : atan2(evt_sPH_outer_nocolumn_vec_PostCut[outer_i].y - vertexXYIncm.second, evt_sPH_outer_nocolumn_vec_PostCut[outer_i].x - vertexXYIncm.first) * (180./TMath::Pi());
+        outer_clu_phi_map_PostCut[ int(Clus_OuterPhi_Offset) ].push_back({false,evt_sPH_outer_nocolumn_vec_PostCut[outer_i]});
+    }
 
   // note : prepare good tracklet
   for (int inner_phi_i = 0; inner_phi_i < 360; inner_phi_i++) // note : each phi cell (1 degree)
@@ -678,6 +684,12 @@ void EvtVtxZProtoTracklet::GetClusUpdated()
 
 void EvtVtxZProtoTracklet::GetTrackletPair(std::vector<pair_str> &input_TrackletPair_vec, bool isRotated)
 {
+
+    inner_clu_phi_map.clear();
+    outer_clu_phi_map.clear();
+    inner_clu_phi_map = std::vector<std::vector<std::pair<bool,EvtVtxZProtoTracklet::clu_info>>>(360);
+    outer_clu_phi_map = std::vector<std::vector<std::pair<bool,EvtVtxZProtoTracklet::clu_info>>>(360);
+
     if (temp_INTTvtxZ != temp_INTTvtxZ || temp_INTTvtxZError != temp_INTTvtxZError) {return;}
 
     std::vector<EvtVtxZProtoTracklet::clu_info> temp_evt_sPH_inner_nocolumn_vec = (isRotated) ? GetRoatedClusterVec(evt_sPH_inner_nocolumn_vec) : evt_sPH_inner_nocolumn_vec;

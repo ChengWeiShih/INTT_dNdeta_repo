@@ -154,8 +154,8 @@ void TrackletHistogram::PrepareInputRootFile()
     tree_in -> SetBranchAddress("TrapezoidalFWHM", &TrapezoidalFWHM);
 
     // note : the tracklet pair
-    tree_in -> SetBranchAddress("evt_TrackletPair_vec", &evt_TrackletPair_vec);
-    tree_in -> SetBranchAddress("evt_TrackletPairRotate_vec", &evt_TrackletPairRotate_vec);
+    tree_in -> SetBranchAddress("TrackletPair", &evt_TrackletPair_vec);
+    tree_in -> SetBranchAddress("TrackletPairRotate", &evt_TrackletPairRotate_vec);
 
     // note : MC
     if (runnumber == -1){

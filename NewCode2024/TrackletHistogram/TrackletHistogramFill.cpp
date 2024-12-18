@@ -80,7 +80,8 @@ void TrackletHistogramFill::PrepareOutPutRootFile()
     tree_out_par -> Branch("cut_TrapezoidalFitWidth", &cut_TrapezoidalFitWidth);
     tree_out_par -> Branch("cut_TrapezoidalFWHM", &cut_TrapezoidalFWHM);
     tree_out_par -> Branch("cut_InttBcoFullDIff_next", &cut_InttBcoFullDIff_next);
-    tree_out_par -> Branch("cut_bestPair_DeltaR", &cut_bestPair_DeltaR);
+    tree_out_par -> Branch("cut_bestPair_DeltaPhi", &cut_bestPair_DeltaPhi);
+    tree_out_par -> Branch("cut_GoodProtoTracklet_DeltaPhi", &cut_GoodProtoTracklet_DeltaPhi);
 }
 
 void TrackletHistogramFill::PrepareHistograms()
@@ -89,6 +90,9 @@ void TrackletHistogramFill::PrepareHistograms()
 
     h1D_eta_template = new TH1D("h1D_eta_template", "h1D_eta_template", nEtaBin, EtaEdge_min, EtaEdge_max); // note : coarse
     h1D_vtxz_template = new TH1D("h1D_vtxz_template", "h1D_vtxz_template", nVtxZBin, VtxZEdge_min, VtxZEdge_max); // note : coarse
+
+    h1D_PairDeltaEta_inclusive = new TH1D("h1D_PairDeltaEta_inclusive", "h1D_PairDeltaEta_inclusive;Pair #eta;Entries", nDeltaEtaBin, DeltaEtaEdge_min, DeltaEtaEdge_max);
+    h1D_PairDeltaPhi_inclusive = new TH1D("h1D_PairDeltaPhi_inclusive", "h1D_PairDeltaPhi_inclusive;Pair #eta;Entries", nDeltaPhiBin, DeltaPhiEdge_min, DeltaPhiEdge_max);
 
     std::vector<int> insert_check; insert_check.clear();
     bool isInserted = false;
@@ -211,7 +215,7 @@ void TrackletHistogramFill::PrepareHistograms()
     // note : for the best pairs
     isInserted = h1D_map.insert( std::make_pair(
             Form("h1D_BestPair_Inclusive70_DeltaEta"),
-            new TH1D(Form("h1D_BestPair_Inclusive70_DeltaEta"), Form("h1D_BestPair_Inclusive70_DeltaEta;Pair #Delta#eta;Entries"), nDeltaPhiBin, DeltaPhiEdge_min, DeltaPhiEdge_max)
+            new TH1D(Form("h1D_BestPair_Inclusive70_DeltaEta"), Form("h1D_BestPair_Inclusive70_DeltaEta;Pair #Delta#eta;Entries"), nDeltaEtaBin, DeltaEtaEdge_min, DeltaEtaEdge_max)
         )
     ).second; insert_check.push_back(isInserted);
 
@@ -250,10 +254,22 @@ void TrackletHistogramFill::PrepareHistograms()
 
             isInserted = h2D_map.insert( std::make_pair(
                     Form("h2D_TrueEtaVtxZ_Mbin%d_FineBin", Mbin),
-                    new TH2D(Form("h2D_TrueEtaVtxZ_Mbin%d_FineBin", Mbin), Form("h2D_TrueEtaVtxZ_Mbin%d_FineBin;PHG4Particle #eta;TruthPV_trig_z [cm]", Mbin), 400, EtaEdge_min, EtaEdge_max, 400, VtxZEdge_min, VtxZEdge_max)
+                    new TH2D(Form("h2D_TrueEtaVtxZ_Mbin%d_FineBin", Mbin), Form("h2D_TrueEtaVtxZ_Mbin%d_FineBin;PHG4Particle #eta;TruthPV_trig_z [cm]", Mbin), 200, EtaEdge_min, EtaEdge_max, 200, VtxZEdge_min, VtxZEdge_max)
                 )
             ).second; insert_check.push_back(isInserted);
         }
+
+        isInserted = h1D_map.insert( std::make_pair(
+                "debug_h1D_NHadron_Inclusive100",
+                new TH1D("debug_h1D_NHadron_Inclusive100", "debug_h1D_NHadron_Inclusive100;N Hadrons;Entries", 200, 0, 10000)
+            )
+        ).second; insert_check.push_back(isInserted);
+
+        isInserted = h1D_map.insert( std::make_pair(
+                "debug_h1D_NHadron_OneEtaBin_Inclusive100",
+                new TH1D("debug_h1D_NHadron_OneEtaBin_Inclusive100", "debug_h1D_NHadron_OneEtaBin_Inclusive100;N Hadrons;Entries", 200, 0, 400)
+            )
+        ).second; insert_check.push_back(isInserted);
         
         // isInserted = h2D_map.insert( std::make_pair(
             //     Form("h2D_Inclusive100_TrueEtaVtxZ"),
@@ -263,7 +279,7 @@ void TrackletHistogramFill::PrepareHistograms()
 
         // isInserted = h2D_map.insert( std::make_pair(
             //     Form("h2D_Inclusive100_TrueEtaVtxZ_FineBin"),
-            //     new TH2D(Form("h2D_Inclusive100_TrueEtaVtxZ_FineBin"), Form("h2D_Inclusive100_TrueEtaVtxZ_FineBin;PHG4Particle #eta;TruthPV_trig_z [cm]"), 400, EtaEdge_min, EtaEdge_max, 400, VtxZEdge_min, VtxZEdge_max)
+            //     new TH2D(Form("h2D_Inclusive100_TrueEtaVtxZ_FineBin"), Form("h2D_Inclusive100_TrueEtaVtxZ_FineBin;PHG4Particle #eta;TruthPV_trig_z [cm]"), 200, EtaEdge_min, EtaEdge_max, 200, VtxZEdge_min, VtxZEdge_max)
             // )
         // ).second; insert_check.push_back(isInserted);
 
@@ -275,7 +291,7 @@ void TrackletHistogramFill::PrepareHistograms()
 
         // isInserted = h2D_map.insert( std::make_pair(
             //     Form("h2D_Inclusive70_TrueEtaVtxZ_FineBin"),
-            //     new TH2D(Form("h2D_Inclusive70_TrueEtaVtxZ_FineBin"), Form("h2D_Inclusive70_TrueEtaVtxZ_FineBin;PHG4Particle #eta;TruthPV_trig_z [cm]"), 400, EtaEdge_min, EtaEdge_max, 400, VtxZEdge_min, VtxZEdge_max)
+            //     new TH2D(Form("h2D_Inclusive70_TrueEtaVtxZ_FineBin"), Form("h2D_Inclusive70_TrueEtaVtxZ_FineBin;PHG4Particle #eta;TruthPV_trig_z [cm]"), 200, EtaEdge_min, EtaEdge_max, 200, VtxZEdge_min, VtxZEdge_max)
             // )
         // ).second; insert_check.push_back(isInserted);
 
@@ -285,6 +301,50 @@ void TrackletHistogramFill::PrepareHistograms()
             )
         ).second; insert_check.push_back(isInserted);
     }
+
+    // note : for good proto tracklet in Eta-VtxZ
+    for (int Mbin = 0; Mbin < nCentrality_bin; Mbin++){
+        
+        isInserted = h2D_map.insert( std::make_pair(
+                Form("h2D_GoodProtoTracklet_EtaVtxZ_Mbin%d", Mbin),
+                new TH2D(Form("h2D_GoodProtoTracklet_EtaVtxZ_Mbin%d", Mbin), Form("h2D_GoodProtoTracklet_EtaVtxZ_Mbin%d;Pair #eta;INTT vtxZ [cm]", Mbin), nEtaBin, EtaEdge_min, EtaEdge_max, nVtxZBin, VtxZEdge_min, VtxZEdge_max) 
+            )
+        ).second; insert_check.push_back(isInserted);
+
+        isInserted = h2D_map.insert( std::make_pair(
+                Form("h2D_typeA_GoodProtoTracklet_EtaVtxZ_Mbin%d", Mbin),
+                new TH2D(Form("h2D_typeA_GoodProtoTracklet_EtaVtxZ_Mbin%d", Mbin), Form("h2D_typeA_GoodProtoTracklet_EtaVtxZ_Mbin%d;Pair #eta;INTT vtxZ [cm]", Mbin), nEtaBin, EtaEdge_min, EtaEdge_max, nVtxZBin, VtxZEdge_min, VtxZEdge_max) 
+            )
+        ).second; insert_check.push_back(isInserted);
+
+        // note : normal fine bin
+        isInserted = h2D_map.insert( std::make_pair(
+                Form("h2D_GoodProtoTracklet_EtaVtxZ_Mbin%d_FineBin", Mbin),
+                new TH2D(Form("h2D_GoodProtoTracklet_EtaVtxZ_Mbin%d_FineBin", Mbin), Form("h2D_GoodProtoTracklet_EtaVtxZ_Mbin%d_FineBin;Pair #eta;INTT vtxZ [cm]", Mbin), 200, EtaEdge_min, EtaEdge_max, 200, VtxZEdge_min, VtxZEdge_max) 
+            )
+        ).second; insert_check.push_back(isInserted);
+
+        isInserted = h2D_map.insert( std::make_pair(
+                Form("h2D_typeA_GoodProtoTracklet_EtaVtxZ_Mbin%d_FineBin", Mbin),
+                new TH2D(Form("h2D_typeA_GoodProtoTracklet_EtaVtxZ_Mbin%d_FineBin", Mbin), Form("h2D_typeA_GoodProtoTracklet_EtaVtxZ_Mbin%d_FineBin;Pair #eta;INTT vtxZ [cm]", Mbin), 200, EtaEdge_min, EtaEdge_max, 200, VtxZEdge_min, VtxZEdge_max) 
+            )
+        ).second; insert_check.push_back(isInserted);
+        
+
+        // note : rotated
+        isInserted = h2D_map.insert( std::make_pair(
+                Form("h2D_GoodProtoTracklet_EtaVtxZ_Mbin%d_rotated", Mbin),
+                new TH2D(Form("h2D_GoodProtoTracklet_EtaVtxZ_Mbin%d_rotated", Mbin), Form("h2D_GoodProtoTracklet_EtaVtxZ_Mbin%d_rotated;Pair #eta;INTT vtxZ [cm]", Mbin), nEtaBin, EtaEdge_min, EtaEdge_max, nVtxZBin, VtxZEdge_min, VtxZEdge_max) 
+            )
+        ).second; insert_check.push_back(isInserted);
+
+        isInserted = h2D_map.insert( std::make_pair(
+                Form("h2D_typeA_GoodProtoTracklet_EtaVtxZ_Mbin%d_rotated", Mbin),
+                new TH2D(Form("h2D_typeA_GoodProtoTracklet_EtaVtxZ_Mbin%d_rotated", Mbin), Form("h2D_typeA_GoodProtoTracklet_EtaVtxZ_Mbin%d_rotated;Pair #eta;INTT vtxZ [cm]", Mbin), nEtaBin, EtaEdge_min, EtaEdge_max, nVtxZBin, VtxZEdge_min, VtxZEdge_max) 
+            )
+        ).second; insert_check.push_back(isInserted);
+    }
+
 
     isInserted = h2D_map.insert( std::make_pair(
             Form("h2D_RecoEvtCount_vtxZCentrality"),
@@ -301,7 +361,7 @@ void TrackletHistogramFill::PrepareHistograms()
 
     isInserted = h2D_map.insert( std::make_pair(
             Form("h2D_Inclusive100_BestPairEtaVtxZ_FineBin"),
-            new TH2D(Form("h2D_Inclusive100_BestPairEtaVtxZ_FineBin"), Form("h2D_Inclusive100_BestPairEtaVtxZ_FineBin;Tracklet #eta;INTT vtxZ [cm]"), 400, EtaEdge_min, EtaEdge_max, 400, VtxZEdge_min, VtxZEdge_max)
+            new TH2D(Form("h2D_Inclusive100_BestPairEtaVtxZ_FineBin"), Form("h2D_Inclusive100_BestPairEtaVtxZ_FineBin;Tracklet #eta;INTT vtxZ [cm]"), 200, EtaEdge_min, EtaEdge_max, 200, VtxZEdge_min, VtxZEdge_max)
         )
     ).second; insert_check.push_back(isInserted);
 
@@ -313,7 +373,7 @@ void TrackletHistogramFill::PrepareHistograms()
 
     isInserted = h2D_map.insert( std::make_pair(
             Form("h2D_Inclusive70_BestPairEtaVtxZ_FineBin"),
-            new TH2D(Form("h2D_Inclusive70_BestPairEtaVtxZ_FineBin"), Form("h2D_Inclusive70_BestPairEtaVtxZ_FineBin;Tracklet #eta;INTT vtxZ [cm]"), 400, EtaEdge_min, EtaEdge_max, 400, VtxZEdge_min, VtxZEdge_max)
+            new TH2D(Form("h2D_Inclusive70_BestPairEtaVtxZ_FineBin"), Form("h2D_Inclusive70_BestPairEtaVtxZ_FineBin;Tracklet #eta;INTT vtxZ [cm]"), 200, EtaEdge_min, EtaEdge_max, 200, VtxZEdge_min, VtxZEdge_max)
         )
     ).second; insert_check.push_back(isInserted);
 
@@ -343,7 +403,7 @@ void TrackletHistogramFill::PrepareHistograms()
 void TrackletHistogramFill::EvtCleanUp()
 {
     Used_Clus_index_map.clear();
-    Pair_DeltaR_vec.clear();
+    Pair_DeltaPhi_vec.clear();
 }
 
 void TrackletHistogramFill::FillHistogram(
@@ -427,13 +487,25 @@ void TrackletHistogramFill::FillHistogram(
 
     if (runnumber == -1){
         
+        int NHadrons = 0;
+        int NHadrons_OneEtaBin = 0;
+
         if (h2D_map.find("h2D_TrueEvtCount_vtxZCentrality") != h2D_map.end()){
             h2D_map["h2D_TrueEvtCount_vtxZCentrality"] -> Fill(TruthPV_trig_z, MBD_centrality);
         }
 
         for (int true_i = 0; true_i < NPrimaryG4P; true_i++){
             if (PrimaryG4P_isChargeHadron->at(true_i) != 1) { continue; }
+            
+            // todo : for debug
+            if (TruthPV_trig_z >= -10 && TruthPV_trig_z < 10){
+                NHadrons++;
 
+                if (PrimaryG4P_Eta->at(true_i) >= -1.1 && PrimaryG4P_Eta->at(true_i) < -0.9){
+                    NHadrons_OneEtaBin++;
+                }
+            }
+            
             if (h1D_map.find(Form("h1D_TrueEta_Mbin%d_VtxZ%d", Mbin, TruthVtxZ_bin)) != h1D_map.end()){
                 h1D_map[Form("h1D_TrueEta_Mbin%d_VtxZ%d", Mbin, TruthVtxZ_bin)] -> Fill(PrimaryG4P_Eta->at(true_i));
             }
@@ -473,6 +545,12 @@ void TrackletHistogramFill::FillHistogram(
 
             // }
         
+        } // note : end of G4Particle loop
+
+        if (TruthPV_trig_z >= -10 && TruthPV_trig_z < 10){
+
+            h1D_map["debug_h1D_NHadron_Inclusive100"] -> Fill(NHadrons);
+            h1D_map["debug_h1D_NHadron_OneEtaBin_Inclusive100"] -> Fill(NHadrons_OneEtaBin);
         }
 
         
@@ -496,7 +574,7 @@ void TrackletHistogramFill::FillHistogram(
         exit(1);
     }
     vtxZReweightFactor = (vtxZReweight) ? h1D_vtxZReweightFactor -> GetBinContent(h1D_vtxZReweightFactor -> FindBin(INTTvtxZ)) : 1;
-
+    vtxZReweightFactor = (vtxZReweightFactor > 250) ? 0 : vtxZReweightFactor;
 
     if (h2D_map.find("h2D_InttVtxZ_Centrality") != h2D_map.end()){
         h2D_map["h2D_InttVtxZ_Centrality"] -> Fill(INTTvtxZ, MBD_centrality, vtxZReweightFactor);
@@ -507,7 +585,7 @@ void TrackletHistogramFill::FillHistogram(
     }
 
     // ==============================================================================================================================================================================================================
-    if (MBD_z_vtx < cut_MBDvtxZ.first || MBD_z_vtx > cut_MBDvtxZ.second) { return; }
+    // if (MBD_z_vtx < cut_MBDvtxZ.first || MBD_z_vtx > cut_MBDvtxZ.second) { return; }
     // ==============================================================================================================================================================================================================
 
     // note : the event counting 
@@ -518,15 +596,35 @@ void TrackletHistogramFill::FillHistogram(
     std::vector<pair_str> p_evt_TrackletPair_vec = (evt_TrackletPair_vec != nullptr) ? *(evt_TrackletPair_vec) : std::vector<pair_str>(0);
     std::vector<pair_str> p_evt_TrackletPairRotate_vec = (evt_TrackletPairRotate_vec != nullptr) ? *(evt_TrackletPairRotate_vec) : std::vector<pair_str>(0);
 
+    // std::cout<<"test, evt_TrackletPair_vec->size(): "<<evt_TrackletPair_vec->size()<<" p_evt_TrackletPair_vec.size(): "<<p_evt_TrackletPair_vec.size()<<std::endl;
+
     for (pair_str pair : p_evt_TrackletPair_vec)
     {
         int eta_bin = h1D_eta_template -> Fill(pair.pair_eta_fit);
         eta_bin = (eta_bin == -1) ? -1 : eta_bin - 1;
 
-        Pair_DeltaR_vec.push_back(sqrt(pow(pair.delta_phi,2)+pow(pair.delta_eta,2)));
+        // Pair_DeltaR_vec.push_back(sqrt(pow(pair.delta_phi,2)+pow(pair.delta_eta,2)));
+        Pair_DeltaPhi_vec.push_back(fabs(pair.delta_phi));
+
+        h1D_PairDeltaEta_inclusive -> Fill(pair.delta_eta);
+        h1D_PairDeltaPhi_inclusive -> Fill(pair.delta_phi);
+
+        // std::cout<<"Mbin: "<<Mbin<<" eta_bin: "<<eta_bin<<" INTTvtxz_bin: "<<INTTvtxz_bin<<std::endl;
 
         if(h1D_map.find(Form("h1D_DeltaPhi_Mbin%d_Eta%d_VtxZ%d", Mbin, eta_bin, INTTvtxz_bin)) != h1D_map.end()){
             h1D_map[Form("h1D_DeltaPhi_Mbin%d_Eta%d_VtxZ%d", Mbin, eta_bin, INTTvtxz_bin)] -> Fill(pair.delta_phi, vtxZReweightFactor);
+            // std::cout<<"In the if(), "<<Form("h1D_DeltaPhi_Mbin%d_Eta%d_VtxZ%d", Mbin, eta_bin, INTTvtxz_bin)<<std::endl;
+        }
+
+        if (pair.delta_phi >= cut_GoodProtoTracklet_DeltaPhi.first && pair.delta_phi <= cut_GoodProtoTracklet_DeltaPhi.second){
+         
+            if(h2D_map.find(Form("h2D_GoodProtoTracklet_EtaVtxZ_Mbin%d", Mbin)) != h2D_map.end()){
+                h2D_map[Form("h2D_GoodProtoTracklet_EtaVtxZ_Mbin%d", Mbin)] -> Fill(pair.pair_eta_fit, INTTvtxZ, vtxZReweightFactor);
+            }
+
+            if(h2D_map.find(Form("h2D_GoodProtoTracklet_EtaVtxZ_Mbin%d_FineBin", Mbin)) != h2D_map.end()){
+                h2D_map[Form("h2D_GoodProtoTracklet_EtaVtxZ_Mbin%d_FineBin", Mbin)] -> Fill(pair.pair_eta_fit, INTTvtxZ, vtxZReweightFactor);
+            }
         }
 
         if (ClusLadderZId->at(pair.inner_index) != typeA_sensorZID[0] && ClusLadderZId->at(pair.inner_index) != typeA_sensorZID[1]) {continue;}
@@ -534,6 +632,17 @@ void TrackletHistogramFill::FillHistogram(
 
         if(h1D_map.find(Form("h1D_typeA_DeltaPhi_Mbin%d_Eta%d_VtxZ%d", Mbin, eta_bin, INTTvtxz_bin)) != h1D_map.end()){
             h1D_map[Form("h1D_typeA_DeltaPhi_Mbin%d_Eta%d_VtxZ%d", Mbin, eta_bin, INTTvtxz_bin)] -> Fill(pair.delta_phi, vtxZReweightFactor);
+        }
+
+        if (pair.delta_phi >= cut_GoodProtoTracklet_DeltaPhi.first && pair.delta_phi <= cut_GoodProtoTracklet_DeltaPhi.second){
+         
+            if(h2D_map.find(Form("h2D_typeA_GoodProtoTracklet_EtaVtxZ_Mbin%d", Mbin)) != h2D_map.end()){
+                h2D_map[Form("h2D_typeA_GoodProtoTracklet_EtaVtxZ_Mbin%d", Mbin)] -> Fill(pair.pair_eta_fit, INTTvtxZ, vtxZReweightFactor);
+            }
+
+            if(h2D_map.find(Form("h2D_typeA_GoodProtoTracklet_EtaVtxZ_Mbin%d_FineBin", Mbin)) != h2D_map.end()){
+                h2D_map[Form("h2D_typeA_GoodProtoTracklet_EtaVtxZ_Mbin%d_FineBin", Mbin)] -> Fill(pair.pair_eta_fit, INTTvtxZ, vtxZReweightFactor);
+            }
         }
     }
 
@@ -547,26 +656,40 @@ void TrackletHistogramFill::FillHistogram(
                 h1D_map[Form("h1D_DeltaPhi_Mbin%d_Eta%d_VtxZ%d_rotated", Mbin, eta_bin, INTTvtxz_bin)] -> Fill(pair.delta_phi, vtxZReweightFactor);
             }
 
+            if (pair.delta_phi >= cut_GoodProtoTracklet_DeltaPhi.first && pair.delta_phi <= cut_GoodProtoTracklet_DeltaPhi.second){
+            
+                if(h2D_map.find(Form("h2D_GoodProtoTracklet_EtaVtxZ_Mbin%d_rotated", Mbin)) != h2D_map.end()){
+                    h2D_map[Form("h2D_GoodProtoTracklet_EtaVtxZ_Mbin%d_rotated", Mbin)] -> Fill(pair.pair_eta_fit, INTTvtxZ, vtxZReweightFactor);
+                }
+            }
+
             if (ClusLadderZId->at(pair.inner_index) != typeA_sensorZID[0] && ClusLadderZId->at(pair.inner_index) != typeA_sensorZID[1]) {continue;}
             if (ClusLadderZId->at(pair.outer_index) != typeA_sensorZID[0] && ClusLadderZId->at(pair.outer_index) != typeA_sensorZID[1]) {continue;}
 
             if(h1D_map.find(Form("h1D_typeA_DeltaPhi_Mbin%d_Eta%d_VtxZ%d_rotated", Mbin, eta_bin, INTTvtxz_bin)) != h1D_map.end()){
                 h1D_map[Form("h1D_typeA_DeltaPhi_Mbin%d_Eta%d_VtxZ%d_rotated", Mbin, eta_bin, INTTvtxz_bin)] -> Fill(pair.delta_phi, vtxZReweightFactor);
             }
+
+            if (pair.delta_phi >= cut_GoodProtoTracklet_DeltaPhi.first && pair.delta_phi <= cut_GoodProtoTracklet_DeltaPhi.second){
+            
+                if(h2D_map.find(Form("h2D_typeA_GoodProtoTracklet_EtaVtxZ_Mbin%d_rotated", Mbin)) != h2D_map.end()){
+                    h2D_map[Form("h2D_typeA_GoodProtoTracklet_EtaVtxZ_Mbin%d_rotated", Mbin)] -> Fill(pair.pair_eta_fit, INTTvtxZ, vtxZReweightFactor);
+                }
+            }
         }
     }
 
     // if (MBD_centrality < 0 || MBD_centrality > 0.7) { return; } // note : 0 - 70% centrality
 
-    long long vec_size = Pair_DeltaR_vec.size();
-    long long ind[Pair_DeltaR_vec.size()];
-    TMath::Sort(vec_size, &Pair_DeltaR_vec[0], ind, false);
+    long long vec_size = Pair_DeltaPhi_vec.size();
+    long long ind[Pair_DeltaPhi_vec.size()];
+    TMath::Sort(vec_size, &Pair_DeltaPhi_vec[0], ind, false);
     for (int pair_i = 0; pair_i < vec_size; pair_i++)
     {
         pair_str pair = p_evt_TrackletPair_vec[ind[pair_i]];
         if (Used_Clus_index_map.find(pair.inner_index) != Used_Clus_index_map.end() || Used_Clus_index_map.find(pair.outer_index) != Used_Clus_index_map.end()) { continue; }
 
-        if (Pair_DeltaR_vec[ind[pair_i]] > cut_bestPair_DeltaR.second) { break; }
+        if (Pair_DeltaPhi_vec[ind[pair_i]] > cut_bestPair_DeltaPhi.second) { break; }
 
         h2D_map["h2D_Inclusive100_BestPairEtaVtxZ"] -> Fill(pair.pair_eta_fit, INTTvtxZ, vtxZReweightFactor);
         h2D_map["h2D_Inclusive100_BestPairEtaVtxZ_FineBin"] -> Fill(pair.pair_eta_fit, INTTvtxZ, vtxZReweightFactor);
@@ -602,15 +725,21 @@ void TrackletHistogramFill::EndRun()
     }
     h1D_eta_template -> Write("h1D_eta_template");
     h1D_vtxz_template -> Write("h1D_vtxz_template");
+
+    h1D_PairDeltaEta_inclusive -> Write("h1D_PairDeltaEta_inclusive");
+    h1D_PairDeltaPhi_inclusive -> Write("h1D_PairDeltaPhi_inclusive");
+
     h1D_centrality_bin -> Write();
+
+    for (auto &pair : h2D_map){
+        pair.second -> Write();
+    }
 
     for (auto &pair : h1D_map){
         pair.second -> Write();
     }
 
-    for (auto &pair : h2D_map){
-        pair.second -> Write();
-    }
+    
 
     file_out -> Close();
 }
