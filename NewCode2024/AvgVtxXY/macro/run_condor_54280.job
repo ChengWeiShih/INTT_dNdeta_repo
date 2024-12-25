@@ -7,16 +7,16 @@ request_memory     = 4GB
 Priority           = 20
 job_lease_duration = 86400
 
-runnumber          = -1
+runnumber          = 54280
 nEvents            = -1
-input_directory    = /sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_Ntuple_HIJING_ana443_20241102/SplitFile_10k
+input_directory    = /sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Dec042024/completed
 job_offset    = 0
 process_shift      = $(Process) + $(job_offset) 
-input_filename     = ntuple_merged_$INT(process_shift,%05d).root
-output_directory   = /sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_Ntuple_HIJING_ana443_20241102/SplitFile_10k/Run24NewCode_AvgVtxXY
+input_filename     = ntuple_$INT(process_shift,%05d).root
+output_directory   = /sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Dec042024/completed/Run24NewCode_AvgVtxXY
 
 Output             = $(output_directory)/cw_log/condor_$INT(process_shift,%05d).out
 Error              = $(output_directory)/cw_log/condor_$INT(process_shift,%05d).err
 Log                = $(output_directory)/cw_log/condor_$INT(process_shift,%05d).log
 Arguments          = "$INT(process_shift) $(runnumber) $(nEvents) $(output_directory) $(input_directory) $(input_filename)"
-Queue 7
+Queue 326

@@ -219,7 +219,11 @@ void EvtVtxZProtoTracklet::PrepareRootFile()
     firedTriggers = 0;
 
     // tree_in -> SetBranchAddress("event", &event);
-    tree_in -> SetBranchAddress("firedTriggers", &firedTriggers);
+    if(branch_map.find("firedTriggers") != branch_map.end()) {
+        tree_in -> SetBranchAddress("firedTriggers", &firedTriggers);
+        m_withTrig = true;
+    }
+
     tree_in -> SetBranchAddress("MBD_z_vtx", &MBD_z_vtx);
     tree_in -> SetBranchAddress("INTT_BCO", &INTT_BCO);
     tree_in -> SetBranchAddress("ClusX", &ClusX);
@@ -266,10 +270,13 @@ void EvtVtxZProtoTracklet::PrepareRootFile()
             b_ClusPhi_TrueXY = tree_out -> Branch("ClusPhi_TrueXY", &out_ClusPhi_TrueXY);
         }
 
-        b_MBDNSg2 = tree_out -> Branch("MBDNSg2", &out_MBDNSg2);
-        b_MBDNSg2_vtxZ10cm = tree_out -> Branch("MBDNSg2_vtxZ10cm", &out_MBDNSg2_vtxZ10cm);
-        b_MBDNSg2_vtxZ30cm = tree_out -> Branch("MBDNSg2_vtxZ30cm", &out_MBDNSg2_vtxZ30cm);
-        b_MBDNSg2_vtxZ60cm = tree_out -> Branch("MBDNSg2_vtxZ60cm", &out_MBDNSg2_vtxZ60cm);
+        if (m_withTrig){
+            b_MBDNSg2 = tree_out -> Branch("MBDNSg2", &out_MBDNSg2);
+            b_MBDNSg2_vtxZ10cm = tree_out -> Branch("MBDNSg2_vtxZ10cm", &out_MBDNSg2_vtxZ10cm);
+            b_MBDNSg2_vtxZ30cm = tree_out -> Branch("MBDNSg2_vtxZ30cm", &out_MBDNSg2_vtxZ30cm);
+            b_MBDNSg2_vtxZ60cm = tree_out -> Branch("MBDNSg2_vtxZ60cm", &out_MBDNSg2_vtxZ60cm);
+        }
+
         b_eID_count = tree_out -> Branch("eID_count", &out_eID_count);
     }
      
@@ -827,7 +834,7 @@ void EvtVtxZProtoTracklet::MainProcess()
 
             GetClusUpdated();
 
-            GetTriggerInfo();
+            if (m_withTrig) {GetTriggerInfo();}
         }
         else {
             temp_INTTvtxZ = INTTvtxZ;

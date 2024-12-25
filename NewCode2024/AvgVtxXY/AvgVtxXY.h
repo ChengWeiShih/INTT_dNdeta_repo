@@ -116,6 +116,9 @@ class AvgVtxXY {
         double out_vtxY_LineFill = std::nan("");
         double out_vtxYE_LineFill = std::nan("");
         double out_vtxYStdDev_LineFill = std::nan("");
+        // int out_run_nEvents;
+        int out_job_index;
+        int out_file_total_event;
 
         TTree * tree_geooffset;
         int out_LayerID;

@@ -136,6 +136,9 @@ class EvtVtxZProtoTracklet{
     double INTTvtxZ;
     double INTTvtxZError;
 
+    // note : the flag
+    int m_withTrig = false;
+
     // note : ---------------------- For update tree vertex Z ----------------------
     double out_INTTvtxZ;
     double out_INTTvtxZError;

@@ -172,7 +172,7 @@ class TrackletHistogramFill{
         int cut_InttBcoFullDIff_next = 188;
 
         // note : for the best pair
-        std::pair<double, double> cut_bestPair_DeltaPhi = {0,0.01}; // note : rad
+        std::pair<double, double> cut_bestPair_DeltaPhi = {0,0.017}; // note : rad
         std::pair<double, double> cut_GoodProtoTracklet_DeltaPhi = {-0.017,0.017}; // note : rad
 };
 

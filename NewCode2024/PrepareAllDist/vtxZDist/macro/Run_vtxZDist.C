@@ -1,8 +1,8 @@
-#include "../TrackletHistogram.h"
+#include "../vtxZDist.h"
 
-R__LOAD_LIBRARY(../libTrackletHistogram.so)
+R__LOAD_LIBRARY(../libvtxZDist.so)
 
-void Run_PrepareHist(
+void Run_vtxZDist(
   int process_id = 0,
   int run_num = 54280,
   int nevents = -1,
@@ -11,16 +11,15 @@ void Run_PrepareHist(
   string output_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280/completed/BCO_check",
   
   // todo : modify here
-  std::string output_file_name_suffix = "_FirstRun_N0p07to0p07_nbin140",
+  std::string output_file_name_suffix = "_DataOldVtxXY",
 
-  bool vtxZReweight = false,
-  bool BcoFullDiffCut = false,
-  bool INTT_vtxZ_QA = true,
-  bool isWithRotate = true
+  bool Apply_cut = true,
+  bool ApplyVtxZReWeighting = false,
+  std::pair<bool, int> ApplyEvtBcoFullDiffCut = {true, 61}
 )
 {
 
-  TrackletHistogram * TLH = new TrackletHistogram(
+  vtxZDist * VZD = new vtxZDist(
     process_id,
     run_num,
     nevents,
@@ -30,18 +29,19 @@ void Run_PrepareHist(
 
     output_file_name_suffix,
 
-    vtxZReweight,
-    BcoFullDiffCut,
-    INTT_vtxZ_QA,
-    isWithRotate
+    Apply_cut,
+    ApplyVtxZReWeighting,
+    ApplyEvtBcoFullDiffCut
   );
 
-  string final_output_file_name = TLH->GetOutputFileName();
+  string final_output_file_name = VZD->GetOutputFileName();
   cout<<"final_output_file_name: "<<final_output_file_name<<endl;
+
   system(Form("if [ -f %s/completed/%s ]; then rm %s/completed/%s; fi;", output_directory.c_str(), final_output_file_name.c_str(), output_directory.c_str(), final_output_file_name.c_str()));  
 
-  TLH -> MainProcess();
-  TLH -> EndRun();
+  VZD->PrepareEvent();
+  VZD->EndRun();
+
 
   system(Form("mv %s/%s %s/completed", output_directory.c_str(), final_output_file_name.c_str(), output_directory.c_str()));
 

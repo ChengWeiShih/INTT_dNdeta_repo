@@ -74,6 +74,10 @@ AvgVtxXY::AvgVtxXY(
             SetGeoOffset();
         }
     }
+
+    // todo: it works if all the events in the files are used
+    // out_start_evt = process_id * run_nEvents;
+    // out_end_evt   = out_start_evt + run_nEvents - 1;
     
 }
 
@@ -152,6 +156,14 @@ void AvgVtxXY::InitOutRootFile()
     tree_vtxXY -> Branch("vtxY_LineFill", &out_vtxY_LineFill);
     tree_vtxXY -> Branch("vtxYE_LineFill", &out_vtxYE_LineFill);
     tree_vtxXY -> Branch("vtxYStdDev_LineFill", &out_vtxYStdDev_LineFill);
+    tree_vtxXY -> Branch("run_nEvents", &out_run_nEvents);
+    tree_vtxXY -> Branch("job_index", &out_job_index);
+    tree_vtxXY -> Branch("file_total_event", &out_file_total_event);
+    // tree_vtxXY -> Branch("start_evt", &out_start_evt);
+    // tree_vtxXY -> Branch("end_evt", &out_end_evt);
+
+    out_job_index = process_id; 
+    out_file_total_event = tree_in->GetEntries();
     
     // note : for the geo offset
     if (HaveGeoOffsetTag) {
