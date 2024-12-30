@@ -1,5 +1,5 @@
-#ifndef PREPAREDNDETAEACH_H
-#define PREPAREDNDETAEACH_H
+#ifndef PREPAREDNDETACLUSEACH_H
+#define PREPAREDNDETACLUSEACH_H
 
 #include <iostream>
 #include <vector>
@@ -32,10 +32,9 @@
 
 #include "../Constants.h"
 
-
-class PreparedNdEtaEach{
+class PreparedNdEtaClusEach{
     public:
-        PreparedNdEtaEach(
+        PreparedNdEtaClusEach(
             int process_id_in, // note : 1 or 2
             int runnumber_in, // note : still, (54280 or -1)
             std::string input_directory_in,
@@ -49,8 +48,8 @@ class PreparedNdEtaEach{
             int SelectedMbin_in // note : 0, 1, ---- 10, 70, 100 
         );
 
-        std::vector<std::string> GetOutputFileName() {
-            return {output_filename_DeltaPhi, output_filename_dNdEta};
+        std::string GetOutputFileName() {
+            return output_filename;
         }
 
         std::vector<std::string> GetAlphaCorrectionNameMap() {return alpha_correction_name_map;}
@@ -75,9 +74,8 @@ class PreparedNdEtaEach{
             cut_EtaRange_pair = cut_EtaRange_in;
         }
 
+
         void PrepareStacks();
-        void DoFittings();
-        void PrepareMultiplicity();
         void PreparedNdEtaHist();
         void DeriveAlphaCorrection();
         void EndRun();
@@ -118,19 +116,9 @@ class PreparedNdEtaEach{
         double VtxZEdge_max;
         int nVtxZBin;
 
-        double DeltaPhiEdge_min;
-        double DeltaPhiEdge_max;
-        int nDeltaPhiBin;
-
-        std::pair<double, double> *cut_GoodProtoTracklet_DeltaPhi;
-
-
         // Division:---output root file------------------------------------------------------------------------------------------------
-        TFile * file_out_DeltaPhi;
-        TFile * file_out_dNdEta;
+        TFile * file_out;
         std::string output_filename;
-        std::string output_filename_DeltaPhi;
-        std::string output_filename_dNdEta;
         void PrepareOutPutFileName();
         void PrepareOutPutRootFile();
 
@@ -138,31 +126,22 @@ class PreparedNdEtaEach{
 
         // Division:---analysis------------------------------------------------------------------------------------------------
         std::map<int, int> GetVtxZIndexMap();
-        void PrepareHistFits();
-        std::string GetObjectName();
-        std::tuple<int, int, int, int, int, int> GetHistStringInfo(std::string hist_name);
-        std::vector<double> find_Ngroup(TH1D * hist_in);
-        double get_dist_offset(TH1D * hist_in, int check_N_bin);
-        double get_hstack2D_GoodProtoTracklet_count(THStack * stack_in, int eta_bin_in);
+        void PrepareHist();
+        std::tuple<int, int, int, int, int> GetHistStringInfo(std::string hist_name);
         double get_EvtCount(TH2D * hist_in, int centrality_bin_in);
-        void Convert_to_PerEvt(TH1D * hist_in, double Nevent);
 
         std::map<int, int> vtxZ_index_map;
         std::pair<double, double> cut_EtaRange_pair = {std::nan(""), std::nan("")};
 
         // Division:---histogram------------------------------------------------------------------------------------------------
-        // note : signal (eta-vtxZ) centrality segemntation
-        std::map<std::string, THStack*> hstack1D_DeltaPhi_map;
-        std::map<std::string, TH1D*> h1D_FitBkg_RecoTrackletEta_map;    // note : for the total count
-        std::map<std::string, TH1D*> h1D_FitBkg_RecoTrackletEtaPerEvt_map;
-        std::map<std::string, TH1D*> h1D_FitBkg_RecoTrackletEtaPerEvtPostAC_map;
-        std::map<std::string, TH1D*> h1D_RotatedBkg_RecoTrackletEta_map; // note : for the total count
-        std::map<std::string, TH1D*> h1D_RotatedBkg_RecoTrackletEtaPerEvt_map;
-        std::map<std::string, TH1D*> h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC_map;
-
-        std::map<std::string, TH1D*> h1D_RotatedBkg_DeltaPhi_Signal_map;
-        
-        std::map<std::string, THStack*> hstack2D_GoodProtoTracklet_map; // note : for the good pair
+        std::map<std::string, THStack*> hstack2D_NClusEtaVtxZ_map;
+        std::map<std::string, THStack*> hstack1D_NClusEta_map; // note : {inner, outer} x {typeA, All} x {Mbin and vtxZ selected for the stack}
+        TH1D * h1D_inner_NClusEta; // note : {typeA, All}
+        TH1D * h1D_inner_NClusEtaPerEvt;
+        TH1D * h1D_inner_NClusEtaPerEvtPostAC;
+        TH1D * h1D_outer_NClusEta;
+        TH1D * h1D_outer_NClusEtaPerEvt;
+        TH1D * h1D_outer_NClusEtaPerEvtPostAC;
 
         // note : for the final Truth
         std::map<std::string, THStack*> hstack2D_TrueEtaVtxZ_map;
@@ -173,16 +152,9 @@ class PreparedNdEtaEach{
         std::map<std::string, TH1D*> h1D_alpha_correction_map_in;
         std::map<std::string, TH1D*> h1D_alpha_correction_map_out;
         std::vector<std::string> alpha_correction_name_map = {
-            "h1D_FitBkg_alpha_correction",
-            "h1D_RotatedBkg_alpha_correction"
+            "h1D_inner_alpha_correction",
+            "h1D_outer_alpha_correction"
         };
-
-        // Division:---fitting------------------------------------------------------------------------------------------------
-        std::map<std::string, TF1*> f1_BkgPol2_Fit_map;
-        std::map<std::string, TF1*> f1_BkgPol2_Draw_map;
-        std::map<std::string, TF1*> f1_SigBkgPol2_Fit_map;
-        std::map<std::string, TF1*> f1_SigBkgPol2_DrawSig_map;
-        std::map<std::string, TF1*> f1_SigBkgPol2_DrawBkgPol2_map;
 
         // Division:---Constants------------------------------------------------------------------------------------------------
         int Semi_inclusive_Mbin = Constants::Semi_inclusive_bin;
@@ -190,47 +162,6 @@ class PreparedNdEtaEach{
         const std::vector<int> ROOT_color_code = {
             51, 61, 70, 79, 88, 98
         };
-
-
-        // Division:---the functions------------------------------------------------------------------------------------------------
-        static double gaus_func(double *x, double *par)
-        {
-            // note : par[0] : size
-            // note : par[1] : mean
-            // note : par[2] : width
-            // note : par[3] : offset 
-            return par[0] * TMath::Gaus(x[0],par[1],par[2]); //+ par[3];
-        }
-
-        static  double gaus_pol2_func(double *x, double *par)
-        {
-            // note : par[0] : size
-            // note : par[1] : mean
-            // note : par[2] : width
-
-            double gaus_func = par[0] * TMath::Gaus(x[0],par[1],par[2]);
-            double pol2_func = par[3] + par[4]* (x[0]-par[6]) + par[5] * pow((x[0]-par[6]),2);
-
-            return gaus_func + pol2_func;
-        }
-
-        static  double bkg_pol2_func(double *x, double *par)
-        {
-            if (x[0] > par[4] && x[0] < par[5]) {
-                TF1::RejectPoint();
-                return 0;
-            }
-            return par[0] + par[1]* (x[0]-par[3]) + par[2] * pow((x[0]-par[3]),2);
-
-            // note : p[0] + p[1]*(x-p[3])+p[2] * (x-p[3])^2, p[4] sets the signal range that should be excluded in the fit
-        }
-
-        static  double full_pol2_func(double *x, double *par)
-        {
-            return par[0] + par[1]* (x[0]-par[3]) + par[2] * pow((x[0]-par[3]),2);
-
-            // note : p[0] + p[1]*(x-p[3])+p[2] * (x-p[3])^2
-        }
 };
 
 #endif

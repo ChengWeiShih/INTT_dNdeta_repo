@@ -39,6 +39,7 @@ void TrackletHistogramFill::PrepareOutPutFileName()
     output_filename += (vtxZReweight) ? "_vtxZReweight" : "";
     output_filename += (BcoFullDiffCut && runnumber != -1) ? "_BcoFullDiffCut" : "";
     output_filename += (INTT_vtxZ_QA) ? "_INTT_vtxZ_QA" : "";
+    output_filename += (isClusQA.first) ? Form("_ClusQAAdc%.0fPhiSize%.0f",isClusQA.second.first,isClusQA.second.second) : "";
     output_filename += output_file_name_suffix;
     output_filename += (runnumber != -1) ? Form("_%s_%s.root",runnumber_str.c_str(),job_index.c_str()) : Form("_%s.root",job_index.c_str());
 }
@@ -75,7 +76,7 @@ void TrackletHistogramFill::PrepareOutPutRootFile()
     tree_out_par -> Branch("nDeltaPhiBin", &nDeltaPhiBin);
 
     tree_out_par -> Branch("typeA_sensorZID", &typeA_sensorZID);
-    tree_out_par -> Branch("cut_MBDvtxZ", &cut_MBDvtxZ);   
+    tree_out_par -> Branch("cut_GlobalMBDvtxZ", &cut_GlobalMBDvtxZ);   
     tree_out_par -> Branch("cut_vtxZDiff", &cut_vtxZDiff);
     tree_out_par -> Branch("cut_TrapezoidalFitWidth", &cut_TrapezoidalFitWidth);
     tree_out_par -> Branch("cut_TrapezoidalFWHM", &cut_TrapezoidalFWHM);
@@ -254,7 +255,7 @@ void TrackletHistogramFill::PrepareHistograms()
 
             isInserted = h2D_map.insert( std::make_pair(
                     Form("h2D_TrueEtaVtxZ_Mbin%d_FineBin", Mbin),
-                    new TH2D(Form("h2D_TrueEtaVtxZ_Mbin%d_FineBin", Mbin), Form("h2D_TrueEtaVtxZ_Mbin%d_FineBin;PHG4Particle #eta;TruthPV_trig_z [cm]", Mbin), 200, EtaEdge_min, EtaEdge_max, 200, VtxZEdge_min, VtxZEdge_max)
+                    new TH2D(Form("h2D_TrueEtaVtxZ_Mbin%d_FineBin", Mbin), Form("h2D_TrueEtaVtxZ_Mbin%d_FineBin;PHG4Particle #eta;TruthPV_trig_z [cm]", Mbin), 400, EtaEdge_min, EtaEdge_max, 400, VtxZEdge_min, VtxZEdge_max)
                 )
             ).second; insert_check.push_back(isInserted);
         }
@@ -279,7 +280,7 @@ void TrackletHistogramFill::PrepareHistograms()
 
         // isInserted = h2D_map.insert( std::make_pair(
             //     Form("h2D_Inclusive100_TrueEtaVtxZ_FineBin"),
-            //     new TH2D(Form("h2D_Inclusive100_TrueEtaVtxZ_FineBin"), Form("h2D_Inclusive100_TrueEtaVtxZ_FineBin;PHG4Particle #eta;TruthPV_trig_z [cm]"), 200, EtaEdge_min, EtaEdge_max, 200, VtxZEdge_min, VtxZEdge_max)
+            //     new TH2D(Form("h2D_Inclusive100_TrueEtaVtxZ_FineBin"), Form("h2D_Inclusive100_TrueEtaVtxZ_FineBin;PHG4Particle #eta;TruthPV_trig_z [cm]"), 400, EtaEdge_min, EtaEdge_max, 400, VtxZEdge_min, VtxZEdge_max)
             // )
         // ).second; insert_check.push_back(isInserted);
 
@@ -291,7 +292,7 @@ void TrackletHistogramFill::PrepareHistograms()
 
         // isInserted = h2D_map.insert( std::make_pair(
             //     Form("h2D_Inclusive70_TrueEtaVtxZ_FineBin"),
-            //     new TH2D(Form("h2D_Inclusive70_TrueEtaVtxZ_FineBin"), Form("h2D_Inclusive70_TrueEtaVtxZ_FineBin;PHG4Particle #eta;TruthPV_trig_z [cm]"), 200, EtaEdge_min, EtaEdge_max, 200, VtxZEdge_min, VtxZEdge_max)
+            //     new TH2D(Form("h2D_Inclusive70_TrueEtaVtxZ_FineBin"), Form("h2D_Inclusive70_TrueEtaVtxZ_FineBin;PHG4Particle #eta;TruthPV_trig_z [cm]"), 400, EtaEdge_min, EtaEdge_max, 400, VtxZEdge_min, VtxZEdge_max)
             // )
         // ).second; insert_check.push_back(isInserted);
 
@@ -320,13 +321,13 @@ void TrackletHistogramFill::PrepareHistograms()
         // note : normal fine bin
         isInserted = h2D_map.insert( std::make_pair(
                 Form("h2D_GoodProtoTracklet_EtaVtxZ_Mbin%d_FineBin", Mbin),
-                new TH2D(Form("h2D_GoodProtoTracklet_EtaVtxZ_Mbin%d_FineBin", Mbin), Form("h2D_GoodProtoTracklet_EtaVtxZ_Mbin%d_FineBin;Pair #eta;INTT vtxZ [cm]", Mbin), 200, EtaEdge_min, EtaEdge_max, 200, VtxZEdge_min, VtxZEdge_max) 
+                new TH2D(Form("h2D_GoodProtoTracklet_EtaVtxZ_Mbin%d_FineBin", Mbin), Form("h2D_GoodProtoTracklet_EtaVtxZ_Mbin%d_FineBin;Pair #eta;INTT vtxZ [cm]", Mbin), 400, EtaEdge_min, EtaEdge_max, 400, VtxZEdge_min, VtxZEdge_max) 
             )
         ).second; insert_check.push_back(isInserted);
 
         isInserted = h2D_map.insert( std::make_pair(
                 Form("h2D_typeA_GoodProtoTracklet_EtaVtxZ_Mbin%d_FineBin", Mbin),
-                new TH2D(Form("h2D_typeA_GoodProtoTracklet_EtaVtxZ_Mbin%d_FineBin", Mbin), Form("h2D_typeA_GoodProtoTracklet_EtaVtxZ_Mbin%d_FineBin;Pair #eta;INTT vtxZ [cm]", Mbin), 200, EtaEdge_min, EtaEdge_max, 200, VtxZEdge_min, VtxZEdge_max) 
+                new TH2D(Form("h2D_typeA_GoodProtoTracklet_EtaVtxZ_Mbin%d_FineBin", Mbin), Form("h2D_typeA_GoodProtoTracklet_EtaVtxZ_Mbin%d_FineBin;Pair #eta;INTT vtxZ [cm]", Mbin), 400, EtaEdge_min, EtaEdge_max, 400, VtxZEdge_min, VtxZEdge_max) 
             )
         ).second; insert_check.push_back(isInserted);
         
@@ -361,7 +362,7 @@ void TrackletHistogramFill::PrepareHistograms()
 
     isInserted = h2D_map.insert( std::make_pair(
             Form("h2D_Inclusive100_BestPairEtaVtxZ_FineBin"),
-            new TH2D(Form("h2D_Inclusive100_BestPairEtaVtxZ_FineBin"), Form("h2D_Inclusive100_BestPairEtaVtxZ_FineBin;Tracklet #eta;INTT vtxZ [cm]"), 200, EtaEdge_min, EtaEdge_max, 200, VtxZEdge_min, VtxZEdge_max)
+            new TH2D(Form("h2D_Inclusive100_BestPairEtaVtxZ_FineBin"), Form("h2D_Inclusive100_BestPairEtaVtxZ_FineBin;Tracklet #eta;INTT vtxZ [cm]"), 400, EtaEdge_min, EtaEdge_max, 400, VtxZEdge_min, VtxZEdge_max)
         )
     ).second; insert_check.push_back(isInserted);
 
@@ -373,7 +374,7 @@ void TrackletHistogramFill::PrepareHistograms()
 
     isInserted = h2D_map.insert( std::make_pair(
             Form("h2D_Inclusive70_BestPairEtaVtxZ_FineBin"),
-            new TH2D(Form("h2D_Inclusive70_BestPairEtaVtxZ_FineBin"), Form("h2D_Inclusive70_BestPairEtaVtxZ_FineBin;Tracklet #eta;INTT vtxZ [cm]"), 200, EtaEdge_min, EtaEdge_max, 200, VtxZEdge_min, VtxZEdge_max)
+            new TH2D(Form("h2D_Inclusive70_BestPairEtaVtxZ_FineBin"), Form("h2D_Inclusive70_BestPairEtaVtxZ_FineBin;Tracklet #eta;INTT vtxZ [cm]"), 400, EtaEdge_min, EtaEdge_max, 400, VtxZEdge_min, VtxZEdge_max)
         )
     ).second; insert_check.push_back(isInserted);
 
@@ -418,7 +419,7 @@ void TrackletHistogramFill::FillHistogram(
     int InttBcoFullDiff_next,
 
     // // note : trigger tag
-    // int MBDNSg2,
+    int MBDNSg2,
     // int MBDNSg2_vtxZ10cm,
     // int MBDNSg2_vtxZ30cm,
     // int MBDNSg2_vtxZ60cm,
@@ -461,20 +462,28 @@ void TrackletHistogramFill::FillHistogram(
     EvtCleanUp();
 
     // ==============================================================================================================================================================================================================
-    if (MBD_south_charge_sum == 0 || MBD_north_charge_sum == 0) { return; }
-    if (MBD_z_vtx != MBD_z_vtx) { return; }
-    if (is_min_bias != 1) { return; }
-    if (INTTvtxZ != INTTvtxZ || INTTvtxZError != INTTvtxZError) { return; }
+    // note : for data
+    if (runnumber != -1 && BcoFullDiffCut && InttBcoFullDiff_next <= cut_InttBcoFullDIff_next) {return;}
+    if (runnumber != -1 && MBDNSg2 != 1) {return;} // todo: assume MC no trigger
+
+    // note : for MC
+    if (runnumber == -1 && NTruthVtx != 1) {return;}
+
+    // note : both data and MC
+    if (MBD_z_vtx != MBD_z_vtx) {return;}
     if (MBD_centrality != MBD_centrality) {return;}
-    if (MBD_centrality < 0 || MBD_centrality > 1) { return; }
-
-    if (BcoFullDiffCut && runnumber != -1 && (InttBcoFullDiff_next < cut_InttBcoFullDIff_next)) {return;}
-
-    if (runnumber == -1 && NTruthVtx != 1) { return; }
+    if (MBD_centrality < 0 || MBD_centrality > 1) {return;}
+    if (INTTvtxZ != INTTvtxZ) {return;}
+    if (MBD_z_vtx < cut_GlobalMBDvtxZ.first || MBD_z_vtx > cut_GlobalMBDvtxZ.second) {return;} // todo: the hard cut 60 cm 
+    if (is_min_bias != 1) {return;}
     // ==============================================================================================================================================================================================================
-
+    // todo : No INTT vtxZ reweighting for the h1D_centrality_bin, as the comparison was done in RestDist
     int Mbin = h1D_centrality_bin -> Fill(MBD_centrality);
     Mbin = (Mbin == -1) ? -1 : Mbin - 1;
+    if (Mbin == -1) {
+        std::cout << "Mbin == -1, MBD_centrality = " << MBD_centrality << std::endl;
+        return;
+    }
 
     int INTTvtxz_bin = h1D_vtxz_template->Fill(INTTvtxZ);
     INTTvtxz_bin = (INTTvtxz_bin == -1) ? -1 : INTTvtxz_bin - 1;
@@ -500,7 +509,7 @@ void TrackletHistogramFill::FillHistogram(
             // todo : for debug
             if (TruthPV_trig_z >= -10 && TruthPV_trig_z < 10){
                 NHadrons++;
-
+                // todo : the selected bin
                 if (PrimaryG4P_Eta->at(true_i) >= -1.1 && PrimaryG4P_Eta->at(true_i) < -0.9){
                     NHadrons_OneEtaBin++;
                 }
@@ -546,7 +555,8 @@ void TrackletHistogramFill::FillHistogram(
             // }
         
         } // note : end of G4Particle loop
-
+        
+        // todo : for debug
         if (TruthPV_trig_z >= -10 && TruthPV_trig_z < 10){
 
             h1D_map["debug_h1D_NHadron_Inclusive100"] -> Fill(NHadrons);
@@ -554,9 +564,10 @@ void TrackletHistogramFill::FillHistogram(
         }
 
         
-    }
+    } // note : end of truth
 
-    h1D_map["h1D_centrality"] -> Fill(MBD_centrality);
+    // note : FineBin
+    // todo : No INTT vtxZ reweighting as this is the MBD_vtxZ filled
     if(h1D_map.find(Form("h1D_centrality_MBDVtxZ%d", MBDVtxz_bin)) != h1D_map.end()){
         h1D_map[Form("h1D_centrality_MBDVtxZ%d", MBDVtxz_bin)] -> Fill(MBD_centrality);
     }
@@ -564,17 +575,25 @@ void TrackletHistogramFill::FillHistogram(
 
 
     // ==============================================================================================================================================================================================================
-    if (INTT_vtxZ_QA && (TrapezoidalFitWidth < cut_TrapezoidalFitWidth.first || TrapezoidalFitWidth > cut_TrapezoidalFitWidth.second)) { return; }
-    if (INTT_vtxZ_QA && (TrapezoidalFWHM < cut_TrapezoidalFWHM.first || TrapezoidalFWHM > cut_TrapezoidalFWHM.second)) { return; }
-    if (MBD_z_vtx - INTTvtxZ < cut_vtxZDiff.first || MBD_z_vtx - INTTvtxZ > cut_vtxZDiff.second) { return; }
+    if (INTT_vtxZ_QA && (MBD_z_vtx - INTTvtxZ < cut_vtxZDiff.first || MBD_z_vtx - INTTvtxZ > cut_vtxZDiff.second) ) {return;}
+    if (INTT_vtxZ_QA && (TrapezoidalFitWidth < cut_TrapezoidalFitWidth.first || TrapezoidalFitWidth > cut_TrapezoidalFitWidth.second)){return;}
+    if (INTT_vtxZ_QA && (TrapezoidalFWHM < cut_TrapezoidalFWHM.first || TrapezoidalFWHM > cut_TrapezoidalFWHM.second)){return;}
+    if (INTT_vtxZ_QA && (INTTvtxZError < cut_INTTvtxZError.first || INTTvtxZError > cut_INTTvtxZError.second)){return;}
     // ==============================================================================================================================================================================================================
+
+    if (vtxZReweight && runnumber != -1){
+        std::cout<<"Should have no vtxZ reweighting for data"<<std::endl;
+        exit(1);
+    }
 
     if (vtxZReweight && h1D_vtxZReweightFactor == nullptr) {
         std::cout<<"vtxZReweightFactor histogram is not found"<<std::endl;
         exit(1);
     }
     vtxZReweightFactor = (vtxZReweight) ? h1D_vtxZReweightFactor -> GetBinContent(h1D_vtxZReweightFactor -> FindBin(INTTvtxZ)) : 1;
-    vtxZReweightFactor = (vtxZReweightFactor > 250) ? 0 : vtxZReweightFactor;
+    vtxZReweightFactor = (vtxZReweightFactor > 250) ? 0 : vtxZReweightFactor; // todo: the rejection of the large weight
+
+    h1D_map["h1D_centrality"] -> Fill(MBD_centrality, vtxZReweightFactor);
 
     if (h2D_map.find("h2D_InttVtxZ_Centrality") != h2D_map.end()){
         h2D_map["h2D_InttVtxZ_Centrality"] -> Fill(INTTvtxZ, MBD_centrality, vtxZReweightFactor);
@@ -583,10 +602,6 @@ void TrackletHistogramFill::FillHistogram(
     if (h1D_map.find(Form("h1D_centrality_InttVtxZ%d",INTTvtxz_bin)) != h1D_map.end()){
         h1D_map[Form("h1D_centrality_InttVtxZ%d",INTTvtxz_bin)] -> Fill(MBD_centrality, vtxZReweightFactor);
     }
-
-    // ==============================================================================================================================================================================================================
-    // if (MBD_z_vtx < cut_MBDvtxZ.first || MBD_z_vtx > cut_MBDvtxZ.second) { return; }
-    // ==============================================================================================================================================================================================================
 
     // note : the event counting 
     if (h2D_map.find("h2D_RecoEvtCount_vtxZCentrality") != h2D_map.end()){
@@ -603,11 +618,19 @@ void TrackletHistogramFill::FillHistogram(
         int eta_bin = h1D_eta_template -> Fill(pair.pair_eta_fit);
         eta_bin = (eta_bin == -1) ? -1 : eta_bin - 1;
 
+        int inner_adc = ClusAdc->at(pair.inner_index);
+        int outer_adc = ClusAdc->at(pair.outer_index);
+        int inner_phi_size = ClusPhiSize->at(pair.inner_index);
+        int outer_phi_size = ClusPhiSize->at(pair.outer_index);
+
+        if (isClusQA.first && (inner_adc <= isClusQA.second.first || outer_adc <= isClusQA.second.first)) {continue;} // note : adc
+        if (isClusQA.first && (inner_phi_size > isClusQA.second.second || outer_phi_size > isClusQA.second.second)) {continue;} // note : phi size
+
         // Pair_DeltaR_vec.push_back(sqrt(pow(pair.delta_phi,2)+pow(pair.delta_eta,2)));
         Pair_DeltaPhi_vec.push_back(fabs(pair.delta_phi));
 
-        h1D_PairDeltaEta_inclusive -> Fill(pair.delta_eta);
-        h1D_PairDeltaPhi_inclusive -> Fill(pair.delta_phi);
+        h1D_PairDeltaEta_inclusive -> Fill(pair.delta_eta, vtxZReweightFactor);
+        h1D_PairDeltaPhi_inclusive -> Fill(pair.delta_phi, vtxZReweightFactor);
 
         // std::cout<<"Mbin: "<<Mbin<<" eta_bin: "<<eta_bin<<" INTTvtxz_bin: "<<INTTvtxz_bin<<std::endl;
 
@@ -651,6 +674,14 @@ void TrackletHistogramFill::FillHistogram(
         {
             int eta_bin = h1D_eta_template -> Fill(pair.pair_eta_fit);
             eta_bin = (eta_bin == -1) ? -1 : eta_bin - 1;
+
+            int inner_adc = ClusAdc->at(pair.inner_index);
+            int outer_adc = ClusAdc->at(pair.outer_index);
+            int inner_phi_size = ClusPhiSize->at(pair.inner_index);
+            int outer_phi_size = ClusPhiSize->at(pair.outer_index);
+
+            if (isClusQA.first && (inner_adc <= isClusQA.second.first || outer_adc <= isClusQA.second.first)) {continue;} // note : adc
+            if (isClusQA.first && (inner_phi_size > isClusQA.second.second || outer_phi_size > isClusQA.second.second)) {continue;} // note : phi size
 
             if(h1D_map.find(Form("h1D_DeltaPhi_Mbin%d_Eta%d_VtxZ%d_rotated", Mbin, eta_bin, INTTvtxz_bin)) != h1D_map.end()){
                 h1D_map[Form("h1D_DeltaPhi_Mbin%d_Eta%d_VtxZ%d_rotated", Mbin, eta_bin, INTTvtxz_bin)] -> Fill(pair.delta_phi, vtxZReweightFactor);
@@ -699,12 +730,12 @@ void TrackletHistogramFill::FillHistogram(
             h2D_map["h2D_Inclusive70_BestPairEtaVtxZ"] -> Fill(pair.pair_eta_fit, INTTvtxZ, vtxZReweightFactor);
             h2D_map["h2D_Inclusive70_BestPairEtaVtxZ_FineBin"] -> Fill(pair.pair_eta_fit, INTTvtxZ, vtxZReweightFactor);
 
-            h1D_map["h1D_BestPair_Inclusive70_DeltaEta"] -> Fill(pair.delta_eta);
-            h1D_map["h1D_BestPair_Inclusive70_DeltaPhi"] -> Fill(pair.delta_phi);
-            h1D_map["h1D_BestPair_Inclusive70_ClusPhiSize"] -> Fill(ClusPhiSize->at(pair.inner_index));
-            h1D_map["h1D_BestPair_Inclusive70_ClusPhiSize"] -> Fill(ClusPhiSize->at(pair.outer_index));
-            h1D_map["h1D_BestPair_Inclusive70_ClusAdc"] -> Fill(ClusAdc->at(pair.inner_index));
-            h1D_map["h1D_BestPair_Inclusive70_ClusAdc"] -> Fill(ClusAdc->at(pair.outer_index));
+            h1D_map["h1D_BestPair_Inclusive70_DeltaEta"] -> Fill(pair.delta_eta, vtxZReweightFactor);
+            h1D_map["h1D_BestPair_Inclusive70_DeltaPhi"] -> Fill(pair.delta_phi, vtxZReweightFactor);
+            h1D_map["h1D_BestPair_Inclusive70_ClusPhiSize"] -> Fill(ClusPhiSize->at(pair.inner_index), vtxZReweightFactor);
+            h1D_map["h1D_BestPair_Inclusive70_ClusPhiSize"] -> Fill(ClusPhiSize->at(pair.outer_index), vtxZReweightFactor);
+            h1D_map["h1D_BestPair_Inclusive70_ClusAdc"] -> Fill(ClusAdc->at(pair.inner_index), vtxZReweightFactor);
+            h1D_map["h1D_BestPair_Inclusive70_ClusAdc"] -> Fill(ClusAdc->at(pair.outer_index), vtxZReweightFactor);
         }
 
         Used_Clus_index_map.insert(std::make_pair(pair.inner_index, 1));

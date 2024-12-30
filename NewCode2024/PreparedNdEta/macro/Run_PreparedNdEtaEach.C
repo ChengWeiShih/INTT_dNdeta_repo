@@ -6,16 +6,16 @@ void Run_PreparedNdEtaEach(
   int process_id = 1,
   int run_num = -1,
   string input_directory = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_Ntuple_HIJING_ana443_20241102/Run24NewCode_TrackHist/completed",
-  string input_filename = "MC_TrackletHistogram_INTT_vtxZ_QA_test_N0p07to0p07_nbin140_merged_001.root",
+  string input_filename = "MC_TrackletHistogram_vtxZReweight_INTT_vtxZ_QA_SecondRun_merged_001.root",
   string output_directory = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_Ntuple_HIJING_ana443_20241102/Run24NewCode_dNdEta",
   
   // todo : modify here
-  std::string output_file_name_suffix = "_test_N0p07to0p07_nbin140",
+  std::string output_file_name_suffix = "_SecondRun",
 
   bool ApplyAlphaCorr = false,
   bool isTypeA = false,
   std::pair<double,double> cut_INTTvtxZ = {-10, 10},
-  int SelectedMbin = 100
+  int SelectedMbin = 70
 )
 {
 

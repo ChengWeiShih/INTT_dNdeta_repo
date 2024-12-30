@@ -1,24 +1,36 @@
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 
+#include <vector>
+
 namespace Constants{
-    std::vector<double> centrality_edges = {0, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0};
+    extern std::vector<double> centrality_edges;
 
     // note : vtxZQA
-    std::pair<double, double> cut_vtxZDiff = {-3, 4.}; // note : MBDz - INTTz
-    std::pair<double, double> cut_TrapezoidalFitWidth = {1.5, 5.5};
-    std::pair<double, double> cut_TrapezoidalFWHM = {2,8};
-    std::pair<double, double> cut_INTTvtxZError = {-10000, 100000};
+    extern std::pair<double, double> cut_vtxZDiff; // note : MBDz - INTTz
+    extern std::pair<double, double> cut_TrapezoidalFitWidth;
+    extern std::pair<double, double> cut_TrapezoidalFWHM;
+    extern std::pair<double, double> cut_INTTvtxZError;
 
     // note : for analysis
-    std::pair<double, double> cut_GlobalMBDvtxZ = {-60, 60};
-    std::pair<double, double> cut_AnaVtxZ = {-10, 10};
+    extern std::pair<double, double> cut_GlobalMBDvtxZ;
+    extern std::pair<double, double> cut_AnaVtxZ;
 
-    int cut_InttBcoFullDIff_next = 61;
+    extern int cut_InttBcoFullDIff_next;
 
-    int Semi_inclusive_bin = 7;
+    extern int Semi_inclusive_bin;
 
-    int HighNClus = 500;
+    extern int HighNClus;
+
+    extern double typeA_sensor_half_length_incm; // note : [cm]
+    extern double typeB_sensor_half_length_incm; // note : [cm] 
+
+    extern int B0L0_index;
+    extern int B0L1_index;
+    extern int B1L0_index;
+    extern int B1L1_index;
+    extern int nLadder_inner;
+    extern int nLadder_outer;
 }
 
 #endif

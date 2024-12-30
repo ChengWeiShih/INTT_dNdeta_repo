@@ -1,6 +1,6 @@
-#include "../TrackletHistogram.h"
+#include "../ClusHistogram.h"
 
-R__LOAD_LIBRARY(../libTrackletHistogram.so)
+R__LOAD_LIBRARY(../libClusHistogram.so)
 
 void Run_PrepareHist(
   int process_id = 0,
@@ -16,12 +16,11 @@ void Run_PrepareHist(
   std::pair<bool, TH1D*> vtxZReweight = {false, nullptr},
   bool BcoFullDiffCut = true,
   bool INTT_vtxZ_QA = true,
-  bool isWithRotate = true,
   std::pair<bool, std::pair<double, double>> isClusQA = {true, {35, 500}} // note : {adc, phi size}
 )
 {
 
-  TrackletHistogram * TLH = new TrackletHistogram(
+  ClusHistogram * CSH = new ClusHistogram(
     process_id,
     run_num,
     nevents,
@@ -34,16 +33,15 @@ void Run_PrepareHist(
     vtxZReweight,
     BcoFullDiffCut,
     INTT_vtxZ_QA,
-    isWithRotate,
     isClusQA
   );
 
-  string final_output_file_name = TLH->GetOutputFileName();
+  string final_output_file_name = CSH->GetOutputFileName();
   cout<<"final_output_file_name: "<<final_output_file_name<<endl;
   system(Form("if [ -f %s/completed/%s ]; then rm %s/completed/%s; fi;", output_directory.c_str(), final_output_file_name.c_str(), output_directory.c_str(), final_output_file_name.c_str()));  
 
-  TLH -> MainProcess();
-  TLH -> EndRun();
+  CSH -> MainProcess();
+  CSH -> EndRun();
 
   system(Form("mv %s/%s %s/completed", output_directory.c_str(), final_output_file_name.c_str(), output_directory.c_str()));
 

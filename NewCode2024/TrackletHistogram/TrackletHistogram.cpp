@@ -9,10 +9,11 @@ TrackletHistogram::TrackletHistogram(
     std::string output_directory_in,
     std::string output_file_name_suffix_in,
 
-    bool vtxZReweight_in,
+    std::pair<bool, TH1D*> vtxZReweight_in,
     bool BcoFullDiffCut_in,
     bool INTT_vtxZ_QA_in,
-    bool isWithRotate_in
+    bool isWithRotate_in,
+    std::pair<bool, std::pair<double, double>> isClusQA_in
 ):
     process_id(process_id_in),
     runnumber(runnumber_in),
@@ -25,7 +26,8 @@ TrackletHistogram::TrackletHistogram(
     vtxZReweight(vtxZReweight_in),
     BcoFullDiffCut(BcoFullDiffCut_in),
     INTT_vtxZ_QA(INTT_vtxZ_QA_in),
-    isWithRotate(isWithRotate_in)
+    isWithRotate(isWithRotate_in),
+    isClusQA(isClusQA_in)
 {
     PrepareInputRootFile();
 
@@ -39,10 +41,16 @@ TrackletHistogram::TrackletHistogram(
         output_directory,
         output_file_name_suffix
     );
-    tracklet_histogram_fill -> SetvtxZReweight(vtxZReweight);
+    tracklet_histogram_fill -> SetvtxZReweight(vtxZReweight.first);
+    
+    if (vtxZReweight.first) {
+        tracklet_histogram_fill -> SetVtxZReweightHist(vtxZReweight.second);
+    }
+
     tracklet_histogram_fill -> SetBcoFullDiffCut(BcoFullDiffCut);
     tracklet_histogram_fill -> SetINTT_vtxZ_QA(INTT_vtxZ_QA);
     tracklet_histogram_fill -> SetWithRotate(isWithRotate);
+    tracklet_histogram_fill -> SetClusQA(isClusQA);
     
     tracklet_histogram_fill -> PrepareOutPutFileName();
     tracklet_histogram_fill -> PrepareOutPutRootFile();
@@ -77,10 +85,10 @@ void TrackletHistogram::PrepareInputRootFile()
     if(branch_map.find("event") != branch_map.end()){tree_in -> SetBranchStatus("event",0);}
 
     if(branch_map.find("ClusEta_INTTz") != branch_map.end()){tree_in -> SetBranchStatus("ClusEta_INTTz",0);}
-    if(branch_map.find("ClusEta_MBDz") != branch_map.end()){tree_in -> SetBranchStatus("ClusEta_INTTz",0);}
-    if(branch_map.find("ClusPhi_AvgPV") != branch_map.end()){tree_in -> SetBranchStatus("ClusEta_INTTz",0);}
-    if(branch_map.find("ClusEta_TrueXYZ") != branch_map.end()){tree_in -> SetBranchStatus("ClusEta_INTTz",0);}
-    if(branch_map.find("ClusPhi_TrueXY") != branch_map.end()){tree_in -> SetBranchStatus("ClusEta_INTTz",0);}
+    if(branch_map.find("ClusEta_MBDz") != branch_map.end()){tree_in -> SetBranchStatus("ClusEta_MBDz",0);}
+    if(branch_map.find("ClusPhi_AvgPV") != branch_map.end()){tree_in -> SetBranchStatus("ClusPhi_AvgPV",0);}
+    if(branch_map.find("ClusEta_TrueXYZ") != branch_map.end()){tree_in -> SetBranchStatus("ClusEta_TrueXYZ",0);}
+    if(branch_map.find("ClusPhi_TrueXY") != branch_map.end()){tree_in -> SetBranchStatus("ClusPhi_TrueXY",0);}
 
     
     if(branch_map.find("INTT_BCO") != branch_map.end()){tree_in -> SetBranchStatus("INTT_BCO",0);}
@@ -195,7 +203,7 @@ void TrackletHistogram::MainProcess()
             InttBcoFullDiff_next,
 
             // // note : trigger tag
-            // MBDNSg2,
+            MBDNSg2,
             // MBDNSg2_vtxZ10cm,
             // MBDNSg2_vtxZ30cm,
             // MBDNSg2_vtxZ60cm,

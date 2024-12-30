@@ -15,6 +15,7 @@
 #include <TObjArray.h>
 
 #include "../EvtVtxZTracklet/structure.h"
+#include "../Constants.h"
 
 class TrackletHistogramFill{
     
@@ -31,6 +32,7 @@ class TrackletHistogramFill{
         void SetBcoFullDiffCut(bool tag){ BcoFullDiffCut = tag; }
         void SetINTT_vtxZ_QA(bool tag){ INTT_vtxZ_QA = tag; }
         void SetWithRotate(bool tag){ isWithRotate = tag; }
+        void SetClusQA(std::pair<bool, std::pair<double, double>> pair_in) {isClusQA = pair_in;} // note : {adc, phi size}
 
         void SetVtxZReweightHist(TH1D * input_hist) {h1D_vtxZReweightFactor = (TH1D*)input_hist->Clone();}
 
@@ -50,7 +52,7 @@ class TrackletHistogramFill{
             int InttBcoFullDiff_next,
 
             // // note : trigger tag
-            // int MBDNSg2,
+            int MBDNSg2,
             // int MBDNSg2_vtxZ10cm,
             // int MBDNSg2_vtxZ30cm,
             // int MBDNSg2_vtxZ60cm,
@@ -103,6 +105,7 @@ class TrackletHistogramFill{
         bool BcoFullDiffCut;
         bool INTT_vtxZ_QA;
         bool isWithRotate;
+        std::pair<bool, std::pair<double, double>> isClusQA;
 
         // note : ----------------- for the root file out -----------------
         TFile * file_out;
@@ -132,8 +135,6 @@ class TrackletHistogramFill{
         double vtxZReweightFactor;
 
         // note : ----------------- constants -----------------
-        std::vector<double> centrality_edges = {0, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0};
-        int nCentrality_bin;
 
         // note : for centrality fine
         double CentralityFineEdge_min = -0.005;
@@ -164,12 +165,16 @@ class TrackletHistogramFill{
 
         std::vector<int> typeA_sensorZID = {0,2}; // note : sensor Z ID for type A // note -> 1, 0, 2, 3        
 
-        std::pair<double, double> cut_MBDvtxZ    = {-80,80};
-        std::pair<double, double> cut_vtxZDiff = {-2, 3.};
-        std::pair<double, double> cut_TrapezoidalFitWidth = {1.5, 5.5};
-        std::pair<double, double> cut_TrapezoidalFWHM = {2,8};
+        std::pair<double, double> cut_GlobalMBDvtxZ    = Constants::cut_GlobalMBDvtxZ;
+        std::pair<double, double> cut_vtxZDiff = Constants::cut_vtxZDiff;
+        std::pair<double, double> cut_TrapezoidalFitWidth = Constants::cut_TrapezoidalFitWidth;
+        std::pair<double, double> cut_TrapezoidalFWHM = Constants::cut_TrapezoidalFWHM;
+        std::pair<double, double> cut_INTTvtxZError = Constants::cut_INTTvtxZError;
 
-        int cut_InttBcoFullDIff_next = 188;
+        int cut_InttBcoFullDIff_next = Constants::cut_InttBcoFullDIff_next;
+
+        std::vector<double> centrality_edges = Constants::centrality_edges;
+        int nCentrality_bin;
 
         // note : for the best pair
         std::pair<double, double> cut_bestPair_DeltaPhi = {0,0.017}; // note : rad

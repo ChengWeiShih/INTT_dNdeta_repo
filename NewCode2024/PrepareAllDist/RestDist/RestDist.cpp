@@ -469,13 +469,6 @@ void RestDist::PrepareEvent()
         if (Apply_cut && (INTTvtxZError < cut_INTTvtxZError.first || INTTvtxZError > cut_INTTvtxZError.second)){continue;}
 
         // =======================================================================================================================================================
-        int Mbin = h1D_centrality_bin -> Fill(MBD_centrality);
-        Mbin = (Mbin == -1) ? -1 : Mbin - 1;
-        if (Mbin == -1) {
-            std::cout << "Mbin == -1, MBD_centrality = " << MBD_centrality << std::endl;
-            continue;
-        }
-
         if (ApplyVtxZReWeighting && runnumber != -1){
             std::cout<<"Should not have the vtxZ weighting from the data"<<std::endl;
             exit(1);
@@ -493,7 +486,15 @@ void RestDist::PrepareEvent()
             INTTvtxZWeighting = 1.0;
         }
         
+        int Mbin = h1D_centrality_bin -> Fill(MBD_centrality, INTTvtxZWeighting);
+        Mbin = (Mbin == -1) ? -1 : Mbin - 1;
+        if (Mbin == -1) {
+            std::cout << "Mbin == -1, MBD_centrality = " << MBD_centrality << std::endl;
+            continue;
+        }
+
         // =======================================================================================================================================================
+        // todo: Only use the INTT for the analysis vtxZ range
         if (RequireVtxZRange.first && (INTTvtxZ < RequireVtxZRange.second.first || INTTvtxZ > RequireVtxZRange.second.second)) {continue;}
         // if (RequireVtxZRange.first && (MBD_z_vtx < RequireVtxZRange.second.first || MBD_z_vtx > RequireVtxZRange.second.second)) {continue;}
          

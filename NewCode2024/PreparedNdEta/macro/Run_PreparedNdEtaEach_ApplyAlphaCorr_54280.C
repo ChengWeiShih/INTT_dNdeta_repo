@@ -32,12 +32,12 @@ std::map<std::string, TH1D*> GetAlphaCorrectionH1DMap(std::string alpha_correcti
   return h1D_alpha_correction_map;
 }
 
-void Run_PreparedNdEtaEach_ApplyAlphaCorr(
-  int process_id = 2,
-  int run_num = -1,
-  string input_directory = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_Ntuple_HIJING_ana443_20241102/Run24NewCode_TrackHist/completed",
-  string input_filename = "MC_TrackletHistogram_vtxZReweight_INTT_vtxZ_QA_SecondRun_merged_002.root",
-  string output_directory = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_Ntuple_HIJING_ana443_20241102/Run24NewCode_dNdEta",
+void Run_PreparedNdEtaEach_ApplyAlphaCorr_54280(
+  int process_id = 0,
+  int run_num = 54280,
+  string input_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Dec042024/completed/Run24NewCode_TrackHist/completed",
+  string input_filename = "Data_TrackletHistogram_BcoFullDiffCut_INTT_vtxZ_QA_SecondRun_00054280_merged.root",
+  string output_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Dec042024/completed/Run24NewCode_TrackHist/completed/Run24NewCode_dNdEta",
   
   // todo : modify here
   std::string output_file_name_suffix = "_SecondRun", 

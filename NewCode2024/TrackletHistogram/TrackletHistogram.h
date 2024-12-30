@@ -32,6 +32,8 @@
 
 #include "TrackletHistogramFill.h"
 
+#include "../Constants.h"
+
 class TrackletHistogram{
     public: 
         TrackletHistogram(
@@ -43,10 +45,11 @@ class TrackletHistogram{
             std::string output_directory_in,
             std::string output_file_name_suffix_in,
 
-            bool vtxZReweight_in,
+            std::pair<bool, TH1D*> vtxZReweight_in,
             bool BcoFullDiffCut_in,
             bool INTT_vtxZ_QA_in,
-            bool isWithRotate_in
+            bool isWithRotate_in,
+            std::pair<bool, std::pair<double, double>> isClusQA_in // note : {adc, phi size}
         );
 
         std::string GetOutputFileName() {return tracklet_histogram_fill -> GetOutputFileName();}
@@ -64,10 +67,11 @@ class TrackletHistogram{
         std::string output_directory;
         std::string output_file_name_suffix;
 
-        bool vtxZReweight;
+        std::pair<bool, TH1D*> vtxZReweight;
         bool BcoFullDiffCut;
         bool INTT_vtxZ_QA;
         bool isWithRotate;
+        std::pair<bool, std::pair<double, double>> isClusQA; // note : {adc, phi size}
 
         // note : ----------------- for the root file out -----------------
         TrackletHistogramFill * tracklet_histogram_fill;

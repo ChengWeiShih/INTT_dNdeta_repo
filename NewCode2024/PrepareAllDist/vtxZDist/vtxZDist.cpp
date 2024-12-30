@@ -446,13 +446,6 @@ void vtxZDist::PrepareEvent()
         if (Apply_cut && (INTTvtxZError < cut_INTTvtxZError.first || INTTvtxZError > cut_INTTvtxZError.second)){continue;}
 
         // =======================================================================================================================================================
-        int Mbin = h1D_centrality_bin -> Fill(MBD_centrality);
-        Mbin = (Mbin == -1) ? -1 : Mbin - 1;
-        if (Mbin == -1) {
-            std::cout << "Mbin == -1, MBD_centrality = " << MBD_centrality << std::endl;
-            continue;
-        }
-
         double INTTvtxZWeighting;
         if (ApplyVtxZReWeighting && h1D_INTT_vtxZ_reweighting != nullptr){
             INTTvtxZWeighting = h1D_INTT_vtxZ_reweighting -> GetBinContent(h1D_INTT_vtxZ_reweighting -> FindBin(INTTvtxZ));
@@ -463,6 +456,13 @@ void vtxZDist::PrepareEvent()
         }
         else {
             INTTvtxZWeighting = 1.0;
+        }
+
+        int Mbin = h1D_centrality_bin -> Fill(MBD_centrality, INTTvtxZWeighting);
+        Mbin = (Mbin == -1) ? -1 : Mbin - 1;
+        if (Mbin == -1) {
+            std::cout << "Mbin == -1, MBD_centrality = " << MBD_centrality << std::endl;
+            continue;
         }
 
 
