@@ -828,7 +828,7 @@ void TrackletHistogramNew::MainProcess()
 
         h2D_map["h2D_RecoEvtCount_vtxZCentrality"] -> Fill(INTTvtxZ, MBD_centrality, INTTvtxZWeighting);
         h2D_map["h2D_InttVtxZ_Centrality"] -> Fill(INTTvtxZ, MBD_centrality, INTTvtxZWeighting); // note : fine bins in centrality
-        h1D_map[Form("h1D_centrality_InttVtxZ%d", InttVtxZ_bin)] -> Fill(MBD_centrality,INTTvtxZWeighting);
+        h1D_map[Form("h1D_centrality_InttVtxZ%d", InttVtxZ_bin)] -> Fill(MBD_centrality,INTTvtxZWeighting); // note : fine bins in centrality
 
         PrepareClusterVec();
 

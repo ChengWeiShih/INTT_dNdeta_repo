@@ -146,16 +146,18 @@ class PreparedNdEtaEach{
         double get_hstack2D_GoodProtoTracklet_count(THStack * stack_in, int eta_bin_in);
         double get_EvtCount(TH2D * hist_in, int centrality_bin_in);
         void Convert_to_PerEvt(TH1D * hist_in, double Nevent);
+        std::pair<int,int> get_DeltaPhi_SingleBin(TH1D * hist_in, std::pair<double, double> range_in);
 
         std::map<int, int> vtxZ_index_map;
         std::pair<double, double> cut_EtaRange_pair = {std::nan(""), std::nan("")};
 
         // Division:---histogram------------------------------------------------------------------------------------------------
         // note : signal (eta-vtxZ) centrality segemntation
+        std::map<std::string, TH1D*> h1D_BestPair_RecoTrackletEta_map;    // note : for the total count
+        std::map<std::string, TH1D*> h1D_BestPair_RecoTrackletEtaPerEvt_map;
+        std::map<std::string, TH1D*> h1D_BestPair_RecoTrackletEtaPerEvtPostAC_map;
+        
         std::map<std::string, THStack*> hstack1D_DeltaPhi_map;
-        std::map<std::string, TH1D*> h1D_FitBkg_RecoTrackletEta_map;    // note : for the total count
-        std::map<std::string, TH1D*> h1D_FitBkg_RecoTrackletEtaPerEvt_map;
-        std::map<std::string, TH1D*> h1D_FitBkg_RecoTrackletEtaPerEvtPostAC_map;
         std::map<std::string, TH1D*> h1D_RotatedBkg_RecoTrackletEta_map; // note : for the total count
         std::map<std::string, TH1D*> h1D_RotatedBkg_RecoTrackletEtaPerEvt_map;
         std::map<std::string, TH1D*> h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC_map;
@@ -163,6 +165,14 @@ class PreparedNdEtaEach{
         std::map<std::string, TH1D*> h1D_RotatedBkg_DeltaPhi_Signal_map;
         
         std::map<std::string, THStack*> hstack2D_GoodProtoTracklet_map; // note : for the good pair
+
+        // note : for the best pair
+        THStack * hstack1D_BestPair_ClusPhiSize;
+        THStack * hstack1D_BestPair_ClusAdc;
+        THStack * hstack1D_BestPair_DeltaPhi;
+        THStack * hstack1D_BestPair_DeltaEta;
+        THStack * hstack2D_BestPairEtaVtxZ;
+        THStack * hstack2D_BestPairEtaVtxZ_FineBin;
 
         // note : for the final Truth
         std::map<std::string, THStack*> hstack2D_TrueEtaVtxZ_map;
@@ -173,7 +183,7 @@ class PreparedNdEtaEach{
         std::map<std::string, TH1D*> h1D_alpha_correction_map_in;
         std::map<std::string, TH1D*> h1D_alpha_correction_map_out;
         std::vector<std::string> alpha_correction_name_map = {
-            "h1D_FitBkg_alpha_correction",
+            "h1D_BestPair_alpha_correction",
             "h1D_RotatedBkg_alpha_correction"
         };
 
@@ -190,6 +200,8 @@ class PreparedNdEtaEach{
         const std::vector<int> ROOT_color_code = {
             51, 61, 70, 79, 88, 98
         };
+
+        std::pair<double,double> BkgRotated_DeltaPhi_Signal_range = {-0.021, 0.021};
 
 
         // Division:---the functions------------------------------------------------------------------------------------------------

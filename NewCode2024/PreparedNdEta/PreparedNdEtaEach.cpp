@@ -200,6 +200,13 @@ void PreparedNdEtaEach::PrepareOutPutRootFile()
 
 void PreparedNdEtaEach::PrepareHistFits()
 {
+    hstack1D_BestPair_ClusPhiSize = new THStack("hstack1D_BestPair_ClusPhiSize","hstack1D_BestPair_ClusPhiSize");
+    hstack1D_BestPair_ClusAdc = new THStack("hstack1D_BestPair_ClusAdc","hstack1D_BestPair_ClusAdc");
+    hstack1D_BestPair_DeltaPhi = new THStack("hstack1D_BestPair_DeltaPhi","hstack1D_BestPair_DeltaPhi");
+    hstack1D_BestPair_DeltaEta = new THStack("hstack1D_BestPair_DeltaEta","hstack1D_BestPair_DeltaEta");
+    hstack2D_BestPairEtaVtxZ = new THStack("hstack2D_BestPairEtaVtxZ","hstack2D_BestPairEtaVtxZ");
+    hstack2D_BestPairEtaVtxZ_FineBin = new THStack("hstack2D_BestPairEtaVtxZ_FineBin","hstack2D_BestPairEtaVtxZ_FineBin");
+
     // Division:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     hstack2D_GoodProtoTracklet_map.clear();
 
@@ -225,10 +232,10 @@ void PreparedNdEtaEach::PrepareHistFits()
 
 
     // Division:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    h1D_FitBkg_RecoTrackletEta_map.clear();
-    h1D_FitBkg_RecoTrackletEta_map.insert( std::make_pair(
-            Form("h1D_FitBkg_RecoTrackletEta"),
-            new TH1D(Form("h1D_FitBkg_RecoTrackletEta"), Form("h1D_FitBkg_RecoTrackletEta;Tracklet #eta;Entries"), nEtaBin, EtaEdge_min, EtaEdge_max)
+    h1D_BestPair_RecoTrackletEta_map.clear();
+    h1D_BestPair_RecoTrackletEta_map.insert( std::make_pair(
+            Form("h1D_BestPair_RecoTrackletEta"),
+            new TH1D(Form("h1D_BestPair_RecoTrackletEta"), Form("h1D_BestPair_RecoTrackletEta;Tracklet #eta;Entries"), nEtaBin, EtaEdge_min, EtaEdge_max)
         )
     ).second;
 
@@ -580,7 +587,34 @@ void PreparedNdEtaEach::PrepareStacks()
                 std::cout<<"wtf_TruthEta_inclusive_to_Mbin: "<<pair.first<<std::endl;
             }
         }
+
+        // Division:--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+        if (pair.first.find("h1D") != std::string::npos && pair.first.find("BestPair") != std::string::npos && isTypeA == l_typeA){
+            if (
+                    SelectedMbin == 100 ||
+                    (SelectedMbin == Semi_inclusive_Mbin * 10 && l_Mbin <= Semi_inclusive_Mbin) ||
+                    SelectedMbin == l_Mbin
+                ){
+                if (pair.first.find("ClusPhiSize") != std::string::npos){
+                    pair.second->SetFillColor(ROOT_color_code[hstack1D_BestPair_ClusPhiSize->GetNhists() % ROOT_color_code.size()]);
+                    hstack1D_BestPair_ClusPhiSize -> Add(pair.second);
+                }
+                else if (pair.first.find("ClusAdc") != std::string::npos){
+                    pair.second->SetFillColor(ROOT_color_code[hstack1D_BestPair_ClusAdc->GetNhists() % ROOT_color_code.size()]);
+                    hstack1D_BestPair_ClusAdc -> Add(pair.second);
+                }
+                else if (pair.first.find("DeltaPhi") != std::string::npos){
+                    pair.second->SetFillColor(ROOT_color_code[hstack1D_BestPair_DeltaPhi->GetNhists() % ROOT_color_code.size()]);
+                    hstack1D_BestPair_DeltaPhi -> Add(pair.second);
+                }
+                else if (pair.first.find("DeltaEta") != std::string::npos){
+                    pair.second->SetFillColor(ROOT_color_code[hstack1D_BestPair_DeltaEta->GetNhists() % ROOT_color_code.size()]);
+                    hstack1D_BestPair_DeltaEta -> Add(pair.second);
+                }
+            }
+        }
     }
+
 
     // note : for h1D_RotatedBkg_DeltaPhi_Signal_map
     for (auto &pair : hstack1D_DeltaPhi_map)
@@ -699,7 +733,22 @@ void PreparedNdEtaEach::PrepareStacks()
             
         }
     }
+    
+    // Division : -----------------------------------------------------------------------------------------------------------------------------------------------------------------
+    for (int Mbin = 0; Mbin < nCentrality_bin; Mbin++)
+    {
+        std::string isTypeA_str = (isTypeA == 0) ? "" : "_typeA";
 
+        if (
+                SelectedMbin == 100 ||
+                (SelectedMbin == Semi_inclusive_Mbin * 10 && Mbin <= Semi_inclusive_Mbin) ||
+                SelectedMbin == Mbin
+            )
+        {
+            hstack2D_BestPairEtaVtxZ -> Add(h2D_input_map[Form("h2D%s_BestPairEtaVtxZ_Mbin%d",isTypeA_str.c_str(), Mbin)]);
+            hstack2D_BestPairEtaVtxZ_FineBin -> Add(h2D_input_map[Form("h2D%s_BestPairEtaVtxZ_Mbin%d_FineBin",isTypeA_str.c_str(), Mbin)]);
+        }
+    }
 
 }
 
@@ -877,16 +926,18 @@ void PreparedNdEtaEach::PrepareMultiplicity()
 
         std::cout<<Form("FitBkg: hstack1D_DeltaPhi_Eta%d_BkgPol2_Draw", eta_bin)<<": "<<pol2_bkg_integral<<", rotated_bkg_count: "<<rotated_bkg_count<<std::endl;
         
-        h1D_FitBkg_RecoTrackletEta_map[Form("h1D_FitBkg_RecoTrackletEta")] -> SetBinContent(
+        h1D_BestPair_RecoTrackletEta_map[Form("h1D_BestPair_RecoTrackletEta")] -> SetBinContent(
             eta_bin + 1,
-            get_hstack2D_GoodProtoTracklet_count(hstack2D_GoodProtoTracklet_map[Form("hstack2D_GoodProtoTracklet_EtaVtxZ")], eta_bin) - pol2_bkg_integral
+            get_hstack2D_GoodProtoTracklet_count(hstack2D_BestPairEtaVtxZ, eta_bin)
         );
+
+        std::pair<int, int> DeltaPhi_signal_bin = get_DeltaPhi_SingleBin(h1D_RotatedBkg_DeltaPhi_Signal_map[Form("h1D_RotatedBkg_DeltaPhi_Signal_Eta%d", eta_bin)], BkgRotated_DeltaPhi_Signal_range);
 
         // todo : for the test, try to use different way to determine the signal size of this method, we take the full range of th DeltaPhi distribution
         h1D_RotatedBkg_RecoTrackletEta_map[Form("h1D_RotatedBkg_RecoTrackletEta")] -> SetBinContent(
             eta_bin + 1,
 
-            h1D_RotatedBkg_DeltaPhi_Signal_map[Form("h1D_RotatedBkg_DeltaPhi_Signal_Eta%d", eta_bin)] -> Integral(51,90) // todo: it's a test, bin 51 -> 90 corresponds to -0.02 -> 0.02
+            h1D_RotatedBkg_DeltaPhi_Signal_map[Form("h1D_RotatedBkg_DeltaPhi_Signal_Eta%d", eta_bin)] -> Integral(DeltaPhi_signal_bin.first, DeltaPhi_signal_bin.second) // todo: it's a test, bin 51 -> 90 corresponds to -0.02 -> 0.02
 
             // get_hstack2D_GoodProtoTracklet_count(hstack2D_GoodProtoTracklet_map[Form("hstack2D_GoodProtoTracklet_EtaVtxZ")], eta_bin) - 
             // rotated_bkg_count
@@ -916,17 +967,17 @@ void PreparedNdEtaEach::PreparedNdEtaHist()
 
     // Division:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-    h1D_FitBkg_RecoTrackletEtaPerEvt_map.clear();
-    h1D_FitBkg_RecoTrackletEtaPerEvt_map.insert( 
+    h1D_BestPair_RecoTrackletEtaPerEvt_map.clear();
+    h1D_BestPair_RecoTrackletEtaPerEvt_map.insert( 
         std::make_pair(            
-            "h1D_FitBkg_RecoTrackletEtaPerEvt",
-            (TH1D*)h1D_FitBkg_RecoTrackletEta_map["h1D_FitBkg_RecoTrackletEta"] -> Clone("h1D_FitBkg_RecoTrackletEtaPerEvt")
+            "h1D_BestPair_RecoTrackletEtaPerEvt",
+            (TH1D*)h1D_BestPair_RecoTrackletEta_map["h1D_BestPair_RecoTrackletEta"] -> Clone("h1D_BestPair_RecoTrackletEtaPerEvt")
         )
     );
-    h1D_FitBkg_RecoTrackletEtaPerEvt_map["h1D_FitBkg_RecoTrackletEtaPerEvt"] -> SetName("h1D_FitBkg_RecoTrackletEtaPerEvt");
-    h1D_FitBkg_RecoTrackletEtaPerEvt_map["h1D_FitBkg_RecoTrackletEtaPerEvt"] -> SetTitle("h1D_FitBkg_RecoTrackletEtaPerEvt");
-    h1D_FitBkg_RecoTrackletEtaPerEvt_map["h1D_FitBkg_RecoTrackletEtaPerEvt"] -> Scale(1. / get_EvtCount(h2D_input_map["h2D_RecoEvtCount_vtxZCentrality"], SelectedMbin));
-    h1D_FitBkg_RecoTrackletEtaPerEvt_map["h1D_FitBkg_RecoTrackletEtaPerEvt"] -> Scale(1. / double(h1D_FitBkg_RecoTrackletEtaPerEvt_map["h1D_FitBkg_RecoTrackletEtaPerEvt"]->GetBinWidth(1)));
+    h1D_BestPair_RecoTrackletEtaPerEvt_map["h1D_BestPair_RecoTrackletEtaPerEvt"] -> SetName("h1D_BestPair_RecoTrackletEtaPerEvt");
+    h1D_BestPair_RecoTrackletEtaPerEvt_map["h1D_BestPair_RecoTrackletEtaPerEvt"] -> SetTitle("h1D_BestPair_RecoTrackletEtaPerEvt");
+    h1D_BestPair_RecoTrackletEtaPerEvt_map["h1D_BestPair_RecoTrackletEtaPerEvt"] -> Scale(1. / get_EvtCount(h2D_input_map["h2D_RecoEvtCount_vtxZCentrality"], SelectedMbin));
+    h1D_BestPair_RecoTrackletEtaPerEvt_map["h1D_BestPair_RecoTrackletEtaPerEvt"] -> Scale(1. / double(h1D_BestPair_RecoTrackletEtaPerEvt_map["h1D_BestPair_RecoTrackletEtaPerEvt"]->GetBinWidth(1)));
 
 
 
@@ -945,15 +996,15 @@ void PreparedNdEtaEach::PreparedNdEtaHist()
     
     
     // Division:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    h1D_FitBkg_RecoTrackletEtaPerEvtPostAC_map.clear();
-    h1D_FitBkg_RecoTrackletEtaPerEvtPostAC_map.insert( 
+    h1D_BestPair_RecoTrackletEtaPerEvtPostAC_map.clear();
+    h1D_BestPair_RecoTrackletEtaPerEvtPostAC_map.insert( 
         std::make_pair(            
-            "h1D_FitBkg_RecoTrackletEtaPerEvtPostAC",
-            (TH1D*)h1D_FitBkg_RecoTrackletEtaPerEvt_map["h1D_FitBkg_RecoTrackletEtaPerEvt"] -> Clone("h1D_FitBkg_RecoTrackletEtaPerEvtPostAC")
+            "h1D_BestPair_RecoTrackletEtaPerEvtPostAC",
+            (TH1D*)h1D_BestPair_RecoTrackletEtaPerEvt_map["h1D_BestPair_RecoTrackletEtaPerEvt"] -> Clone("h1D_BestPair_RecoTrackletEtaPerEvtPostAC")
         )
     );
-    h1D_FitBkg_RecoTrackletEtaPerEvtPostAC_map["h1D_FitBkg_RecoTrackletEtaPerEvtPostAC"]  -> SetName("h1D_FitBkg_RecoTrackletEtaPerEvtPostAC");
-    h1D_FitBkg_RecoTrackletEtaPerEvtPostAC_map["h1D_FitBkg_RecoTrackletEtaPerEvtPostAC"] -> SetTitle("h1D_FitBkg_RecoTrackletEtaPerEvtPostAC");
+    h1D_BestPair_RecoTrackletEtaPerEvtPostAC_map["h1D_BestPair_RecoTrackletEtaPerEvtPostAC"]  -> SetName("h1D_BestPair_RecoTrackletEtaPerEvtPostAC");
+    h1D_BestPair_RecoTrackletEtaPerEvtPostAC_map["h1D_BestPair_RecoTrackletEtaPerEvtPostAC"] -> SetTitle("h1D_BestPair_RecoTrackletEtaPerEvtPostAC");
 
     h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC_map.clear();
     h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC_map.insert( 
@@ -971,9 +1022,9 @@ void PreparedNdEtaEach::PreparedNdEtaHist()
 
     if (h1D_alpha_correction_map_in.size() != 0 && ApplyAlphaCorr == true)
     {
-        // note : FitBkg
-        h1D_FitBkg_RecoTrackletEtaPerEvtPostAC_map[Form("h1D_FitBkg_RecoTrackletEtaPerEvtPostAC")] -> Sumw2(true);
-        h1D_FitBkg_RecoTrackletEtaPerEvtPostAC_map[Form("h1D_FitBkg_RecoTrackletEtaPerEvtPostAC")] -> Divide(h1D_FitBkg_RecoTrackletEtaPerEvtPostAC_map[Form("h1D_FitBkg_RecoTrackletEtaPerEvtPostAC")], h1D_alpha_correction_map_in[alpha_correction_name_map[0]], 1, 1);
+        // note : BestPair
+        h1D_BestPair_RecoTrackletEtaPerEvtPostAC_map[Form("h1D_BestPair_RecoTrackletEtaPerEvtPostAC")] -> Sumw2(true);
+        h1D_BestPair_RecoTrackletEtaPerEvtPostAC_map[Form("h1D_BestPair_RecoTrackletEtaPerEvtPostAC")] -> Divide(h1D_BestPair_RecoTrackletEtaPerEvtPostAC_map[Form("h1D_BestPair_RecoTrackletEtaPerEvtPostAC")], h1D_alpha_correction_map_in[alpha_correction_name_map[0]], 1, 1);
 
         // note : RotatedBkg
         h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC_map[Form("h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC")] -> Sumw2(true);
@@ -985,25 +1036,18 @@ void PreparedNdEtaEach::PreparedNdEtaHist()
             if (
                 cut_EtaRange_pair.first == cut_EtaRange_pair.first && 
                 ( 
-                    h1D_FitBkg_RecoTrackletEtaPerEvtPostAC_map[Form("h1D_FitBkg_RecoTrackletEtaPerEvtPostAC")] -> GetXaxis() -> GetBinUpEdge(eta_bin + 1) < cut_EtaRange_pair.first || 
-                    h1D_FitBkg_RecoTrackletEtaPerEvtPostAC_map[Form("h1D_FitBkg_RecoTrackletEtaPerEvtPostAC")] -> GetXaxis() -> GetBinLowEdge(eta_bin + 1) > cut_EtaRange_pair.second
+                    h1D_BestPair_RecoTrackletEtaPerEvtPostAC_map[Form("h1D_BestPair_RecoTrackletEtaPerEvtPostAC")] -> GetXaxis() -> GetBinUpEdge(eta_bin + 1) < cut_EtaRange_pair.first || 
+                    h1D_BestPair_RecoTrackletEtaPerEvtPostAC_map[Form("h1D_BestPair_RecoTrackletEtaPerEvtPostAC")] -> GetXaxis() -> GetBinLowEdge(eta_bin + 1) > cut_EtaRange_pair.second
                 )
             ){
-                h1D_FitBkg_RecoTrackletEtaPerEvtPostAC_map[Form("h1D_FitBkg_RecoTrackletEtaPerEvtPostAC")] -> SetBinContent(eta_bin + 1, 0);
-                h1D_FitBkg_RecoTrackletEtaPerEvtPostAC_map[Form("h1D_FitBkg_RecoTrackletEtaPerEvtPostAC")] -> SetBinError(eta_bin + 1, 0);
+                h1D_BestPair_RecoTrackletEtaPerEvtPostAC_map[Form("h1D_BestPair_RecoTrackletEtaPerEvtPostAC")] -> SetBinContent(eta_bin + 1, 0);
+                h1D_BestPair_RecoTrackletEtaPerEvtPostAC_map[Form("h1D_BestPair_RecoTrackletEtaPerEvtPostAC")] -> SetBinError(eta_bin + 1, 0);
 
                 h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC_map[Form("h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC")] -> SetBinContent(eta_bin + 1, 0);
                 h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC_map[Form("h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC")] -> SetBinError(eta_bin + 1, 0);
 
                 continue;
             }
-            // // note : FitBkg
-            // h1D_FitBkg_RecoTrackletEtaPerEvtPostAC_map[Form("h1D_FitBkg_RecoTrackletEtaPerEvtPostAC")] -> SetBinContent(eta_bin + 1, h1D_FitBkg_RecoTrackletEtaPerEvtPostAC_map[Form("h1D_FitBkg_RecoTrackletEtaPerEvtPostAC")] -> GetBinContent(eta_bin + 1) / h1D_alpha_correction_map_in[alpha_correction_name_map[0]] -> GetBinContent(eta_bin + 1));
-            // h1D_FitBkg_RecoTrackletEtaPerEvtPostAC_map[Form("h1D_FitBkg_RecoTrackletEtaPerEvtPostAC")] -> SetBinError(eta_bin + 1, h1D_FitBkg_RecoTrackletEtaPerEvtPostAC_map[Form("h1D_FitBkg_RecoTrackletEtaPerEvtPostAC")] -> GetBinError(eta_bin + 1)     / h1D_alpha_correction_map_in[alpha_correction_name_map[0]] -> GetBinContent(eta_bin + 1));
-
-            // // note : RotatedBkg
-            // h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC_map[Form("h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC")] -> SetBinContent(eta_bin + 1, h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC_map[Form("h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC")] -> GetBinContent(eta_bin + 1) / h1D_alpha_correction_map_in[alpha_correction_name_map[1]] -> GetBinContent(eta_bin + 1));
-            // h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC_map[Form("h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC")] -> SetBinError(eta_bin + 1, h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC_map[Form("h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC")] -> GetBinError(eta_bin + 1)     / h1D_alpha_correction_map_in[alpha_correction_name_map[1]] -> GetBinContent(eta_bin + 1));
         }
 
     }
@@ -1041,19 +1085,8 @@ void PreparedNdEtaEach::DeriveAlphaCorrection()
     h1D_alpha_correction_map_out[alpha_correction_name_map[0]] -> Sumw2(true);
     h1D_alpha_correction_map_out[alpha_correction_name_map[1]] -> Sumw2(true);
 
-    h1D_alpha_correction_map_out[alpha_correction_name_map[0]] -> Divide(h1D_FitBkg_RecoTrackletEtaPerEvtPostAC_map[Form("h1D_FitBkg_RecoTrackletEtaPerEvtPostAC")], h1D_TruedNdEta_map[Form("h1D_TruedNdEta")]);
+    h1D_alpha_correction_map_out[alpha_correction_name_map[0]] -> Divide(h1D_BestPair_RecoTrackletEtaPerEvtPostAC_map[Form("h1D_BestPair_RecoTrackletEtaPerEvtPostAC")], h1D_TruedNdEta_map[Form("h1D_TruedNdEta")]);
     h1D_alpha_correction_map_out[alpha_correction_name_map[1]] -> Divide(h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC_map[Form("h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC")], h1D_TruedNdEta_map[Form("h1D_TruedNdEta")]);
-
-    // for (int eta_bin = 0; eta_bin < nEtaBin; eta_bin++)
-    // {   
-    //     // note : FitBkg
-    //     h1D_alpha_correction_map_out[alpha_correction_name_map[0]] -> SetBinContent(eta_bin + 1, h1D_FitBkg_RecoTrackletEtaPerEvtPostAC_map[Form("h1D_FitBkg_RecoTrackletEtaPerEvtPostAC")] -> GetBinContent(eta_bin + 1) / h1D_TruedNdEta_map[Form("h1D_TruedNdEta")] -> GetBinContent(eta_bin + 1));
-    //     // h1D_alpha_correction_map_out[alpha_correction_name_map[0]] -> SetBinError(eta_bin + 1, h1D_FitBkg_RecoTrackletEtaPerEvtPostAC_map[Form("h1D_FitBkg_RecoTrackletEtaPerEvtPostAC")] -> GetBinError(eta_bin + 1)     / h1D_TruedNdEta_map[Form("h1D_TruedNdEta")] -> GetBinContent(eta_bin + 1));
-        
-    //     // note : RotatedBkg
-    //     h1D_alpha_correction_map_out[alpha_correction_name_map[1]] -> SetBinContent(eta_bin + 1, h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC_map[Form("h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC")] -> GetBinContent(eta_bin + 1) / h1D_TruedNdEta_map[Form("h1D_TruedNdEta")] -> GetBinContent(eta_bin + 1));
-    //     // h1D_alpha_correction_map_out[alpha_correction_name_map[1]] -> SetBinError(eta_bin + 1, h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC_map[Form("h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC")] -> GetBinError(eta_bin + 1)     / h1D_TruedNdEta_map[Form("h1D_TruedNdEta")] -> GetBinContent(eta_bin + 1));
-    // }
 }
 
 void PreparedNdEtaEach::EndRun()
@@ -1085,9 +1118,16 @@ void PreparedNdEtaEach::EndRun()
         h2D_input_map["h2D_TrueEvtCount_vtxZCentrality"] -> Write();
     }
 
-    h1D_FitBkg_RecoTrackletEta_map["h1D_FitBkg_RecoTrackletEta"] -> Write();
-    h1D_FitBkg_RecoTrackletEtaPerEvt_map["h1D_FitBkg_RecoTrackletEtaPerEvt"] -> Write();
-    h1D_FitBkg_RecoTrackletEtaPerEvtPostAC_map["h1D_FitBkg_RecoTrackletEtaPerEvtPostAC"] -> Write();
+    ((TH1D*) hstack1D_BestPair_ClusPhiSize -> GetStack() -> Last()) -> Write("h1D_BestPair_ClusPhiSize");
+    ((TH1D*) hstack1D_BestPair_ClusAdc -> GetStack() -> Last()) -> Write("h1D_BestPair_ClusAdc");
+    ((TH1D*) hstack1D_BestPair_DeltaPhi -> GetStack() -> Last()) -> Write("h1D_BestPair_DeltaPhi");
+    ((TH1D*) hstack1D_BestPair_DeltaEta -> GetStack() -> Last()) -> Write("h1D_BestPair_DeltaEta");
+    ((TH1D*) hstack2D_BestPairEtaVtxZ -> GetStack() -> Last()) -> Write("h2D_BestPairEtaVtxZ");
+    ((TH1D*) hstack2D_BestPairEtaVtxZ_FineBin -> GetStack() -> Last()) -> Write("h2D_BestPairEtaVtxZ_FineBin");
+
+    h1D_BestPair_RecoTrackletEta_map["h1D_BestPair_RecoTrackletEta"] -> Write();
+    h1D_BestPair_RecoTrackletEtaPerEvt_map["h1D_BestPair_RecoTrackletEtaPerEvt"] -> Write();
+    h1D_BestPair_RecoTrackletEtaPerEvtPostAC_map["h1D_BestPair_RecoTrackletEtaPerEvtPostAC"] -> Write();
     h1D_RotatedBkg_RecoTrackletEta_map["h1D_RotatedBkg_RecoTrackletEta"] -> Write();
     h1D_RotatedBkg_RecoTrackletEtaPerEvt_map["h1D_RotatedBkg_RecoTrackletEtaPerEvt"] -> Write();
     h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC_map["h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC"] -> Write();
@@ -1112,6 +1152,13 @@ void PreparedNdEtaEach::EndRun()
         hstack1D_TrueEta_map["hstack1D_TrueEta"] -> Write();
     }
 
+    hstack1D_BestPair_ClusPhiSize -> Write();
+    hstack1D_BestPair_ClusAdc -> Write();
+    hstack1D_BestPair_DeltaPhi -> Write();
+    hstack1D_BestPair_DeltaEta -> Write();
+    hstack2D_BestPairEtaVtxZ -> Write();
+    hstack2D_BestPairEtaVtxZ_FineBin -> Write();
+
     if (runnumber == -1){
         c1 -> Clear();
         c1 -> cd();
@@ -1119,8 +1166,8 @@ void PreparedNdEtaEach::EndRun()
         h1D_TruedNdEta_map["h1D_TruedNdEta"] -> SetFillColorAlpha(0,0);
         h1D_TruedNdEta_map["h1D_TruedNdEta"] -> SetMinimum(0.);
         h1D_TruedNdEta_map["h1D_TruedNdEta"] -> Draw("hist");
-        h1D_FitBkg_RecoTrackletEtaPerEvtPostAC_map["h1D_FitBkg_RecoTrackletEtaPerEvtPostAC"]->SetLineColor(2);
-        h1D_FitBkg_RecoTrackletEtaPerEvtPostAC_map["h1D_FitBkg_RecoTrackletEtaPerEvtPostAC"]->Draw("ep same");
+        h1D_BestPair_RecoTrackletEtaPerEvtPostAC_map["h1D_BestPair_RecoTrackletEtaPerEvtPostAC"]->SetLineColor(2);
+        h1D_BestPair_RecoTrackletEtaPerEvtPostAC_map["h1D_BestPair_RecoTrackletEtaPerEvtPostAC"]->Draw("ep same");
         h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC_map["h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC"]->SetLineColor(8);
         h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC_map["h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC"]->Draw("ep same");
 
@@ -1301,4 +1348,18 @@ void PreparedNdEtaEach::Convert_to_PerEvt(TH1D * hist_in, double Nevent)
         hist_in -> SetBinError(i, hist_in -> GetBinError(i) / Nevent);
     }
 
+}
+
+std::pair<int,int> PreparedNdEtaEach::get_DeltaPhi_SingleBin(TH1D * hist_in, std::pair<double, double> range_in)
+{
+    int bin_min = hist_in -> FindBin(range_in.first);
+    
+    int bin_max = hist_in -> FindBin(range_in.second);
+    bin_max = (hist_in -> GetXaxis() -> GetBinLowEdge(bin_max) == range_in.second) ? bin_max - 1 : bin_max;
+
+    std::cout<<"Input range : "<<range_in.first<<", "<<range_in.second<<std::endl;
+    std::cout<<"Final selected bins: "<<bin_min<<", "<<bin_max<<std::endl;
+    std::cout<<"Output range : "<<hist_in -> GetXaxis() -> GetBinLowEdge(bin_min)<<", "<<hist_in -> GetXaxis() -> GetBinUpEdge(bin_max)<<std::endl;
+
+    return std::make_pair(bin_min, bin_max);
 }
