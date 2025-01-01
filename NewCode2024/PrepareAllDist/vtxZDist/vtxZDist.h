@@ -135,12 +135,18 @@ class vtxZDist{
 
         int HighNClus = 500;
 
+        double cut_GoodRecoVtxZ = Constants::cut_GoodRecoVtxZ; // note : unit [cm]
+
         std::pair<double, double> cut_vtxZDiff = Constants::cut_vtxZDiff;
         std::pair<double, double> cut_TrapezoidalFitWidth = Constants::cut_TrapezoidalFitWidth;
         std::pair<double, double> cut_TrapezoidalFWHM = Constants::cut_TrapezoidalFWHM;
         std::pair<double, double> cut_INTTvtxZError = Constants::cut_INTTvtxZError;
         std::pair<double, double> cut_GlobalMBDvtxZ = Constants::cut_GlobalMBDvtxZ;
         std::pair<double, double> cut_AnaVtxZ = Constants::cut_AnaVtxZ;
+
+        double VtxZEdge_min = Constants::VtxZEdge_min;
+        double VtxZEdge_max = Constants::VtxZEdge_max;
+        int nVtxZBin = Constants::nVtxZBin;
 
         int cut_InttBcoFullDIff_next = Constants::cut_InttBcoFullDIff_next;
         int Semi_inclusive_bin = Constants::Semi_inclusive_bin;

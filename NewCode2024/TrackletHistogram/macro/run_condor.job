@@ -13,7 +13,7 @@ input_directory    = /sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata
 job_offset    = 0
 process_shift      = $(Process) + $(job_offset) 
 input_filename     = Data_EvtVtxZProtoTracklet_FieldOff_BcoFullDiff_VtxZReco_Tracklet_TrackletRotate_FirstRun20241218_00054280_$INT(process_shift,%05d).root
-output_directory   = /sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Dec042024/completed/Run24NewCode_TrackHist_ClusQA
+output_directory   = /sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Dec042024/completed/TrackHistNew_WithClusQA
 macro_name         = Run_PrepareHist
 
 Output             = $(output_directory)/cw_log/condor_$INT(process_shift,%05d).out

@@ -12,6 +12,7 @@ SemiChipClustering::SemiChipClustering(
 
     bool BcoFullDiffCut_in,
     bool INTT_vtxZ_QA_in,
+    std::pair<bool, std::string> BadChMask_in,
     bool ApplyHitQA_in,
     bool clone_hit_remove_BCO_tag_in,
     std::pair<bool, int> cut_HitBcoDiff_in,
@@ -26,6 +27,7 @@ SemiChipClustering::SemiChipClustering(
     output_file_name_suffix(output_file_name_suffix_in),
     BcoFullDiffCut(BcoFullDiffCut_in),
     INTT_vtxZ_QA(INTT_vtxZ_QA_in),
+    BadChMask(BadChMask_in),
     ApplyHitQA(ApplyHitQA_in),
     clone_hit_remove_BCO_tag(clone_hit_remove_BCO_tag_in),
     cut_HitBcoDiff(cut_HitBcoDiff_in),
@@ -38,6 +40,11 @@ SemiChipClustering::SemiChipClustering(
 
     PrepareOutPutFileName();
     PrepareOutPutRootFile();
+    
+    hot_channel_map.clear();
+    if (BadChMask.first){PrepareHotChannel();}
+
+    PrepareHists();
 }
 
 std::map<std::string, int> SemiChipClustering::GetInputTreeBranchesMap(TTree * m_tree_in)
@@ -96,6 +103,9 @@ void SemiChipClustering::PrepareInputRootFile(){
     tree_in -> SetBranchStatus("TrapezoidalFWHM", 1);
 
     tree_in -> SetBranchStatus("NClus", 1);
+    tree_in -> SetBranchStatus("NClus_Layer1", 1);
+    tree_in -> SetBranchStatus("ClusAdc", 1);
+    tree_in -> SetBranchStatus("ClusPhiSize", 1);
 
 
     InttRawHit_bco = 0;
@@ -105,6 +115,9 @@ void SemiChipClustering::PrepareInputRootFile(){
     InttRawHit_chip_id = 0;
     InttRawHit_adc = 0;
     InttRawHit_FPHX_BCO = 0;
+
+    ClusAdc = 0;
+    ClusPhiSize = 0;
 
     tree_in -> SetBranchAddress("MBD_z_vtx", &MBD_z_vtx);
     tree_in -> SetBranchAddress("is_min_bias", &is_min_bias);
@@ -137,6 +150,10 @@ void SemiChipClustering::PrepareInputRootFile(){
     tree_in -> SetBranchAddress("TrapezoidalFWHM", &TrapezoidalFWHM);
 
     tree_in -> SetBranchAddress("NClus", &NClus);
+    tree_in -> SetBranchAddress("NClus_Layer1", &NClus_Layer1);
+
+    tree_in -> SetBranchAddress("ClusAdc", &ClusAdc);
+    tree_in -> SetBranchAddress("ClusPhiSize", &ClusPhiSize);
 
 
 }
@@ -163,6 +180,7 @@ void SemiChipClustering::PrepareOutPutFileName()
     output_filename += (BcoFullDiffCut && runnumber != -1) ? "_BcoFullDiffCut" : "";
     output_filename += (INTT_vtxZ_QA) ? "_VtxZQA" : "";
 
+    output_filename += (BadChMask.first) ? "_BadChMask" : "";
     output_filename += (ApplyHitQA) ? "_HitQA" : "";
     output_filename += (cut_HitBcoDiff.first) ? Form("_HitBcoDiff%d",cut_HitBcoDiff.second) : "";
     output_filename += (clone_hit_remove_BCO_tag) ? "_CloneHitRm" : "";
@@ -179,18 +197,49 @@ void SemiChipClustering::PrepareOutPutRootFile()
 void SemiChipClustering::PrepareHists()
 {
     h1D_NSize2Clus = new TH1D("h1D_NSize2Clus","h1D_NSize2Clus;NSize2Clus;Entries", 30, 0, 30);
-    h1D_NSize1Clus = new TH1D("h1D_NSize1Clus","h1D_NSize1Clus;NSize1Clus;Entries", 30, 0, 30);
+    h1D_NSize1Clus = new TH1D("h1D_NSize1Clus","h1D_NSize1Clus;NSize1Clus;Entries", 45, 0, 45);
     
     h2D_NClus_NSize2Clus = new TH2D("h2D_NClus_NSize2Clus","h2D_NClus_NSize2Clus;NClus;NSize2Clus", 200, 0, 10000, 30, 0, 30);
-    h2D_NClus_NSize1Clus = new TH2D("h2D_NClus_NSize1Clus","h2D_NClus_NSize1Clus;NClus;NSize1Clus", 200, 0, 10000, 30, 0, 30);
+    h2D_NClus_NSize1Clus = new TH2D("h2D_NClus_NSize1Clus","h2D_NClus_NSize1Clus;NClus;NSize1Clus", 200, 0, 10000, 45, 0, 45);
     h2D_nInttRawHit_NSize2Clus = new TH2D("h2D_nInttRawHit_NSize2Clus","h2D_nInttRawHit_NSize2Clus;NInttRawHits;NSize2Clus",200, 0, 25000, 30, 0, 30);
-    h2D_nInttRawHit_NSize1Clus = new TH2D("h2D_nInttRawHit_NSize1Clus","h2D_nInttRawHit_NSize1Clus;NInttRawHits;NSize1Clus",200, 0, 25000, 30, 0, 30);
+    h2D_nInttRawHit_NSize1Clus = new TH2D("h2D_nInttRawHit_NSize1Clus","h2D_nInttRawHit_NSize1Clus;NInttRawHits;NSize1Clus",200, 0, 25000, 45, 0, 45);
 
     h2D_nChipHit_NSize2Clus = new TH2D("h2D_nChipHit_NSize2Clus","h2D_nChipHit_NSize2Clus;NChipHits;NSize2Clus",128, 0, 128, 30, 0, 30);
-    h2D_nChipHit_NSize1Clus = new TH2D("h2D_nChipHit_NSize1Clus","h2D_nChipHit_NSize1Clus;NChipHits;NSize1Clus",128, 0, 128, 30, 0, 30);
+    h2D_nChipHit_NSize1Clus = new TH2D("h2D_nChipHit_NSize1Clus","h2D_nChipHit_NSize1Clus;NChipHits;NSize1Clus",128, 0, 128, 45, 0, 45);
+
+    h2D_NSize2Clus_NSize1Clus = new TH2D("h2D_NSize2Clus_NSize1Clus","h2D_NSize2Clus_NSize1Clus;NSize2Clus;NSize1Clus", 30, 0, 30, 45, 0, 45);
+    h2D_NSize2Clus_LargestSize = new TH2D("h2D_NSize2Clus_LargestSize","h2D_NSize2Clus_LargestSize;NSize2Clus;LargestSize", 30, 0, 30, 128, 0, 128);
 
     h1D_ClusSizeCount = new TH1D("h1D_ClusSizeCount","h1D_ClusSizeCount;ClusSize;Entries", 130,0,130);
     h1D_ClusSizeCount_all = new TH1D("h1D_ClusSizeCount_all","h1D_ClusSizeCount_all;ClusSize;Entries", 130,0,130);
+
+    h1D_confirm_HitBcoDiff_post = new TH1D("h1D_confirm_HitBcoDiff_post","h1D_confirm_HitBcoDiff_post;Time_bucket;Entries",128, 0, 128);
+    h1D_confirm_HitBcoDiff = new TH1D("h1D_confirm_HitBcoDiff","h1D_confirm_HitBcoDiff;Time_bucket;Entries",128, 0, 128);
+    h2D_confirm_NClus_MBDChargeSum = new TH2D("h2D_confirm_NClus_MBDChargeSum","h2D_confirm_NClus_MBDChargeSum;INTT NClus; MBD Charge Sum",200, 0, 10000, 200, 0, 3000);
+
+    h2D_NSize2Clus_Size2Dist = new TH2D("h2D_NSize2Clus_Size2Dist","h2D_NSize2Clus_Size2Dist;NSize2Clus;Size2Dist",30,0,30,100,0,20);
+    h2D_Size2DistAvg_Size2DistStd = new TH2D("h2D_Size2DistAvg_Size2DistStd","h2D_Size2DistAvg_Size2DistStd;Avg. Size2Dist;StdDev Size2Dist",100,0,20,200,0,20);
+    h2D_Size2DistAvg_Size2DistStd_WithLargeSize = new TH2D("h2D_Size2DistAvg_Size2DistStd_WithLargeSize","h2D_Size2DistAvg_Size2DistStd_WithLargeSize;Avg. Size2Dist;StdDev Size2Dist",100,0,20,200,0,20);
+
+
+    h2D_Inclusive_Inner_Outer_NClus = new TH2D("h2D_Inclusive_Inner_Outer_NClus","h2D_Inclusive_Inner_Outer_NClus;NClus (Inner);NClus (Outer)",200,0,5000,200,0,5000);
+    h2D_Inclusive_NClus_MBDChargeSum = new TH2D("h2D_Inclusive_NClus_MBDChargeSum","h2D_Inclusive_NClus_MBDChargeSum;NClus;MBD charge sum",200,0,10000,200,0,3000);
+    h1D_Inclusive_MBDCentrality = new TH1D("h1D_Inclusive_MBDCentrality","h1D_Inclusive_MBDCentrality;MBD charge sum;Entries",nCentralityFineBin, CentralityFineEdge_min, CentralityFineEdge_max);
+    h1D_Inclusive_ClusPhiSize = new TH1D("h1D_Inclusive_ClusPhiSize","h1D_Inclusive_ClusPhiSize;ClusPhiSize;Entries",128,0,128);
+    h1D_Inclusive_ClusAdc = new TH1D("h1D_Inclusive_ClusAdc","h1D_Inclusive_ClusAdc;ClusAdc;Entries",200,0,18000);
+
+    h2D_Post_Inner_Outer_NClus = new TH2D("h2D_Post_Inner_Outer_NClus","h2D_Post_Inner_Outer_NClus;NClus (Inner);NClus (Outer)",200,0,5000,200,0,5000);
+    h2D_Post_NClus_MBDChargeSum = new TH2D("h2D_Post_NClus_MBDChargeSum","h2D_Post_NClus_MBDChargeSum;NClus;MBD charge sum",200,0,10000,200,0,3000);
+    h1D_Post_MBDCentrality = new TH1D("h1D_Post_MBDCentrality","h1D_Post_MBDCentrality;MBD charge sum;Entries",nCentralityFineBin, CentralityFineEdge_min, CentralityFineEdge_max);
+    h1D_Post_ClusPhiSize = new TH1D("h1D_Post_ClusPhiSize","h1D_Post_ClusPhiSize;ClusPhiSize;Entries",128,0,128);
+    h1D_Post_ClusAdc = new TH1D("h1D_Post_ClusAdc","h1D_Post_ClusAdc;ClusAdc;Entries",200,0,18000);
+
+    h2D_Killed_Inner_Outer_NClus = new TH2D("h2D_Killed_Inner_Outer_NClus","h2D_Killed_Inner_Outer_NClus;NClus (Inner);NClus (Outer)",200,0,5000,200,0,5000);
+    h2D_Killed_NClus_MBDChargeSum = new TH2D("h2D_Killed_NClus_MBDChargeSum","h2D_Killed_NClus_MBDChargeSum;NClus;MBD charge sum",200,0,10000,200,0,3000);
+    h1D_Killed_MBDCentrality = new TH1D("h1D_Killed_MBDCentrality","h1D_Killed_MBDCentrality;MBD charge sum;Entries",nCentralityFineBin, CentralityFineEdge_min, CentralityFineEdge_max);
+    h1D_Killed_ClusPhiSize = new TH1D("h1D_Killed_ClusPhiSize","h1D_Killed_ClusPhiSize;ClusPhiSize;Entries",128,0,128);
+    h1D_Killed_ClusAdc = new TH1D("h1D_Killed_ClusAdc","h1D_Killed_ClusAdc;ClusAdc;Entries",200,0,18000);
+
 
     h1D_chip_hit_container_map.clear();
     for (int server_i = 0; server_i < nFelix; server_i++){
@@ -245,6 +294,8 @@ bool SemiChipClustering::DoSemiChipCluster(
         int bco = FPHX_BCO_vec_in[hit_i];
         int bco_diff = (bco - (bco_full & 0x7fU) + 128) % 128;
 
+        h1D_confirm_HitBcoDiff -> Fill(bco_diff);
+
 
         if (eID_count % 1000 == 0 && hit_i%25 == 0) {
             std::cout << "eID: "<< eID_count <<" INTTBcoResolution::PrepareINTT - server: "<< server << " felix_ch: "<< felix_ch << " chip: "<< chip << " channel: "<< channel << " adc: "<< adc << " bco: "<< bco << " bco_diff: "<< bco_diff << std::endl;
@@ -283,6 +334,11 @@ bool SemiChipClustering::DoSemiChipCluster(
         if (ApplyHitQA && (bco < 0 || bco > 127)) // note : bco ID 0 - 127
         {
             std::cout << "eID: "<< eID_count <<" INTTBcoResolution::PrepareINTT - bco out of range, this bco is : "<< bco << std::endl;
+            continue;
+        }
+
+        if (BadChMask.first && (hot_channel_map.find(Form("%d_%d_%d_%d",server,felix_ch,chip,channel)) != hot_channel_map.end())) // note : if we want to remove the hot channels
+        {
             continue;
         }
 
@@ -327,8 +383,12 @@ bool SemiChipClustering::DoSemiChipCluster(
         int bco = this_hit.hit_bco;
         int bco_diff = this_hit.hit_bco_diff;
 
+        h1D_confirm_HitBcoDiff_post -> Fill(bco_diff);
+
         h1D_chip_hit_container_map[Form("server%d_Fch%d_chip%d",server,felix_ch,chip)] -> Fill(channel, adc);
     }
+
+    bool good_evt_flag = true;
 
     for (auto pair : h1D_chip_hit_container_map)
     {
@@ -343,23 +403,94 @@ bool SemiChipClustering::DoSemiChipCluster(
             h1D_ClusSizeCount_all -> Fill(size);
         }
 
+        int NSize1Clus = h1D_ClusSizeCount -> GetBinContent(2);
+        int NSize2Clus = h1D_ClusSizeCount -> GetBinContent(3);
 
-        h1D_NSize2Clus -> Fill(h1D_ClusSizeCount -> GetBinContent(3));
-        h1D_NSize1Clus -> Fill(h1D_ClusSizeCount -> GetBinContent(2));
-        
-        h2D_NClus_NSize2Clus -> Fill(NClus_in, h1D_ClusSizeCount -> GetBinContent(3));
-        h2D_NClus_NSize1Clus -> Fill(NClus_in, h1D_ClusSizeCount -> GetBinContent(2));
-        
-        h2D_nInttRawHit_NSize2Clus -> Fill(evt_inttHits_map.size(), h1D_ClusSizeCount -> GetBinContent(3));
-        h2D_nInttRawHit_NSize1Clus -> Fill(evt_inttHits_map.size(), h1D_ClusSizeCount -> GetBinContent(2));
-        
-        h2D_nChipHit_NSize2Clus -> Fill(pair.second -> GetEntries(), h1D_ClusSizeCount -> GetBinContent(3));
-        h2D_nChipHit_NSize1Clus -> Fill(pair.second -> GetEntries(), h1D_ClusSizeCount -> GetBinContent(2));
-    
+        h1D_NSize1Clus -> Fill(NSize1Clus);
+        h2D_NClus_NSize1Clus -> Fill(NClus_in, NSize1Clus);
+        h2D_nInttRawHit_NSize1Clus -> Fill(evt_inttHits_map.size(), NSize1Clus);
+        h2D_nChipHit_NSize1Clus -> Fill(pair.second -> GetEntries(), NSize1Clus);
+
+        h2D_NSize2Clus_NSize1Clus -> Fill(NSize2Clus, NSize1Clus);
+        h2D_NSize2Clus_LargestSize -> Fill(NSize2Clus, clu_info.largest_size);
+
+
+        std::pair<double,double> size2dist_pair = GetSize2Dist(clu_info, eID_count, pair.first);
+        if (size2dist_pair.first == size2dist_pair.first && size2dist_pair.second == size2dist_pair.second){
+            double avg_size2dist = size2dist_pair.first;
+            double std_size2dist = size2dist_pair.second;
+
+            h2D_NSize2Clus_Size2Dist -> Fill(NSize2Clus, avg_size2dist);
+            h2D_Size2DistAvg_Size2DistStd -> Fill(avg_size2dist, std_size2dist);
+
+            if (avg_size2dist >= 4 && avg_size2dist < 5 && std_size2dist < 0.3){
+                good_evt_flag = false;
+            } 
+            
+            if (clu_info.largest_size <= 20) {continue;}    
+
+            h2D_Size2DistAvg_Size2DistStd_WithLargeSize -> Fill(avg_size2dist, std_size2dist);
+        }
+
+        if (clu_info.largest_size <= 20) {continue;}
+
+        h1D_NSize2Clus -> Fill(NSize2Clus);        
+        h2D_NClus_NSize2Clus -> Fill(NClus_in, NSize2Clus);        
+        h2D_nInttRawHit_NSize2Clus -> Fill(evt_inttHits_map.size(), NSize2Clus);        
+        h2D_nChipHit_NSize2Clus -> Fill(pair.second -> GetEntries(), NSize2Clus);    
     }
 
-    return true;
+    return good_evt_flag;
 }
+
+std::pair<double, double> SemiChipClustering::GetSize2Dist(SemiChipClustering::chip_clu_info clu_info_in, int eID_count, std::string chip_string)
+{
+    std::vector<std::pair<double, double>> obj_vec; obj_vec.clear();
+
+    for (int clu_i = 0; clu_i < clu_info_in.size_vec.size(); clu_i++){
+        if (clu_info_in.size_vec[clu_i] != 2) {continue;}
+
+        obj_vec.push_back( std::make_pair(clu_info_in.edge_l_vec[clu_i], clu_info_in.edge_r_vec[clu_i]) );
+    }
+
+    // note : no cluster with size 2 or only 1 cluster with size 2
+    if (obj_vec.size() < 2) {return std::make_pair(std::nan(""),std::nan(""));}
+
+    if (eID_count % 200 == 0){
+        for (int i = 0; i < obj_vec.size(); i++){
+            std::cout<<"In GetSize2Dist, eID: "<<eID_count<<", "<<chip_string<<", edge : "<<obj_vec[i].first<<" "<<obj_vec[i].second<<std::endl;
+        }
+    }
+
+    std::vector<double> distances; distances.clear();
+
+    for (size_t i = 0; i < obj_vec.size() - 1; ++i) {
+        double distance = obj_vec[i + 1].first - obj_vec[i].second;
+        distances.push_back(distance);
+    }
+
+    return std::make_pair(vector_average(distances), vector_stddev(distances));
+
+}
+
+double  SemiChipClustering::vector_average (std::vector <double> input_vector) {
+	return accumulate( input_vector.begin(), input_vector.end(), 0.0 ) / double(input_vector.size());
+}
+
+double SemiChipClustering::vector_stddev (std::vector <double> input_vector){
+	
+	double sum_subt = 0;
+	double average  = accumulate( input_vector.begin(), input_vector.end(), 0.0 ) / double(input_vector.size());
+	
+	// cout<<"average is : "<<average<<endl;
+
+	for (int i=0; i<int(input_vector.size()); i++){ sum_subt += pow((input_vector[i] - average),2); }
+
+	//cout<<"sum_subt : "<<sum_subt<<endl;
+	// cout<<"print from the function, average : "<<average<<" std : "<<stddev<<endl;
+
+	return sqrt( sum_subt / double(input_vector.size()-1) );
+}	
 
 SemiChipClustering::chip_clu_info SemiChipClustering::find_Ngroup(TH1D * hist_in)
 {
@@ -507,7 +638,9 @@ void SemiChipClustering::MainProcess()
         if (INTT_vtxZ_QA && (INTTvtxZError < cut_INTTvtxZError.first || INTTvtxZError > cut_INTTvtxZError.second)){continue;}
         // =======================================================================================================================================================
 
-        DoSemiChipCluster(
+        h2D_confirm_NClus_MBDChargeSum -> Fill(NClus, MBD_charge_sum);
+
+        bool good_evt_flag = DoSemiChipCluster(
             i,
             NClus,
             *InttRawHit_bco,
@@ -518,14 +651,39 @@ void SemiChipClustering::MainProcess()
             *InttRawHit_adc,
             *InttRawHit_FPHX_BCO
         );
-        
 
+        TH2D * temp_h2D_Inner_Outer_NClus = (good_evt_flag) ? h2D_Post_Inner_Outer_NClus : h2D_Killed_Inner_Outer_NClus;
+        TH2D * temp_h2D_NClus_MBDChargeSum = (good_evt_flag) ? h2D_Post_NClus_MBDChargeSum : h2D_Killed_NClus_MBDChargeSum;
+        TH1D * temp_h1D_MBDCentrality = (good_evt_flag) ? h1D_Post_MBDCentrality : h1D_Killed_MBDCentrality;
+        TH1D * temp_h1D_ClusPhiSize = (good_evt_flag) ? h1D_Post_ClusPhiSize : h1D_Killed_ClusPhiSize;
+        TH1D * temp_h1D_ClusAdc = (good_evt_flag) ? h1D_Post_ClusAdc : h1D_Killed_ClusAdc;
+        
+        h2D_Inclusive_Inner_Outer_NClus -> Fill(NClus_Layer1,NClus - NClus_Layer1);
+        h2D_Inclusive_NClus_MBDChargeSum -> Fill(NClus,MBD_charge_sum);
+        h1D_Inclusive_MBDCentrality -> Fill(MBD_centrality);
+
+        temp_h2D_Inner_Outer_NClus -> Fill(NClus_Layer1,NClus - NClus_Layer1);
+        temp_h2D_NClus_MBDChargeSum -> Fill(NClus,MBD_charge_sum);
+        temp_h1D_MBDCentrality -> Fill(MBD_centrality);
+
+        for (int clu_i = 0; clu_i < ClusPhiSize -> size(); clu_i++)
+        {
+            h1D_Inclusive_ClusPhiSize -> Fill(ClusPhiSize -> at(clu_i));
+            h1D_Inclusive_ClusAdc -> Fill(ClusAdc -> at(clu_i));
+
+            temp_h1D_ClusPhiSize -> Fill(ClusPhiSize -> at(clu_i));
+            temp_h1D_ClusAdc -> Fill(ClusAdc -> at(clu_i));
+        }
     }
 }
 
 void SemiChipClustering::EndRun()
 {
     file_out -> cd();
+
+    h1D_confirm_HitBcoDiff -> Write();
+    h1D_confirm_HitBcoDiff_post -> Write();
+    h2D_confirm_NClus_MBDChargeSum -> Write();
 
     h1D_ClusSizeCount_all -> Write();
     h1D_NSize2Clus -> Write();
@@ -537,5 +695,60 @@ void SemiChipClustering::EndRun()
     h2D_nChipHit_NSize2Clus -> Write();
     h2D_nChipHit_NSize1Clus -> Write();
 
+    h2D_NSize2Clus_NSize1Clus -> Write();
+    h2D_NSize2Clus_LargestSize -> Write();
+
+    h2D_NSize2Clus_Size2Dist -> Write();
+    h2D_Size2DistAvg_Size2DistStd -> Write();
+    h2D_Size2DistAvg_Size2DistStd_WithLargeSize -> Write();
+
+    h2D_Inclusive_Inner_Outer_NClus -> Write();
+    h2D_Inclusive_NClus_MBDChargeSum -> Write();
+    h1D_Inclusive_MBDCentrality -> Write();
+    h1D_Inclusive_ClusPhiSize -> Write();
+    h1D_Inclusive_ClusAdc -> Write();
+    
+    h2D_Post_Inner_Outer_NClus -> Write();
+    h2D_Post_NClus_MBDChargeSum -> Write();
+    h1D_Post_MBDCentrality -> Write();
+    h1D_Post_ClusPhiSize -> Write();
+    h1D_Post_ClusAdc -> Write();
+    
+    h2D_Killed_Inner_Outer_NClus -> Write();
+    h2D_Killed_NClus_MBDChargeSum -> Write();
+    h1D_Killed_MBDCentrality -> Write();
+    h1D_Killed_ClusPhiSize -> Write();
+    h1D_Killed_ClusAdc -> Write();
+
     file_out -> Close();
+}
+
+void SemiChipClustering::PrepareHotChannel()
+{
+  hot_file_in = TFile::Open(BadChMask.second.c_str());
+
+  if (!hot_file_in)
+  {
+    std::cout << "INTTBcoResolution::PrepareHotChannel - hot channel file not found" << std::endl;
+    exit(1);
+  }
+
+  hot_tree_in = (TTree*)hot_file_in->Get(hot_tree_name.c_str());
+
+  hot_tree_in->SetBranchAddress("IID",&IID);
+  hot_tree_in->SetBranchAddress("Ichannel",&Ichannel);
+  hot_tree_in->SetBranchAddress("Ichip",&Ichip);
+  hot_tree_in->SetBranchAddress("Ifelix_channel",&Ifelix_channel);
+  hot_tree_in->SetBranchAddress("Ifelix_server",&Ifelix_server);
+  hot_tree_in->SetBranchAddress("Iflag",&Iflag);
+
+  hot_channel_map.clear();
+
+  for (int i=0; i<hot_tree_in->GetEntries(); i++)
+  {
+    hot_tree_in->GetEntry(i);
+    hot_channel_map[Form("%d_%d_%d_%d",Ifelix_server,Ifelix_channel,Ichip,Ichannel)] = Form("%d",Iflag);
+  }
+
+  return;
 }

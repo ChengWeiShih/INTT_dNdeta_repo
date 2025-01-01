@@ -798,10 +798,10 @@ void PreparedNdEtaEach::DoFittings()
             // note : par[0] + par[1]* (x[0]-par[3]) + par[2] * pow((x[0]-par[3]),2);
             // std::cout<<"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"<<std::endl;
             // todo: the parameters
-            f1_BkgPol2_Fit_map[f1_BkgPol2_Fit_map_key] -> SetParameters(hist_offset, 0, -500000, 0, signal_region_l, signal_region_r);
+            f1_BkgPol2_Fit_map[f1_BkgPol2_Fit_map_key] -> SetParameters(hist_offset, 0, 500000, 0, signal_region_l, signal_region_r);
             f1_BkgPol2_Fit_map[f1_BkgPol2_Fit_map_key] -> FixParameter(4, signal_region_l);
             f1_BkgPol2_Fit_map[f1_BkgPol2_Fit_map_key] -> FixParameter(5, signal_region_r);
-            f1_BkgPol2_Fit_map[f1_BkgPol2_Fit_map_key] -> SetParLimits(2, -100000000, 0);
+            // f1_BkgPol2_Fit_map[f1_BkgPol2_Fit_map_key] -> SetParLimits(2, -100000000, 0);
 
             // std::cout<<"for "<<f1_BkgPol2_Fit_map_key<<"fit parameters: "<<hist_offset<<", 0, -0.2, 0, "<<signal_region_l<<", "<<signal_region_r<<std::endl;
 
@@ -839,9 +839,9 @@ void PreparedNdEtaEach::DoFittings()
                 // todo: the parameters
                 f1_SigBkgPol2_Fit_map[f1_SigBkgPol2_Fit_map_key] -> SetParameters(
                     gaus_height, 0, gaus_width, 
-                    hist_offset, 0, -500000, 0
+                    hist_offset, 0, 500000, 0
                 );
-                f1_SigBkgPol2_Fit_map[f1_SigBkgPol2_Fit_map_key] -> SetParLimits(5, -100000000, 0);
+                // f1_SigBkgPol2_Fit_map[f1_SigBkgPol2_Fit_map_key] -> SetParLimits(5, -100000000, 0);
 
                 // std::cout<<"for "<<f1_SigBkgPol2_Fit_map_key<<", all pars: "<<gaus_height<<", 0, "<<gaus_width<<", "<<hist_offset<<", 0, -0.2, 0"<<std::endl;
 
@@ -1094,22 +1094,30 @@ void PreparedNdEtaEach::EndRun()
     file_out_dNdEta -> cd();
     // note : the 2D
 
+    std::cout<<111<<std::endl;
+
     file_out_DeltaPhi -> cd();
 
     for (auto &pair : hstack1D_DeltaPhi_map)
     {
         pair.second -> Write();
     }
+
+    std::cout<<2222<<std::endl;
     
     for (auto &pair : h1D_RotatedBkg_DeltaPhi_Signal_map){
         pair.second -> Write();
     }
     
+    std::cout<<3333<<std::endl;
+
     file_out_dNdEta -> cd();
     ((TH2D*)hstack2D_GoodProtoTracklet_map[Form("hstack2D_GoodProtoTracklet_EtaVtxZ")]->GetStack()->Last()) -> Write("h2D_GoodProtoTracklet_EtaVtxZ");
     ((TH2D*)hstack2D_GoodProtoTracklet_map[Form("hstack2D_GoodProtoTracklet_EtaVtxZ_FineBin")]->GetStack()->Last()) -> Write("h2D_GoodProtoTracklet_EtaVtxZ_FineBin");
     ((TH2D*)hstack2D_GoodProtoTracklet_map[Form("hstack2D_GoodProtoTracklet_EtaVtxZ_rotated")]->GetStack()->Last()) -> Write("h2D_GoodProtoTracklet_EtaVtxZ_rotated");
     h2D_input_map["h2D_RecoEvtCount_vtxZCentrality"] -> Write();
+
+    std::cout<<4444<<std::endl;
 
     if (runnumber == -1){
         ((TH2D*)hstack2D_TrueEtaVtxZ_map["hstack2D_TrueEtaVtxZ"]->GetStack()->Last()) -> Write("h2D_TrueEtaVtxZ");
@@ -1118,12 +1126,22 @@ void PreparedNdEtaEach::EndRun()
         h2D_input_map["h2D_TrueEvtCount_vtxZCentrality"] -> Write();
     }
 
+    std::cout<<5555<<std::endl;
+    std::cout<<"test: hstack1D_BestPair_ClusPhiSize size(): "<<hstack1D_BestPair_ClusPhiSize->GetNhists()<<std::endl;
     ((TH1D*) hstack1D_BestPair_ClusPhiSize -> GetStack() -> Last()) -> Write("h1D_BestPair_ClusPhiSize");
+    std::cout<<55551<<std::endl;
     ((TH1D*) hstack1D_BestPair_ClusAdc -> GetStack() -> Last()) -> Write("h1D_BestPair_ClusAdc");
+    std::cout<<55552<<std::endl;
     ((TH1D*) hstack1D_BestPair_DeltaPhi -> GetStack() -> Last()) -> Write("h1D_BestPair_DeltaPhi");
+    std::cout<<55553<<std::endl;
     ((TH1D*) hstack1D_BestPair_DeltaEta -> GetStack() -> Last()) -> Write("h1D_BestPair_DeltaEta");
-    ((TH1D*) hstack2D_BestPairEtaVtxZ -> GetStack() -> Last()) -> Write("h2D_BestPairEtaVtxZ");
-    ((TH1D*) hstack2D_BestPairEtaVtxZ_FineBin -> GetStack() -> Last()) -> Write("h2D_BestPairEtaVtxZ_FineBin");
+    std::cout<<55554<<std::endl;
+    ((TH2D*) hstack2D_BestPairEtaVtxZ -> GetStack() -> Last()) -> Write("h2D_BestPairEtaVtxZ");
+    std::cout<<55555<<std::endl;
+    ((TH2D*) hstack2D_BestPairEtaVtxZ_FineBin -> GetStack() -> Last()) -> Write("h2D_BestPairEtaVtxZ_FineBin");
+    std::cout<<55556<<std::endl;
+
+    std::cout<<6666<<std::endl;
 
     h1D_BestPair_RecoTrackletEta_map["h1D_BestPair_RecoTrackletEta"] -> Write();
     h1D_BestPair_RecoTrackletEtaPerEvt_map["h1D_BestPair_RecoTrackletEtaPerEvt"] -> Write();
@@ -1132,16 +1150,22 @@ void PreparedNdEtaEach::EndRun()
     h1D_RotatedBkg_RecoTrackletEtaPerEvt_map["h1D_RotatedBkg_RecoTrackletEtaPerEvt"] -> Write();
     h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC_map["h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC"] -> Write();
 
+    std::cout<<7777<<std::endl;
+
 
     if (runnumber == -1){
         ((TH1D*)hstack1D_TrueEta_map["hstack1D_TrueEta"]->GetStack()->Last()) -> Write("h1D_TrueEta");
         h1D_TruedNdEta_map["h1D_TruedNdEta"] -> Write();
     }
 
+    std::cout<<8888<<std::endl;
+
     if (h1D_alpha_correction_map_out.size() != 0){
         h1D_alpha_correction_map_out[alpha_correction_name_map[0]] -> Write();
         h1D_alpha_correction_map_out[alpha_correction_name_map[1]] -> Write();
     }
+
+    std::cout<<9999<<std::endl;
 
     hstack2D_GoodProtoTracklet_map[Form("hstack2D_GoodProtoTracklet_EtaVtxZ")] -> Write();
     hstack2D_GoodProtoTracklet_map[Form("hstack2D_GoodProtoTracklet_EtaVtxZ_FineBin")] -> Write();
@@ -1152,12 +1176,15 @@ void PreparedNdEtaEach::EndRun()
         hstack1D_TrueEta_map["hstack1D_TrueEta"] -> Write();
     }
 
+    std::cout<<1010101<<std::endl;
+
     hstack1D_BestPair_ClusPhiSize -> Write();
     hstack1D_BestPair_ClusAdc -> Write();
     hstack1D_BestPair_DeltaPhi -> Write();
     hstack1D_BestPair_DeltaEta -> Write();
     hstack2D_BestPairEtaVtxZ -> Write();
     hstack2D_BestPairEtaVtxZ_FineBin -> Write();
+    std::cout<<101011111<<std::endl;
 
     if (runnumber == -1){
         c1 -> Clear();
@@ -1174,6 +1201,8 @@ void PreparedNdEtaEach::EndRun()
         c1 -> Write("c1_comp_h1D_dNdEta");
         c1 -> Clear();
     }
+    
+    std::cout<<10102222<<std::endl;
 
     file_out_dNdEta -> Close();
 
@@ -1355,7 +1384,7 @@ std::pair<int,int> PreparedNdEtaEach::get_DeltaPhi_SingleBin(TH1D * hist_in, std
     int bin_min = hist_in -> FindBin(range_in.first);
     
     int bin_max = hist_in -> FindBin(range_in.second);
-    bin_max = (hist_in -> GetXaxis() -> GetBinLowEdge(bin_max) == range_in.second) ? bin_max - 1 : bin_max;
+    bin_max = (fabs(hist_in -> GetXaxis() -> GetBinLowEdge(bin_max) - range_in.second) < 1e-9) ? bin_max - 1 : bin_max;
 
     std::cout<<"Input range : "<<range_in.first<<", "<<range_in.second<<std::endl;
     std::cout<<"Final selected bins: "<<bin_min<<", "<<bin_max<<std::endl;

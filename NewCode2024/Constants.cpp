@@ -19,6 +19,13 @@ namespace Constants{
 
     int HighNClus = 500;
 
+    double VtxZEdge_min = -45; // note : cm
+    double VtxZEdge_max = 45; // note : cm
+    int nVtxZBin = 18;
+
+    double cut_GoodRecoVtxZ = 1.; // note : cm
+
+    // note : below should never be changed
     double typeA_sensor_half_length_incm = 0.8; // note : [cm]
     double typeB_sensor_half_length_incm = 1.0; // note : [cm] 
 

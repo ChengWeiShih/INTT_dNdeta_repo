@@ -20,4 +20,4 @@ Output             = $(output_directory)/cw_log/condor_$INT(process_shift,%05d).
 Error              = $(output_directory)/cw_log/condor_$INT(process_shift,%05d).err
 Log                = $(output_directory)/cw_log/condor_$INT(process_shift,%05d).log
 Arguments          = "$INT(process_shift) $(runnumber) $(nEvents) $(output_directory) $(input_directory) $(input_filename) $(macro_name)"
-Queue 1
+Queue 154

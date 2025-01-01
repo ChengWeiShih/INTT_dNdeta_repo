@@ -265,38 +265,38 @@ int DataMcComp(string data_directory_in, string MC_directory_in, string output_d
     TFile * file_in_data = TFile::Open(data_directory_in.c_str());
     TFile * file_in_mc = TFile::Open(MC_directory_in.c_str());
 
-    TH1D * data_h1D_FitBkg_RecoTrackletEtaPerEvt = (TH1D*)file_in_data->Get("h1D_FitBkg_RecoTrackletEtaPerEvt");
+    TH1D * data_h1D_BestPair_RecoTrackletEtaPerEvt = (TH1D*)file_in_data->Get("h1D_BestPair_RecoTrackletEtaPerEvt");
     TH1D * data_h1D_RotatedBkg_RecoTrackletEtaPerEvt = (TH1D*)file_in_data->Get("h1D_RotatedBkg_RecoTrackletEtaPerEvt");
-    TH1D * data_h1D_FitBkg_RecoTrackletEtaPerEvtPostAC = (TH1D*)file_in_data->Get("h1D_FitBkg_RecoTrackletEtaPerEvtPostAC");
+    TH1D * data_h1D_BestPair_RecoTrackletEtaPerEvtPostAC = (TH1D*)file_in_data->Get("h1D_BestPair_RecoTrackletEtaPerEvtPostAC");
     TH1D * data_h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC = (TH1D*)file_in_data->Get("h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC");
 
-    data_h1D_FitBkg_RecoTrackletEtaPerEvt -> SetMarkerColor(1);
-    data_h1D_FitBkg_RecoTrackletEtaPerEvt -> SetLineColor(1);
+    data_h1D_BestPair_RecoTrackletEtaPerEvt -> SetMarkerColor(1);
+    data_h1D_BestPair_RecoTrackletEtaPerEvt -> SetLineColor(1);
 
     data_h1D_RotatedBkg_RecoTrackletEtaPerEvt -> SetMarkerColor(1);
     data_h1D_RotatedBkg_RecoTrackletEtaPerEvt -> SetLineColor(1);
 
-    data_h1D_FitBkg_RecoTrackletEtaPerEvtPostAC -> SetMarkerColor(1);
-    data_h1D_FitBkg_RecoTrackletEtaPerEvtPostAC -> SetLineColor(1);
+    data_h1D_BestPair_RecoTrackletEtaPerEvtPostAC -> SetMarkerColor(1);
+    data_h1D_BestPair_RecoTrackletEtaPerEvtPostAC -> SetLineColor(1);
 
     data_h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC -> SetMarkerColor(1);
     data_h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC -> SetLineColor(1);
 
 
 
-    TH1D * MC_h1D_FitBkg_RecoTrackletEtaPerEvt = (TH1D*)file_in_mc->Get("h1D_FitBkg_RecoTrackletEtaPerEvt");
+    TH1D * MC_h1D_BestPair_RecoTrackletEtaPerEvt = (TH1D*)file_in_mc->Get("h1D_BestPair_RecoTrackletEtaPerEvt");
     TH1D * MC_h1D_RotatedBkg_RecoTrackletEtaPerEvt = (TH1D*)file_in_mc->Get("h1D_RotatedBkg_RecoTrackletEtaPerEvt");
-    TH1D * MC_h1D_FitBkg_RecoTrackletEtaPerEvtPostAC = (TH1D*)file_in_mc->Get("h1D_FitBkg_RecoTrackletEtaPerEvtPostAC");
+    TH1D * MC_h1D_BestPair_RecoTrackletEtaPerEvtPostAC = (TH1D*)file_in_mc->Get("h1D_BestPair_RecoTrackletEtaPerEvtPostAC");
     TH1D * MC_h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC = (TH1D*)file_in_mc->Get("h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC");
 
-    MC_h1D_FitBkg_RecoTrackletEtaPerEvt -> SetMarkerColor(2); // note : red
-    MC_h1D_FitBkg_RecoTrackletEtaPerEvt -> SetLineColor(2);
+    MC_h1D_BestPair_RecoTrackletEtaPerEvt -> SetMarkerColor(2); // note : red
+    MC_h1D_BestPair_RecoTrackletEtaPerEvt -> SetLineColor(2);
 
     MC_h1D_RotatedBkg_RecoTrackletEtaPerEvt -> SetMarkerColor(2);
     MC_h1D_RotatedBkg_RecoTrackletEtaPerEvt -> SetLineColor(2);
 
-    MC_h1D_FitBkg_RecoTrackletEtaPerEvtPostAC -> SetMarkerColor(2);
-    MC_h1D_FitBkg_RecoTrackletEtaPerEvtPostAC -> SetLineColor(2);
+    MC_h1D_BestPair_RecoTrackletEtaPerEvtPostAC -> SetMarkerColor(2);
+    MC_h1D_BestPair_RecoTrackletEtaPerEvtPostAC -> SetLineColor(2);
 
     MC_h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC -> SetMarkerColor(2);
     MC_h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC -> SetLineColor(2);
@@ -311,9 +311,9 @@ int DataMcComp(string data_directory_in, string MC_directory_in, string output_d
     TCanvas * c1 = new TCanvas("c1", "c1", 800, 600);
 
     c1 -> cd();
-    data_h1D_FitBkg_RecoTrackletEtaPerEvt -> Draw("ep");
-    MC_h1D_FitBkg_RecoTrackletEtaPerEvt -> Draw("hist same");
-    c1 -> Write("h1D_FitBkg_RecoTrackletEtaPerEvt");
+    data_h1D_BestPair_RecoTrackletEtaPerEvt -> Draw("ep");
+    MC_h1D_BestPair_RecoTrackletEtaPerEvt -> Draw("hist same");
+    c1 -> Write("h1D_BestPair_RecoTrackletEtaPerEvt");
     c1 -> Clear();
 
     c1 -> cd();
@@ -323,11 +323,11 @@ int DataMcComp(string data_directory_in, string MC_directory_in, string output_d
     c1 -> Clear();
 
     c1 -> cd();
-    data_h1D_FitBkg_RecoTrackletEtaPerEvtPostAC -> Draw("ep");
-    MC_h1D_FitBkg_RecoTrackletEtaPerEvtPostAC -> Draw("hist same");
+    data_h1D_BestPair_RecoTrackletEtaPerEvtPostAC -> Draw("ep");
+    MC_h1D_BestPair_RecoTrackletEtaPerEvtPostAC -> Draw("hist same");
     h1D_TruedNdEta -> SetFillColorAlpha(2,0);
     h1D_TruedNdEta -> Draw("hist same");
-    c1 -> Write("h1D_FitBkg_RecoTrackletEtaPerEvtPostAC");
+    c1 -> Write("h1D_BestPair_RecoTrackletEtaPerEvtPostAC");
     c1 -> Clear();
 
     c1 -> cd();
@@ -350,19 +350,19 @@ int McMcComp(string MC1_directory_in, string MC2_directory_in, string output_dir
     TFile * file_in_data = TFile::Open(MC1_directory_in.c_str());
     TFile * file_in_mc = TFile::Open(MC2_directory_in.c_str());
 
-    TH1D * data_h1D_FitBkg_RecoTrackletEtaPerEvt = (TH1D*)file_in_data->Get("h1D_FitBkg_RecoTrackletEtaPerEvt");
+    TH1D * data_h1D_BestPair_RecoTrackletEtaPerEvt = (TH1D*)file_in_data->Get("h1D_BestPair_RecoTrackletEtaPerEvt");
     TH1D * data_h1D_RotatedBkg_RecoTrackletEtaPerEvt = (TH1D*)file_in_data->Get("h1D_RotatedBkg_RecoTrackletEtaPerEvt");
-    TH1D * data_h1D_FitBkg_RecoTrackletEtaPerEvtPostAC = (TH1D*)file_in_data->Get("h1D_FitBkg_RecoTrackletEtaPerEvtPostAC");
+    TH1D * data_h1D_BestPair_RecoTrackletEtaPerEvtPostAC = (TH1D*)file_in_data->Get("h1D_BestPair_RecoTrackletEtaPerEvtPostAC");
     TH1D * data_h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC = (TH1D*)file_in_data->Get("h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC");
 
-    data_h1D_FitBkg_RecoTrackletEtaPerEvt -> SetMarkerColor(1);
-    data_h1D_FitBkg_RecoTrackletEtaPerEvt -> SetLineColor(1);
+    data_h1D_BestPair_RecoTrackletEtaPerEvt -> SetMarkerColor(1);
+    data_h1D_BestPair_RecoTrackletEtaPerEvt -> SetLineColor(1);
 
     data_h1D_RotatedBkg_RecoTrackletEtaPerEvt -> SetMarkerColor(1);
     data_h1D_RotatedBkg_RecoTrackletEtaPerEvt -> SetLineColor(1);
 
-    data_h1D_FitBkg_RecoTrackletEtaPerEvtPostAC -> SetMarkerColor(1);
-    data_h1D_FitBkg_RecoTrackletEtaPerEvtPostAC -> SetLineColor(1);
+    data_h1D_BestPair_RecoTrackletEtaPerEvtPostAC -> SetMarkerColor(1);
+    data_h1D_BestPair_RecoTrackletEtaPerEvtPostAC -> SetLineColor(1);
 
     data_h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC -> SetMarkerColor(1);
     data_h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC -> SetLineColor(1);
@@ -373,19 +373,19 @@ int McMcComp(string MC1_directory_in, string MC2_directory_in, string output_dir
 
 
 
-    TH1D * MC_h1D_FitBkg_RecoTrackletEtaPerEvt = (TH1D*)file_in_mc->Get("h1D_FitBkg_RecoTrackletEtaPerEvt");
+    TH1D * MC_h1D_BestPair_RecoTrackletEtaPerEvt = (TH1D*)file_in_mc->Get("h1D_BestPair_RecoTrackletEtaPerEvt");
     TH1D * MC_h1D_RotatedBkg_RecoTrackletEtaPerEvt = (TH1D*)file_in_mc->Get("h1D_RotatedBkg_RecoTrackletEtaPerEvt");
-    TH1D * MC_h1D_FitBkg_RecoTrackletEtaPerEvtPostAC = (TH1D*)file_in_mc->Get("h1D_FitBkg_RecoTrackletEtaPerEvtPostAC");
+    TH1D * MC_h1D_BestPair_RecoTrackletEtaPerEvtPostAC = (TH1D*)file_in_mc->Get("h1D_BestPair_RecoTrackletEtaPerEvtPostAC");
     TH1D * MC_h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC = (TH1D*)file_in_mc->Get("h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC");
 
-    MC_h1D_FitBkg_RecoTrackletEtaPerEvt -> SetMarkerColor(2);
-    MC_h1D_FitBkg_RecoTrackletEtaPerEvt -> SetLineColor(2);
+    MC_h1D_BestPair_RecoTrackletEtaPerEvt -> SetMarkerColor(2);
+    MC_h1D_BestPair_RecoTrackletEtaPerEvt -> SetLineColor(2);
 
     MC_h1D_RotatedBkg_RecoTrackletEtaPerEvt -> SetMarkerColor(2);
     MC_h1D_RotatedBkg_RecoTrackletEtaPerEvt -> SetLineColor(2);
 
-    MC_h1D_FitBkg_RecoTrackletEtaPerEvtPostAC -> SetMarkerColor(2);
-    MC_h1D_FitBkg_RecoTrackletEtaPerEvtPostAC -> SetLineColor(2);
+    MC_h1D_BestPair_RecoTrackletEtaPerEvtPostAC -> SetMarkerColor(2);
+    MC_h1D_BestPair_RecoTrackletEtaPerEvtPostAC -> SetLineColor(2);
 
     MC_h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC -> SetMarkerColor(2);
     MC_h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC -> SetLineColor(2);
@@ -401,9 +401,9 @@ int McMcComp(string MC1_directory_in, string MC2_directory_in, string output_dir
     TCanvas * c1 = new TCanvas("c1", "c1", 800, 600);
 
     c1 -> cd();
-    data_h1D_FitBkg_RecoTrackletEtaPerEvt -> Draw("ep");
-    MC_h1D_FitBkg_RecoTrackletEtaPerEvt -> Draw("hist same");
-    c1 -> Write("h1D_FitBkg_RecoTrackletEtaPerEvt");
+    data_h1D_BestPair_RecoTrackletEtaPerEvt -> Draw("ep");
+    MC_h1D_BestPair_RecoTrackletEtaPerEvt -> Draw("hist same");
+    c1 -> Write("h1D_BestPair_RecoTrackletEtaPerEvt");
     c1 -> Clear();
 
     c1 -> cd();
@@ -413,11 +413,11 @@ int McMcComp(string MC1_directory_in, string MC2_directory_in, string output_dir
     c1 -> Clear();
 
     c1 -> cd();
-    data_h1D_FitBkg_RecoTrackletEtaPerEvtPostAC -> Draw("ep");
-    MC_h1D_FitBkg_RecoTrackletEtaPerEvtPostAC -> Draw("hist same");
+    data_h1D_BestPair_RecoTrackletEtaPerEvtPostAC -> Draw("ep");
+    MC_h1D_BestPair_RecoTrackletEtaPerEvtPostAC -> Draw("hist same");
     MC_h1D_TruedNdEta -> Draw("hist same");
     data_h1D_TruedNdEta -> Draw("hist same");
-    c1 -> Write("h1D_FitBkg_RecoTrackletEtaPerEvtPostAC");
+    c1 -> Write("h1D_BestPair_RecoTrackletEtaPerEvtPostAC");
     c1 -> Clear();
 
     c1 -> cd();
@@ -450,7 +450,7 @@ int CombinedMacro()
     std::pair<double,double> cut_INTTvtxZ = {-10, 10};
     int SelectedMbin = 70;
     std::pair<double,double> cut_EtaRange = {-1.9, 1.9};
-    string output_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Dec042024/completed/Run24NewCode_TrackHist_ClusQA/completed";
+    string output_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Dec042024/completed/TrackHistNew_WithClusQA/completed";
 
     string output_suffix = "dNdEta";
     output_suffix += (isTypeA) ? "_TypeA" : "_AllSensor";
@@ -461,26 +461,26 @@ int CombinedMacro()
     // string alpha_correction_input_directory = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_Ntuple_HIJING_ana443_20241102/Run24NewCode_dNdEta/completed/MC_PreparedNdEtaEach_AllSensor_VtxZ10_Mbin70_SecondRun_00001_dNdEta.root";    
     
     // note : MC common
-    string MC_input_directory = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_Ntuple_HIJING_ana443_20241102/Run24NewCode_TrackHist_ClusQA/completed";
+    string MC_input_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/sPH_dNdeta/Run24AuAuMC/Sim_Ntuple_HIJING_ana443_20241102/TrackHistNew_WithClusQA/completed";
     string MC_output_directory = final_output_directory;
 
     // note : MC1 deriving the alpha corrections
-    string MC1_input_filename = "MC_TrackletHistogram_vtxZReweight_INTT_vtxZ_QA_ClusQAAdc35PhiSize500_SecondRun_merged_001.root";
+    string MC1_input_filename = "MC_TrackHist_vtxZReweight_VtxZQA_ClusQAAdc35PhiSize500_SecondRun_merged_001.root";
     int    MC1_process_id = 1;
     int    MC1_run_num = -1;
     bool   MC1_ApplyAlphaCorr = false;
     std::pair<bool, std::pair<double,double>> MC1_setEtaRange = {false, cut_EtaRange};
 
     // note : MC2 applying the alpha corrections
-    string MC2_input_filename = "MC_TrackletHistogram_vtxZReweight_INTT_vtxZ_QA_ClusQAAdc35PhiSize500_SecondRun_merged_002.root";
+    string MC2_input_filename = "MC_TrackHist_vtxZReweight_VtxZQA_ClusQAAdc35PhiSize500_SecondRun_merged_002.root";
     int    MC2_process_id = 2;
     int    MC2_run_num = -1;
     bool   MC2_ApplyAlphaCorr = true;
     std::pair<bool, std::pair<double,double>> MC2_setEtaRange = {true, cut_EtaRange};
     
     // note : for data
-    string data_input_directory  = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Dec042024/completed/Run24NewCode_TrackHist_ClusQA/completed";
-    string data_input_filename   = "Data_TrackletHistogram_BcoFullDiffCut_INTT_vtxZ_QA_ClusQAAdc35PhiSize500_SecondRun_00054280_merged.root";
+    string data_input_directory  = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Dec042024/completed/TrackHistNew_WithClusQA/completed";
+    string data_input_filename   = "Data_TrackHist_BcoFullDiffCut_VtxZQA_ClusQAAdc35PhiSize500_SecondRun_00054280_merged.root";
     string data_output_directory = final_output_directory;
     int    data_process_id = 0;
     int    data_run_num = 54280;

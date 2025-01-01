@@ -22,6 +22,13 @@ namespace Constants{
 
     extern int HighNClus;
 
+    extern double VtxZEdge_min;
+    extern double VtxZEdge_max;
+    extern int nVtxZBin;
+
+    extern double cut_GoodRecoVtxZ; // note : cm
+
+    //  note : below should never be changed
     extern double typeA_sensor_half_length_incm; // note : [cm]
     extern double typeB_sensor_half_length_incm; // note : [cm] 
 

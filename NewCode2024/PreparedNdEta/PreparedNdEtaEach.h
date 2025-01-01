@@ -221,7 +221,7 @@ class PreparedNdEtaEach{
             // note : par[2] : width
 
             double gaus_func = par[0] * TMath::Gaus(x[0],par[1],par[2]);
-            double pol2_func = par[3] + par[4]* (x[0]-par[6]) + par[5] * pow((x[0]-par[6]),2);
+            double pol2_func = par[3] + par[4]* (x[0]-par[6]) - fabs(par[5]) * pow((x[0]-par[6]),2);
 
             return gaus_func + pol2_func;
         }
@@ -232,14 +232,14 @@ class PreparedNdEtaEach{
                 TF1::RejectPoint();
                 return 0;
             }
-            return par[0] + par[1]* (x[0]-par[3]) + par[2] * pow((x[0]-par[3]),2);
+            return par[0] + par[1]* (x[0]-par[3]) - fabs(par[2]) * pow((x[0]-par[3]),2);
 
             // note : p[0] + p[1]*(x-p[3])+p[2] * (x-p[3])^2, p[4] sets the signal range that should be excluded in the fit
         }
 
         static  double full_pol2_func(double *x, double *par)
         {
-            return par[0] + par[1]* (x[0]-par[3]) + par[2] * pow((x[0]-par[3]),2);
+            return par[0] + par[1]* (x[0]-par[3]) - fabs(par[2]) * pow((x[0]-par[3]),2);
 
             // note : p[0] + p[1]*(x-p[3])+p[2] * (x-p[3])^2
         }

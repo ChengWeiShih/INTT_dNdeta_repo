@@ -455,6 +455,7 @@ void RestDist::PrepareEvent()
         if (runnumber == -1 && NTruthVtx != 1) {continue;}
 
         // note : both data and MC
+        if (is_min_bias != 1) {continue;}
         if (MBD_z_vtx != MBD_z_vtx) {continue;}
         if (MBD_centrality != MBD_centrality) {continue;}
         if (MBD_centrality < 0 || MBD_centrality > 1) {continue;}

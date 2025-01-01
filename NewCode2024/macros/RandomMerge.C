@@ -53,8 +53,8 @@ std::string get_merged_suffix(int file_index, int total_file)
 int RandomMerge()
 {
     int N_merged_files = 2;
-    string input_directory = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_Ntuple_HIJING_ana443_20241102/Run24NewCode_ClusHist_WithClusQA_Rand35Hit/completed";
-    string input_filename = "MC_ClusHist_vtxZReweight_VtxZQA_ClusQAAdc35PhiSize500_Rand75Hits_SecondRun_00066.root"; // note : xxxxx_00001.root
+    string input_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/sPH_dNdeta/Run24AuAuMC/Sim_Ntuple_HIJING_ana443_20241102/TrackHistNew_WithClusQA/completed";
+    string input_filename = "MC_TrackHist_vtxZReweight_VtxZQA_ClusQAAdc35PhiSize500_SecondRun_00072.root"; // note : xxxxx_00001.root
 
     string input_filename_no_number = input_filename.substr(0, input_filename.find_last_of("_"));
 

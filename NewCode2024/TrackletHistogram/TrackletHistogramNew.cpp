@@ -212,55 +212,59 @@ void TrackletHistogramNew::PrepareHistograms()
     // note : for the best pairs
     for (int Mbin = 0; Mbin < nCentrality_bin; Mbin++)
     {
-        isInserted = h1D_map.insert( std::make_pair(
-                Form("h1D_BestPair_DeltaEta_Mbin%d",Mbin),
-                new TH1D(Form("h1D_BestPair_DeltaEta_Mbin%d",Mbin), Form("h1D_BestPair_DeltaEta_Mbin%d;Pair #Delta#eta;Entries",Mbin), nDeltaEtaBin, DeltaEtaEdge_min, DeltaEtaEdge_max)
-            )
-        ).second; insert_check.push_back(isInserted);
+        for (int vtxz_bin = 0; vtxz_bin < nVtxZBin; vtxz_bin++){
 
-        isInserted = h1D_map.insert( std::make_pair(
-                Form("h1D_BestPair_DeltaPhi_Mbin%d",Mbin),
-                new TH1D(Form("h1D_BestPair_DeltaPhi_Mbin%d",Mbin), Form("h1D_BestPair_DeltaPhi_Mbin%d;Pair #Delta#phi [radian];Entries",Mbin), nDeltaPhiBin, DeltaPhiEdge_min, DeltaPhiEdge_max)
-            )
-        ).second; insert_check.push_back(isInserted);
+            isInserted = h1D_map.insert( std::make_pair(
+                    Form("h1D_BestPair_DeltaEta_Mbin%d_VtxZ%d",Mbin, vtxz_bin),
+                    new TH1D(Form("h1D_BestPair_DeltaEta_Mbin%d_VtxZ%d",Mbin, vtxz_bin), Form("h1D_BestPair_DeltaEta_Mbin%d_VtxZ%d;Pair #Delta#eta;Entries",Mbin, vtxz_bin), nDeltaEtaBin, DeltaEtaEdge_min, DeltaEtaEdge_max)
+                )
+            ).second; insert_check.push_back(isInserted);
 
-        isInserted = h1D_map.insert( std::make_pair(
-                Form("h1D_BestPair_ClusPhiSize_Mbin%d",Mbin),
-                new TH1D(Form("h1D_BestPair_ClusPhiSize_Mbin%d",Mbin), Form("h1D_BestPair_ClusPhiSize_Mbin%d;ClusPhiSize;Entries",Mbin), 128,0,128)
-            )
-        ).second; insert_check.push_back(isInserted);
+            isInserted = h1D_map.insert( std::make_pair(
+                    Form("h1D_BestPair_DeltaPhi_Mbin%d_VtxZ%d",Mbin, vtxz_bin),
+                    new TH1D(Form("h1D_BestPair_DeltaPhi_Mbin%d_VtxZ%d",Mbin, vtxz_bin), Form("h1D_BestPair_DeltaPhi_Mbin%d_VtxZ%d;Pair #Delta#phi [radian];Entries",Mbin, vtxz_bin), nDeltaPhiBin, DeltaPhiEdge_min, DeltaPhiEdge_max)
+                )
+            ).second; insert_check.push_back(isInserted);
 
-        isInserted = h1D_map.insert( std::make_pair(
-                Form("h1D_BestPair_ClusAdc_Mbin%d",Mbin),
-                new TH1D(Form("h1D_BestPair_ClusAdc_Mbin%d",Mbin), Form("h1D_BestPair_ClusAdc_Mbin%d;ClusAdc;Entries",Mbin), 200,0,18000)
-            )
-        ).second; insert_check.push_back(isInserted);
+            isInserted = h1D_map.insert( std::make_pair(
+                    Form("h1D_BestPair_ClusPhiSize_Mbin%d_VtxZ%d",Mbin, vtxz_bin),
+                    new TH1D(Form("h1D_BestPair_ClusPhiSize_Mbin%d_VtxZ%d",Mbin, vtxz_bin), Form("h1D_BestPair_ClusPhiSize_Mbin%d_VtxZ%d;ClusPhiSize;Entries",Mbin, vtxz_bin), 128,0,128)
+                )
+            ).second; insert_check.push_back(isInserted);
 
-        
-        // note : typeA : ------------------------------------------------------------------------------------------------------------------------------------------------------------------
-        isInserted = h1D_map.insert( std::make_pair(
-                Form("h1D_typeA_BestPair_DeltaEta_Mbin%d",Mbin),
-                new TH1D(Form("h1D_typeA_BestPair_DeltaEta_Mbin%d",Mbin), Form("h1D_typeA_BestPair_DeltaEta_Mbin%d;Pair #Delta#eta (type A);Entries",Mbin), nDeltaEtaBin, DeltaEtaEdge_min, DeltaEtaEdge_max)
-            )
-        ).second; insert_check.push_back(isInserted);
+            isInserted = h1D_map.insert( std::make_pair(
+                    Form("h1D_BestPair_ClusAdc_Mbin%d_VtxZ%d",Mbin, vtxz_bin),
+                    new TH1D(Form("h1D_BestPair_ClusAdc_Mbin%d_VtxZ%d",Mbin, vtxz_bin), Form("h1D_BestPair_ClusAdc_Mbin%d_VtxZ%d;ClusAdc;Entries",Mbin, vtxz_bin), 200,0,18000)
+                )
+            ).second; insert_check.push_back(isInserted);
 
-        isInserted = h1D_map.insert( std::make_pair(
-                Form("h1D_typeA_BestPair_DeltaPhi_Mbin%d",Mbin),
-                new TH1D(Form("h1D_typeA_BestPair_DeltaPhi_Mbin%d",Mbin), Form("h1D_typeA_BestPair_DeltaPhi_Mbin%d;Pair #Delta#phi [radian] (type A);Entries",Mbin), nDeltaPhiBin, DeltaPhiEdge_min, DeltaPhiEdge_max)
-            )
-        ).second; insert_check.push_back(isInserted);
+            
+            // note : typeA : ------------------------------------------------------------------------------------------------------------------------------------------------------------------
+            isInserted = h1D_map.insert( std::make_pair(
+                    Form("h1D_typeA_BestPair_DeltaEta_Mbin%d_VtxZ%d",Mbin, vtxz_bin),
+                    new TH1D(Form("h1D_typeA_BestPair_DeltaEta_Mbin%d_VtxZ%d",Mbin, vtxz_bin), Form("h1D_typeA_BestPair_DeltaEta_Mbin%d_VtxZ%d;Pair #Delta#eta (type A);Entries",Mbin, vtxz_bin), nDeltaEtaBin, DeltaEtaEdge_min, DeltaEtaEdge_max)
+                )
+            ).second; insert_check.push_back(isInserted);
 
-        isInserted = h1D_map.insert( std::make_pair(
-                Form("h1D_typeA_BestPair_ClusPhiSize_Mbin%d",Mbin),
-                new TH1D(Form("h1D_typeA_BestPair_ClusPhiSize_Mbin%d",Mbin), Form("h1D_typeA_BestPair_ClusPhiSize_Mbin%d;ClusPhiSize (type A);Entries",Mbin), 128,0,128)
-            )
-        ).second; insert_check.push_back(isInserted);
+            isInserted = h1D_map.insert( std::make_pair(
+                    Form("h1D_typeA_BestPair_DeltaPhi_Mbin%d_VtxZ%d",Mbin, vtxz_bin),
+                    new TH1D(Form("h1D_typeA_BestPair_DeltaPhi_Mbin%d_VtxZ%d",Mbin, vtxz_bin), Form("h1D_typeA_BestPair_DeltaPhi_Mbin%d_VtxZ%d;Pair #Delta#phi [radian] (type A);Entries",Mbin, vtxz_bin), nDeltaPhiBin, DeltaPhiEdge_min, DeltaPhiEdge_max)
+                )
+            ).second; insert_check.push_back(isInserted);
 
-        isInserted = h1D_map.insert( std::make_pair(
-                Form("h1D_typeA_BestPair_ClusAdc_Mbin%d",Mbin),
-                new TH1D(Form("h1D_typeA_BestPair_ClusAdc_Mbin%d",Mbin), Form("h1D_typeA_BestPair_ClusAdc_Mbin%d;ClusAdc (type A);Entries",Mbin), 200,0,18000)
-            )
-        ).second; insert_check.push_back(isInserted);
+            isInserted = h1D_map.insert( std::make_pair(
+                    Form("h1D_typeA_BestPair_ClusPhiSize_Mbin%d_VtxZ%d",Mbin, vtxz_bin),
+                    new TH1D(Form("h1D_typeA_BestPair_ClusPhiSize_Mbin%d_VtxZ%d",Mbin, vtxz_bin), Form("h1D_typeA_BestPair_ClusPhiSize_Mbin%d_VtxZ%d;ClusPhiSize (type A);Entries",Mbin, vtxz_bin), 128,0,128)
+                )
+            ).second; insert_check.push_back(isInserted);
+
+            isInserted = h1D_map.insert( std::make_pair(
+                    Form("h1D_typeA_BestPair_ClusAdc_Mbin%d_VtxZ%d",Mbin, vtxz_bin),
+                    new TH1D(Form("h1D_typeA_BestPair_ClusAdc_Mbin%d_VtxZ%d",Mbin, vtxz_bin), Form("h1D_typeA_BestPair_ClusAdc_Mbin%d_VtxZ%d;ClusAdc (type A);Entries",Mbin, vtxz_bin), 200,0,18000)
+                )
+            ).second; insert_check.push_back(isInserted);
+        }
+
     }
 
 
@@ -567,7 +571,7 @@ void TrackletHistogramNew::FillPairs(std::vector<pair_str> input_TrackletPair_ve
     {
         pair_str this_pair = input_TrackletPair_vec[pair_i];
 
-        if (isRotated == false) {Pair_DeltaPhi_vec.push_back(this_pair.delta_phi);}
+        if (isRotated == false) {Pair_DeltaPhi_vec.push_back(fabs(this_pair.delta_phi));}
 
         int eta_bin = h1D_eta_template -> Fill(this_pair.pair_eta_fit);
         eta_bin = (eta_bin == -1) ? -1 : eta_bin - 1;
@@ -634,32 +638,32 @@ void TrackletHistogramNew::FillPairs(std::vector<pair_str> input_TrackletPair_ve
 
             if (Pair_DeltaPhi_vec[ind[pair_i]] > cut_bestPair_DeltaPhi.second) { break; }
 
-            h1D_map[Form("h1D_BestPair_DeltaEta_Mbin%d",Mbin_in)] -> Fill(pair.delta_eta, vtxZ_weight_in);
-            h1D_map[Form("h1D_BestPair_DeltaPhi_Mbin%d",Mbin_in)] -> Fill(pair.delta_phi, vtxZ_weight_in);
+            h1D_map[Form("h1D_BestPair_DeltaEta_Mbin%d_VtxZ%d",Mbin_in,vtxz_bin_in)] -> Fill(pair.delta_eta, vtxZ_weight_in);
+            h1D_map[Form("h1D_BestPair_DeltaPhi_Mbin%d_VtxZ%d",Mbin_in,vtxz_bin_in)] -> Fill(pair.delta_phi, vtxZ_weight_in);
 
             h2D_map[Form("h2D_BestPairEtaVtxZ_Mbin%d",Mbin_in)] -> Fill(pair.pair_eta_fit, INTTvtxZ, vtxZ_weight_in);
             h2D_map[Form("h2D_BestPairEtaVtxZ_Mbin%d_FineBin",Mbin_in)] -> Fill(pair.pair_eta_fit, INTTvtxZ, vtxZ_weight_in);
 
-            h1D_map[Form("h1D_BestPair_ClusPhiSize_Mbin%d",Mbin_in)] -> Fill(ClusPhiSize->at(pair.inner_index), vtxZ_weight_in);
-            h1D_map[Form("h1D_BestPair_ClusPhiSize_Mbin%d",Mbin_in)] -> Fill(ClusPhiSize->at(pair.outer_index), vtxZ_weight_in);
-            h1D_map[Form("h1D_BestPair_ClusAdc_Mbin%d",Mbin_in)] -> Fill(ClusAdc->at(pair.inner_index), vtxZ_weight_in);
-            h1D_map[Form("h1D_BestPair_ClusAdc_Mbin%d",Mbin_in)] -> Fill(ClusAdc->at(pair.outer_index), vtxZ_weight_in);
+            h1D_map[Form("h1D_BestPair_ClusPhiSize_Mbin%d_VtxZ%d",Mbin_in,vtxz_bin_in)] -> Fill(ClusPhiSize->at(pair.inner_index), vtxZ_weight_in);
+            h1D_map[Form("h1D_BestPair_ClusPhiSize_Mbin%d_VtxZ%d",Mbin_in,vtxz_bin_in)] -> Fill(ClusPhiSize->at(pair.outer_index), vtxZ_weight_in);
+            h1D_map[Form("h1D_BestPair_ClusAdc_Mbin%d_VtxZ%d",Mbin_in,vtxz_bin_in)] -> Fill(ClusAdc->at(pair.inner_index), vtxZ_weight_in);
+            h1D_map[Form("h1D_BestPair_ClusAdc_Mbin%d_VtxZ%d",Mbin_in,vtxz_bin_in)] -> Fill(ClusAdc->at(pair.outer_index), vtxZ_weight_in);
 
             // note : typeA
             if (
                 (ClusLadderZId->at(pair.inner_index) == typeA_sensorZID[0] || ClusLadderZId->at(pair.inner_index) == typeA_sensorZID[1]) &&
                 (ClusLadderZId->at(pair.outer_index) == typeA_sensorZID[0] || ClusLadderZId->at(pair.outer_index) == typeA_sensorZID[1])
             ){
-                h1D_map[Form("h1D_typeA_BestPair_DeltaEta_Mbin%d",Mbin_in)] -> Fill(pair.delta_eta, vtxZ_weight_in);
-                h1D_map[Form("h1D_typeA_BestPair_DeltaPhi_Mbin%d",Mbin_in)] -> Fill(pair.delta_phi, vtxZ_weight_in);
+                h1D_map[Form("h1D_typeA_BestPair_DeltaEta_Mbin%d_VtxZ%d",Mbin_in,vtxz_bin_in)] -> Fill(pair.delta_eta, vtxZ_weight_in);
+                h1D_map[Form("h1D_typeA_BestPair_DeltaPhi_Mbin%d_VtxZ%d",Mbin_in,vtxz_bin_in)] -> Fill(pair.delta_phi, vtxZ_weight_in);
 
                 h2D_map[Form("h2D_typeA_BestPairEtaVtxZ_Mbin%d",Mbin_in)] -> Fill(pair.pair_eta_fit, INTTvtxZ, vtxZ_weight_in);
                 h2D_map[Form("h2D_typeA_BestPairEtaVtxZ_Mbin%d_FineBin",Mbin_in)] -> Fill(pair.pair_eta_fit, INTTvtxZ, vtxZ_weight_in);
 
-                h1D_map[Form("h1D_typeA_BestPair_ClusPhiSize_Mbin%d",Mbin_in)] -> Fill(ClusPhiSize->at(pair.inner_index), vtxZ_weight_in);
-                h1D_map[Form("h1D_typeA_BestPair_ClusPhiSize_Mbin%d",Mbin_in)] -> Fill(ClusPhiSize->at(pair.outer_index), vtxZ_weight_in);
-                h1D_map[Form("h1D_typeA_BestPair_ClusAdc_Mbin%d",Mbin_in)] -> Fill(ClusAdc->at(pair.inner_index), vtxZ_weight_in);
-                h1D_map[Form("h1D_typeA_BestPair_ClusAdc_Mbin%d",Mbin_in)] -> Fill(ClusAdc->at(pair.outer_index), vtxZ_weight_in);
+                h1D_map[Form("h1D_typeA_BestPair_ClusPhiSize_Mbin%d_VtxZ%d",Mbin_in,vtxz_bin_in)] -> Fill(ClusPhiSize->at(pair.inner_index), vtxZ_weight_in);
+                h1D_map[Form("h1D_typeA_BestPair_ClusPhiSize_Mbin%d_VtxZ%d",Mbin_in,vtxz_bin_in)] -> Fill(ClusPhiSize->at(pair.outer_index), vtxZ_weight_in);
+                h1D_map[Form("h1D_typeA_BestPair_ClusAdc_Mbin%d_VtxZ%d",Mbin_in,vtxz_bin_in)] -> Fill(ClusAdc->at(pair.inner_index), vtxZ_weight_in);
+                h1D_map[Form("h1D_typeA_BestPair_ClusAdc_Mbin%d_VtxZ%d",Mbin_in,vtxz_bin_in)] -> Fill(ClusAdc->at(pair.outer_index), vtxZ_weight_in);
             }
 
 
@@ -836,7 +840,7 @@ void TrackletHistogramNew::MainProcess()
         FillPairs(evt_TrackletPair_vec, false, Mbin, InttVtxZ_bin, INTTvtxZWeighting, i);
 
         GetTrackletPair(evt_TrackletPairRotate_vec, true);  
-        FillPairs(evt_TrackletPair_vec, true, Mbin, InttVtxZ_bin, INTTvtxZWeighting, i);
+        FillPairs(evt_TrackletPairRotate_vec, true, Mbin, InttVtxZ_bin, INTTvtxZWeighting, i);
 
     }
 }

@@ -411,6 +411,27 @@ void vtxZDist::PrepareHist()
             )
         );
 
+        h2D_map.insert(
+            std::make_pair(
+                "h2D_GoodRecoZ_TruthZ_Centrality",
+                new TH2D("h2D_GoodRecoZ_TruthZ_Centrality","h2D_GoodRecoZ_TruthZ_Centrality;Truth_{z} [cm];Centrality [%]",nVtxZ_bin, VtxZEdge_min, VtxZEdge_max, nCentrality_bin, &centrality_edges[0])
+            )
+        );
+
+        h2D_map.insert(
+            std::make_pair(
+                "h2D_TruthCount_TruthZ_Centrality",
+                new TH2D("h2D_TruthCount_TruthZ_Centrality","h2D_TruthCount_TruthZ_Centrality;Truth_{z} [cm];Centrality [%]",nVtxZ_bin, VtxZEdge_min, VtxZEdge_max, nCentrality_bin, &centrality_edges[0])
+            )
+        );
+
+        h2D_map.insert(
+            std::make_pair(
+                "h2D_RecoZEffi_TruthZ_Centrality",
+                new TH2D("h2D_RecoZEffi_TruthZ_Centrality","h2D_RecoZEffi_TruthZ_Centrality;Truth_{z} [cm];Centrality [%]",nVtxZ_bin, VtxZEdge_min, VtxZEdge_max, nCentrality_bin, &centrality_edges[0])
+            )
+        );
+
     }
 
 }
@@ -432,6 +453,7 @@ void vtxZDist::PrepareEvent()
         if (runnumber == -1 && NTruthVtx != 1) {continue;}
 
         // note : both data and MC
+        if (is_min_bias != 1) {continue;}
         if (MBD_z_vtx != MBD_z_vtx) {continue;}
         if (MBD_centrality != MBD_centrality) {continue;}
         if (MBD_centrality < 0 || MBD_centrality > 1) {continue;}
@@ -518,6 +540,10 @@ void vtxZDist::PrepareEvent()
             if (Mbin <= Semi_inclusive_bin){
                 h1D_map["h1D_INTTvtxZ_resolution_Inclusive70"] -> Fill(INTTvtxZ - TruthPV_trig_z);
             }
+
+            // todo : no weight
+            if (fabs(INTTvtxZ - TruthPV_trig_z) <= cut_GoodRecoVtxZ) {h2D_map["h2D_GoodRecoZ_TruthZ_Centrality"] -> Fill(TruthPV_trig_z, MBD_centrality);}
+            h2D_map["h2D_TruthCount_TruthZ_Centrality"] -> Fill(TruthPV_trig_z, MBD_centrality);
         }
 
         // =======================================================================================================================================================
@@ -541,6 +567,8 @@ void vtxZDist::EndRun()
     {
         hist.second -> Write();
     }
+
+    h2D_map["h2D_RecoZEffi_TruthZ_Centrality"] -> Divide(h2D_map["h2D_GoodRecoZ_TruthZ_Centrality"], h2D_map["h2D_TruthCount_TruthZ_Centrality"]);
 
     for (auto &hist : h2D_map)
     {

@@ -27,7 +27,7 @@ void Run_PrepareHist_MC(
   std::pair<bool, std::pair<double, double>> isClusQA = {true, {35, 500}}, // note : {adc, phi size}
 
   bool HaveGeoOffsetTag = false,
-  std::pair<bool, int> SetRandomHits = {false, 0}
+  std::pair<bool, int> SetRandomHits = {false, 0},
 
   std::string vtxZReWeighting_input_directory = "/sphenix/user/ChengWei/INTT/INTT_dNdeta_repo/NewCode2024/PrepareAllDist/vtxZDist_comp/plots/Test_20241225_withVtxZQA/INTTvtxZReWeight.root",
   std::string map_name = "HIJING_noZWeight_WithVtxZQA_Inclusive70"

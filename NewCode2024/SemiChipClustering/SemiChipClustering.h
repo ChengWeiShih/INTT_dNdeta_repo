@@ -46,6 +46,7 @@ class SemiChipClustering{
 
             bool BcoFullDiffCut_in,
             bool INTT_vtxZ_QA_in,
+            std::pair<bool, std::string> BadChMask_in,
             bool ApplyHitQA_in = true,
             bool clone_hit_remove_BCO_tag_in = true,
             std::pair<bool, int> cut_HitBcoDiff_in = {true, 55},
@@ -78,6 +79,7 @@ class SemiChipClustering{
 
         bool BcoFullDiffCut;
         bool INTT_vtxZ_QA;
+        std::pair<bool, std::string> BadChMask;
         bool ApplyHitQA;
         bool clone_hit_remove_BCO_tag;
         std::pair<bool, int> cut_HitBcoDiff;
@@ -101,6 +103,7 @@ class SemiChipClustering{
         int InttBcoFullDiff_next;
 
         int NClus;
+        int NClus_Layer1;
 
         // note : trigger tag
         int MBDNSg2;
@@ -126,6 +129,9 @@ class SemiChipClustering{
         // std::vector<unsigned short> *InttRawHit_full_FPHX;
         // std::vector<unsigned short> *InttRawHit_full_ROC;
         // std::vector<unsigned short> *InttRawHit_amplitude;
+
+        std::vector<unsigned int> *ClusAdc;
+        std::vector<float> *ClusPhiSize;
 
         // note : ------------------------- for analysis --------------------------------
         struct chip_clu_info{
@@ -155,6 +161,23 @@ class SemiChipClustering{
         );
         SemiChipClustering::chip_clu_info find_Ngroup(TH1D * hist_in);
         double CoM_cluster_pos(TH1D * hist_in, double edge_l, double edge_r);
+        std::pair<double, double> GetSize2Dist(SemiChipClustering::chip_clu_info clu_info_in, int eID_count, std::string chip_string);
+        double  vector_average (std::vector <double> input_vector);
+        double vector_stddev (std::vector <double> input_vector);
+
+        // note : -------------------------------- Hot channel branch ------------------------------
+        void PrepareHotChannel();
+        TFile * hot_file_in;
+        TTree * hot_tree_in;
+        std::string hot_tree_name = "Multiple";
+        int IID;             
+        int Ichannel;        
+        int Ichip;           
+        int Ifelix_channel;  
+        int Ifelix_server;   
+        int Iflag;           
+
+        std::map<std::string,std::string> hot_channel_map;
 
 
         // note : ------------------------- for output root file --------------------------------
@@ -179,6 +202,35 @@ class SemiChipClustering{
 
         TH2D * h2D_nChipHit_NSize2Clus;
         TH2D * h2D_nChipHit_NSize1Clus;
+
+        TH2D * h2D_NSize2Clus_NSize1Clus;
+        TH2D * h2D_NSize2Clus_LargestSize;
+
+        TH2D * h2D_NSize2Clus_Size2Dist;
+        TH2D * h2D_Size2DistAvg_Size2DistStd;
+        TH2D * h2D_Size2DistAvg_Size2DistStd_WithLargeSize;
+
+        TH1D * h1D_confirm_HitBcoDiff;
+        TH1D * h1D_confirm_HitBcoDiff_post;
+        TH2D * h2D_confirm_NClus_MBDChargeSum;
+
+        TH2D * h2D_Inclusive_Inner_Outer_NClus;
+        TH2D * h2D_Inclusive_NClus_MBDChargeSum;
+        TH1D * h1D_Inclusive_MBDCentrality;
+        TH1D * h1D_Inclusive_ClusPhiSize;
+        TH1D * h1D_Inclusive_ClusAdc;
+
+        TH2D * h2D_Post_Inner_Outer_NClus;
+        TH2D * h2D_Post_NClus_MBDChargeSum;
+        TH1D * h1D_Post_MBDCentrality;
+        TH1D * h1D_Post_ClusPhiSize;
+        TH1D * h1D_Post_ClusAdc;
+
+        TH2D * h2D_Killed_Inner_Outer_NClus;
+        TH2D * h2D_Killed_NClus_MBDChargeSum;
+        TH1D * h1D_Killed_MBDCentrality;
+        TH1D * h1D_Killed_ClusPhiSize;
+        TH1D * h1D_Killed_ClusAdc;
 
         // note : -------------------------------- The constant values ------------------------------
         const int nFelix = 8;
@@ -209,6 +261,10 @@ class SemiChipClustering{
 
         std::vector<double> centrality_edges = Constants::centrality_edges;
         int nCentrality_bin;
+
+        double CentralityFineEdge_min = -0.005;
+        double CentralityFineEdge_max = 1.005;
+        int nCentralityFineBin = 101;
 
         int B0L0_index = Constants::B0L0_index;
         int B0L1_index = Constants::B0L1_index;
