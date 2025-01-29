@@ -9,6 +9,8 @@ PreparedNdEtaEach::PreparedNdEtaEach(
     std::string output_file_name_suffix_in,
 
     bool ApplyAlphaCorr_in,
+    bool ApplyGeoAccCorr_in,
+
     bool isTypeA_in,
     std::pair<double,double> cut_INTTvtxZ_in,
     int SelectedMbin_in
@@ -20,6 +22,8 @@ PreparedNdEtaEach::PreparedNdEtaEach(
     output_file_name_suffix(output_file_name_suffix_in),
 
     ApplyAlphaCorr(ApplyAlphaCorr_in),
+    ApplyGeoAccCorr(ApplyGeoAccCorr_in),
+
     isTypeA(isTypeA_in),
     cut_INTTvtxZ(cut_INTTvtxZ_in),
     SelectedMbin(SelectedMbin_in)
@@ -44,6 +48,14 @@ PreparedNdEtaEach::PreparedNdEtaEach(
 
     h1D_alpha_correction_map_in.clear();
     h1D_alpha_correction_map_out.clear();
+
+    h2D_GeoAccCorr_map.clear();
+
+    std::string isTypeA_str = (isTypeA) ? "_typeA" : "";
+    GeoAccCorr_name_map = {
+        Form("h2D%s_BestPair_EtaVtxZ_Rebin_Selected",isTypeA_str.c_str()),
+        Form("h2D%s_BestPair_EtaVtxZ_Rebin_Selected",isTypeA_str.c_str())
+    };
 }
 
 void PreparedNdEtaEach::PrepareInputRootFie()
@@ -177,7 +189,9 @@ void PreparedNdEtaEach::PrepareOutPutFileName()
     output_filename = "PreparedNdEtaEach";
     output_filename = (runnumber != -1) ? "Data_" + output_filename : "MC_" + output_filename;
 
-    output_filename += (ApplyAlphaCorr) ? "_ApplyAlphaCorr" : "";
+    output_filename += (ApplyAlphaCorr) ? "_AlphaCorr" : "";
+    output_filename += (ApplyGeoAccCorr) ? "_GeoAccCorr" : "";
+
     output_filename += (isTypeA) ? "_TypeA" : "_AllSensor";
     output_filename += Form("_VtxZ%.0f", fabs(cut_INTTvtxZ.first - cut_INTTvtxZ.second)/2.); // todo : check this
     output_filename += Form("_Mbin%d",SelectedMbin);
@@ -483,6 +497,21 @@ void PreparedNdEtaEach::PrepareStacks()
     int l_eta_bin, l_vtxz_bin, l_Mbin;
     int l_typeA, l_rotated, l_finebin;
 
+    if (ApplyGeoAccCorr && h2D_GeoAccCorr_map.size() == 1){
+        if (
+                cut_INTTvtxZ.first < h2D_GeoAccCorr_map[GeoAccCorr_name_map[0]] -> GetYaxis() -> GetXmin() || // todo: the map ID
+                cut_INTTvtxZ.second > h2D_GeoAccCorr_map[GeoAccCorr_name_map[0]] -> GetYaxis() -> GetXmax()   // todo: the map ID
+            )
+        {
+            std::cout<<"Error: cut_INTTvtxZ is outside the h2D_GeoAccr map"<<std::endl;
+            exit(1);
+        }
+    }
+    else if (ApplyGeoAccCorr && h2D_GeoAccCorr_map.size() != 1){
+        std::cout<<"Error: h2D_GeoAccCorr_map is empty"<<std::endl;
+        exit(1);
+    }
+
     for (auto &pair : h1D_input_map)
     {
         std::tie(l_eta_bin, l_vtxz_bin, l_Mbin, l_typeA, l_rotated, l_finebin) = GetHistStringInfo(pair.first);
@@ -493,7 +522,50 @@ void PreparedNdEtaEach::PrepareStacks()
         }
 
         if (pair.first.find("h1D") != std::string::npos && pair.first.find("_DeltaPhi") != std::string::npos && l_Mbin != -1 && l_eta_bin != -1){
-            std::cout<<"----- "<<pair.first<<", eta_bin: "<<l_eta_bin<<", vtxz_bin: "<<l_vtxz_bin<<", Mbin: "<<l_Mbin<<", typeA: "<<l_typeA<<", rotated: "<<l_rotated<<", finebin: "<<l_finebin<<std::endl;
+
+            if (!ApplyGeoAccCorr) {std::cout<<"----- "<<pair.first<<", eta_bin: "<<l_eta_bin<<", vtxz_bin: "<<l_vtxz_bin<<", Mbin: "<<l_Mbin<<", typeA: "<<l_typeA<<", rotated: "<<l_rotated<<", finebin: "<<l_finebin<<std::endl;}
+            
+            double GeoAcc_correction;
+
+            if (ApplyGeoAccCorr && h2D_GeoAccCorr_map.size() != 0)
+            {
+                // note : to find the corrsponding eta_bin and vtxz_bin in the h2D_GeoAccCorr_map
+                double h1D_eta_center = h2D_input_map["h2D_GoodProtoTracklet_EtaVtxZ_Mbin0"] -> GetXaxis() -> GetBinCenter(l_eta_bin + 1); // note : for DeltaPhi
+                double h1D_Z_center   = h2D_input_map["h2D_GoodProtoTracklet_EtaVtxZ_Mbin0"] -> GetYaxis() -> GetBinCenter(l_vtxz_bin + 1); // note : for DeltaPhi
+                double h1D_Z_BinWidth = h2D_input_map["h2D_GoodProtoTracklet_EtaVtxZ_Mbin0"] -> GetYaxis() -> GetBinWidth(l_vtxz_bin + 1); // note : for DeltaPhi
+
+                auto temp_RotatedBkg_GeoAccCorr_h2D = h2D_GeoAccCorr_map[GeoAccCorr_name_map[0]]; // todo: the map ID
+
+                if (
+                        h1D_Z_center < temp_RotatedBkg_GeoAccCorr_h2D -> GetYaxis() -> GetXmin() || 
+                        h1D_Z_center > temp_RotatedBkg_GeoAccCorr_h2D -> GetYaxis() -> GetXmax() || 
+                        h1D_Z_BinWidth != temp_RotatedBkg_GeoAccCorr_h2D -> GetYaxis() -> GetBinWidth(1)
+                    )
+                {
+                    std::cout<<"Error: h1D_Z_center is outside the h2D_GeoAccCorr_map or the binwidths are not matched"<<std::endl;
+                    exit(1);
+                }
+
+                GeoAcc_correction = temp_RotatedBkg_GeoAccCorr_h2D -> GetBinContent( temp_RotatedBkg_GeoAccCorr_h2D -> FindBin(h1D_eta_center, h1D_Z_center) );
+                GeoAcc_correction = (GeoAcc_correction <= 0) ? 0. : 1.;
+
+                std::cout<<std::endl;
+                std::cout<<"----- "<<pair.first<<", eta_bin: "<<l_eta_bin<<", vtxz_bin: "<<l_vtxz_bin<<", Mbin: "<<l_Mbin<<", typeA: "<<l_typeA<<", rotated: "<<l_rotated<<", finebin: "<<l_finebin<<std::endl;
+                std::cout<<"----- eta_center: "<<h1D_eta_center<<", Z_center: "<<h1D_Z_center<<", GeoAcc_correction: "<<GeoAcc_correction<<std::endl;
+                std::cout<<"----- h1D_DeltaPhi Integral: "<<pair.second -> Integral()<<std::endl;
+                pair.second -> Scale(GeoAcc_correction);
+                std::cout<<"----- h1D_DeltaPhi Integral post : "<<pair.second -> Integral()<<std::endl;
+                
+            }
+            else if (ApplyGeoAccCorr && h2D_GeoAccCorr_map.size() == 0)
+            {
+                std::cout<<"Error: h2D_GeoAccCorr_map is empty"<<std::endl;
+                exit(1);
+            }
+            else 
+            {
+                GeoAcc_correction = 1;
+            }
 
             // note : normal, with Mbin
             // note : normal, with Inclusive100
@@ -507,7 +579,12 @@ void PreparedNdEtaEach::PrepareStacks()
             // Form("hstack1D_DeltaPhi_Eta%d_rotated", eta_bin)
 
             if (isTypeA == l_typeA){ // note : {isTypeA == 0 -> inclusive, l_typeA should be zero}, {isTypeA == 1 -> typeA, l_typeA should be 1}
-                if (SelectedMbin == 100){ // note : inclusive centrality
+                if  (
+                        SelectedMbin == 100 || 
+                        (SelectedMbin == Semi_inclusive_Mbin * 10 && l_Mbin <= Semi_inclusive_Mbin) ||
+                        SelectedMbin == l_Mbin
+                    )
+                { // note : inclusive centrality
                     if (l_rotated == 0){
                         pair.second->SetFillColor(ROOT_color_code[hstack1D_DeltaPhi_map[Form("hstack1D_DeltaPhi_Eta%d", l_eta_bin)]->GetNhists() % ROOT_color_code.size()]);
 
@@ -523,46 +600,45 @@ void PreparedNdEtaEach::PrepareStacks()
                     }
                 }
                 // todo: need to check if the centrality bin is changed
-                else if (SelectedMbin == Semi_inclusive_Mbin * 10){
-                    if (l_Mbin > Semi_inclusive_Mbin) {continue;}
+                // else if (SelectedMbin == Semi_inclusive_Mbin * 10){
+                //     if (l_Mbin > Semi_inclusive_Mbin) {continue;}
 
-                    if (l_rotated == 0){
-                        pair.second->SetFillColor(ROOT_color_code[hstack1D_DeltaPhi_map[Form("hstack1D_DeltaPhi_Eta%d", l_eta_bin)]->GetNhists() % ROOT_color_code.size()]);
+                //     if (l_rotated == 0){
+                //         pair.second->SetFillColor(ROOT_color_code[hstack1D_DeltaPhi_map[Form("hstack1D_DeltaPhi_Eta%d", l_eta_bin)]->GetNhists() % ROOT_color_code.size()]);
 
-                        hstack1D_DeltaPhi_map[Form("hstack1D_DeltaPhi_Eta%d", l_eta_bin)] -> Add(pair.second);
-                    }
-                    else if (l_rotated == 1){
-                        pair.second->SetFillColor(ROOT_color_code[hstack1D_DeltaPhi_map[Form("hstack1D_DeltaPhi_Eta%d_rotated", l_eta_bin)]->GetNhists() % ROOT_color_code.size()]);
+                //         hstack1D_DeltaPhi_map[Form("hstack1D_DeltaPhi_Eta%d", l_eta_bin)] -> Add(pair.second);
+                //     }
+                //     else if (l_rotated == 1){
+                //         pair.second->SetFillColor(ROOT_color_code[hstack1D_DeltaPhi_map[Form("hstack1D_DeltaPhi_Eta%d_rotated", l_eta_bin)]->GetNhists() % ROOT_color_code.size()]);
 
-                        hstack1D_DeltaPhi_map[Form("hstack1D_DeltaPhi_Eta%d_rotated", l_eta_bin)] -> Add(pair.second);
-                    }
-                    else {
-                        std::cout<<"wtf_Inclusive"<<Semi_inclusive_Mbin*10<<" : "<<pair.first<<std::endl;
-                    }
-                }
+                //         hstack1D_DeltaPhi_map[Form("hstack1D_DeltaPhi_Eta%d_rotated", l_eta_bin)] -> Add(pair.second);
+                //     }
+                //     else {
+                //         std::cout<<"wtf_Inclusive"<<Semi_inclusive_Mbin*10<<" : "<<pair.first<<std::endl;
+                //     }
+                // }
 
-                else if (SelectedMbin == l_Mbin){ // note : each bin
-                    if (l_rotated == 0){
-                        pair.second->SetFillColor(ROOT_color_code[hstack1D_DeltaPhi_map[Form("hstack1D_DeltaPhi_Eta%d", l_eta_bin)]->GetNhists() % ROOT_color_code.size()]);
+                // else if (SelectedMbin == l_Mbin){ // note : each bin
+                //     if (l_rotated == 0){
+                //         pair.second->SetFillColor(ROOT_color_code[hstack1D_DeltaPhi_map[Form("hstack1D_DeltaPhi_Eta%d", l_eta_bin)]->GetNhists() % ROOT_color_code.size()]);
 
-                        hstack1D_DeltaPhi_map[Form("hstack1D_DeltaPhi_Eta%d", l_eta_bin)] -> Add(pair.second);
-                    }
-                    else if (l_rotated == 1){
-                        pair.second->SetFillColor(ROOT_color_code[hstack1D_DeltaPhi_map[Form("hstack1D_DeltaPhi_Eta%d_rotated", l_eta_bin)]->GetNhists() % ROOT_color_code.size()]);
+                //         hstack1D_DeltaPhi_map[Form("hstack1D_DeltaPhi_Eta%d", l_eta_bin)] -> Add(pair.second);
+                //     }
+                //     else if (l_rotated == 1){
+                //         pair.second->SetFillColor(ROOT_color_code[hstack1D_DeltaPhi_map[Form("hstack1D_DeltaPhi_Eta%d_rotated", l_eta_bin)]->GetNhists() % ROOT_color_code.size()]);
 
-                        hstack1D_DeltaPhi_map[Form("hstack1D_DeltaPhi_Eta%d_rotated", l_eta_bin)] -> Add(pair.second);
-                    }
-                    else {
-                        std::cout<<"wtf_singlebin: "<<pair.first<<std::endl;
-                    }
-                }
+                //         hstack1D_DeltaPhi_map[Form("hstack1D_DeltaPhi_Eta%d_rotated", l_eta_bin)] -> Add(pair.second);
+                //     }
+                //     else {
+                //         std::cout<<"wtf_singlebin: "<<pair.first<<std::endl;
+                //     }
+                // }
                 else 
                 {
                     std::cout<<"wtf_inclusive_to_Mbin: "<<pair.first<<std::endl;
                 }
             }
         }
-
         // Division:--------------------------------------------------------------------------------------------------------------------------------------------------------------------
         // note : for truth
         if (runnumber == -1 && pair.first.find("h1D") != std::string::npos && pair.first.find("_TrueEta") != std::string::npos && l_Mbin != -1){
@@ -613,7 +689,7 @@ void PreparedNdEtaEach::PrepareStacks()
                 }
             }
         }
-    }
+    } // note : end of -> for (auto &pair : h1D_input_map)
 
 
     // note : for h1D_RotatedBkg_DeltaPhi_Signal_map
@@ -623,12 +699,18 @@ void PreparedNdEtaEach::PrepareStacks()
 
         if (pair.first.find("hstack1D") != std::string::npos && pair.first.find("_DeltaPhi") != std::string::npos && pair.first.find("_rotated") == std::string::npos && l_eta_bin != -1){
 
+            std::cout<<"----- "<<pair.first<<", eta_bin: "<<l_eta_bin<<", vtxz_bin: "<<l_vtxz_bin<<", Mbin: "<<l_Mbin<<", typeA: "<<l_typeA<<", rotated: "<<l_rotated<<", finebin: "<<l_finebin<<std::endl;
+
+
             auto temp_hist = (TH1D*) pair.second -> GetStack() -> Last();
             auto temp_hist_rotate = (TH1D*) hstack1D_DeltaPhi_map[pair.first + "_rotated"] -> GetStack() -> Last();
 
+
             h1D_RotatedBkg_DeltaPhi_Signal_map[Form("h1D_RotatedBkg_DeltaPhi_Signal_Eta%d", l_eta_bin)] -> Add(temp_hist, temp_hist_rotate, 1, -1);
             // h1D_RotatedBkg_DeltaPhi_Signal_map[Form("h1D_RotatedBkg_DeltaPhi_Signal_Eta%d", l_eta_bin)] -> SetLineStyle(2);
+
             h1D_RotatedBkg_DeltaPhi_Signal_map[Form("h1D_RotatedBkg_DeltaPhi_Signal_Eta%d", l_eta_bin)] -> SetLineColor(8);
+
         }
     }
 
@@ -674,6 +756,7 @@ void PreparedNdEtaEach::PrepareStacks()
         }
 
     }
+
 
     // Division:--------------------------------------------------------------------------------------------------------------------------------------------------------------------
     // note : for hstack2D_TrueEtaVtxZ_map
@@ -733,7 +816,8 @@ void PreparedNdEtaEach::PrepareStacks()
             
         }
     }
-    
+
+
     // Division : -----------------------------------------------------------------------------------------------------------------------------------------------------------------
     for (int Mbin = 0; Mbin < nCentrality_bin; Mbin++)
     {
@@ -919,16 +1003,61 @@ void PreparedNdEtaEach::PrepareMultiplicity()
 {
     std::cout<<"In PrepareMultiplicity()"<<std::endl;
 
+    h1D_RotatedBkg_RecoTrackletEta_map[Form("h1D_RotatedBkg_RecoTrackletEta")] -> Sumw2(false);
+
     for (int eta_bin = 0; eta_bin < nEtaBin; eta_bin++){
         
         double pol2_bkg_integral = fabs(f1_BkgPol2_Draw_map[Form("hstack1D_DeltaPhi_Eta%d_BkgPol2_Draw", eta_bin)] -> Integral( cut_GoodProtoTracklet_DeltaPhi->first, cut_GoodProtoTracklet_DeltaPhi->second )) / ((DeltaPhiEdge_max - DeltaPhiEdge_min)/double(nDeltaPhiBin));
         double rotated_bkg_count = get_hstack2D_GoodProtoTracklet_count(hstack2D_GoodProtoTracklet_map[Form("hstack2D_GoodProtoTracklet_EtaVtxZ_rotated")], eta_bin);
 
         std::cout<<Form("FitBkg: hstack1D_DeltaPhi_Eta%d_BkgPol2_Draw", eta_bin)<<": "<<pol2_bkg_integral<<", rotated_bkg_count: "<<rotated_bkg_count<<std::endl;
+
+        auto temp_h2D = (TH2D*) hstack2D_BestPairEtaVtxZ -> GetStack() -> Last();
+
+        if (false /*ApplyGeoAccCorr && runnumber != -1*/) // note : for data
+        {
+            SetH2DNonZeroBins(h2D_GeoAccCorr_map[GeoAccCorr_name_map[0]], 1);
+        }
+
+        if (false /*ApplyGeoAccCorr*/)
+        {
+            double GelAcc_BestPair_BinWidthY = h2D_GeoAccCorr_map[GeoAccCorr_name_map[0]] -> GetYaxis() -> GetBinWidth(1);
+            double temp_h2D_BinWidthY = temp_h2D -> GetYaxis() -> GetBinWidth(1);
+            int Ngroup = temp_h2D_BinWidthY / GelAcc_BestPair_BinWidthY;
+
+            std::cout<<"GelAcc_BestPair_BinWidthY: "<<GelAcc_BestPair_BinWidthY<<", temp_h2D_BinWidthY: "<<temp_h2D_BinWidthY<<", Ngroup: "<<Ngroup<<std::endl;
+
+            h2D_GeoAccCorr_map[GeoAccCorr_name_map[0]] -> Rebin2D(1, Ngroup);
+        }
+
+        if (false /*ApplyGeoAccCorr*/){
+
+            if (
+                temp_h2D -> GetNbinsX() != h2D_GeoAccCorr_map[GeoAccCorr_name_map[0]] -> GetNbinsX() ||
+                temp_h2D -> GetXaxis() -> GetXmin() != h2D_GeoAccCorr_map[GeoAccCorr_name_map[0]] -> GetXaxis() -> GetXmin() ||
+                temp_h2D -> GetXaxis() -> GetXmax() != h2D_GeoAccCorr_map[GeoAccCorr_name_map[0]] -> GetXaxis() -> GetXmax() ||
+
+                temp_h2D -> GetNbinsY() != h2D_GeoAccCorr_map[GeoAccCorr_name_map[0]] -> GetNbinsY() ||
+                temp_h2D -> GetYaxis() -> GetXmin() != h2D_GeoAccCorr_map[GeoAccCorr_name_map[0]] -> GetYaxis() -> GetXmin() ||
+                temp_h2D -> GetYaxis() -> GetXmax() != h2D_GeoAccCorr_map[GeoAccCorr_name_map[0]] -> GetYaxis() -> GetXmax()
+            )
+            {
+                std::cout<<"h2D_BestPairEtaVtxZ and h2D_GeoAccCorr_map[For_BestPair] have different binning!!"<<std::endl;
+                std::cout<<"temp_h2D X: "<<temp_h2D -> GetNbinsX()<<", "<<temp_h2D -> GetXaxis() -> GetXmin()<<", "<<temp_h2D -> GetXaxis() -> GetXmax()<<std::endl;
+                std::cout<<"temp_h2D Y: "<<temp_h2D -> GetNbinsY()<<", "<<temp_h2D -> GetYaxis() -> GetXmin()<<", "<<temp_h2D -> GetYaxis() -> GetXmax()<<std::endl;
+
+                std::cout<<"h2D_GeoAccCorr_map[For_BestPair] X: "<<h2D_GeoAccCorr_map[GeoAccCorr_name_map[0]] -> GetNbinsX()<<", "<<h2D_GeoAccCorr_map[GeoAccCorr_name_map[0]] -> GetXaxis() -> GetXmin()<<", "<<h2D_GeoAccCorr_map[GeoAccCorr_name_map[0]] -> GetXaxis() -> GetXmax()<<std::endl;
+                std::cout<<"h2D_GeoAccCorr_map[For_BestPair] Y: "<<h2D_GeoAccCorr_map[GeoAccCorr_name_map[0]] -> GetNbinsY()<<", "<<h2D_GeoAccCorr_map[GeoAccCorr_name_map[0]] -> GetYaxis() -> GetXmin()<<", "<<h2D_GeoAccCorr_map[GeoAccCorr_name_map[0]] -> GetYaxis() -> GetXmax()<<std::endl;
+                exit(1);
+            }
+
+            temp_h2D -> Multiply(h2D_GeoAccCorr_map[GeoAccCorr_name_map[0]]);
+        }
         
         h1D_BestPair_RecoTrackletEta_map[Form("h1D_BestPair_RecoTrackletEta")] -> SetBinContent(
             eta_bin + 1,
-            get_hstack2D_GoodProtoTracklet_count(hstack2D_BestPairEtaVtxZ, eta_bin)
+            // get_hstack2D_GoodProtoTracklet_count(hstack2D_BestPairEtaVtxZ, eta_bin)
+            get_h2D_GoodProtoTracklet_count(temp_h2D, eta_bin)
         );
 
         std::pair<int, int> DeltaPhi_signal_bin = get_DeltaPhi_SingleBin(h1D_RotatedBkg_DeltaPhi_Signal_map[Form("h1D_RotatedBkg_DeltaPhi_Signal_Eta%d", eta_bin)], BkgRotated_DeltaPhi_Signal_range);
@@ -942,6 +1071,10 @@ void PreparedNdEtaEach::PrepareMultiplicity()
             // get_hstack2D_GoodProtoTracklet_count(hstack2D_GoodProtoTracklet_map[Form("hstack2D_GoodProtoTracklet_EtaVtxZ")], eta_bin) - 
             // rotated_bkg_count
         );
+
+        std::cout<<"h1D_RotatedBkg_RecoTrackletEta, bin: "<<eta_bin + 1
+        <<", Eta: ["<<h1D_RotatedBkg_RecoTrackletEta_map[Form("h1D_RotatedBkg_RecoTrackletEta")]->GetXaxis()->GetBinLowEdge(eta_bin + 1)<<", "<<h1D_RotatedBkg_RecoTrackletEta_map[Form("h1D_RotatedBkg_RecoTrackletEta")]->GetXaxis()->GetBinUpEdge(eta_bin + 1)<<"], "
+        <<"Content&Errors: {"<<h1D_RotatedBkg_RecoTrackletEta_map[Form("h1D_RotatedBkg_RecoTrackletEta")]->GetBinContent(eta_bin + 1)<<", "<<h1D_RotatedBkg_RecoTrackletEta_map[Form("h1D_RotatedBkg_RecoTrackletEta")]->GetBinError(eta_bin + 1)<<"}"<<std::endl;
     }
 }
 
@@ -1091,9 +1224,6 @@ void PreparedNdEtaEach::DeriveAlphaCorrection()
 
 void PreparedNdEtaEach::EndRun()
 {
-    file_out_dNdEta -> cd();
-    // note : the 2D
-
     std::cout<<111<<std::endl;
 
     file_out_DeltaPhi -> cd();
@@ -1151,6 +1281,11 @@ void PreparedNdEtaEach::EndRun()
     h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC_map["h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC"] -> Write();
 
     std::cout<<7777<<std::endl;
+
+    if (ApplyGeoAccCorr && h2D_GeoAccCorr_map.size() != 0){
+        h2D_GeoAccCorr_map[GeoAccCorr_name_map[0]]   -> Write("GeoAccMap_For_BestPair");
+        h2D_GeoAccCorr_map[GeoAccCorr_name_map[0]] -> Write("GeoAccMap_For_RotatedBkg"); // todo: the map ID
+    }
 
 
     if (runnumber == -1){
@@ -1321,6 +1456,26 @@ double PreparedNdEtaEach::get_hstack2D_GoodProtoTracklet_count(THStack * stack_i
 
 }
 
+double PreparedNdEtaEach::get_h2D_GoodProtoTracklet_count(TH2D * h2D_in, int eta_bin_in)
+{
+    double count = 0;
+    
+    // note : hist
+    // note : X: eta
+    // note : Y: VtxZ
+
+    for (int yi = 1; yi <= h2D_in->GetNbinsY(); yi++){ // note : vtxZ bin
+            
+        if (vtxZ_index_map.find(yi - 1) == vtxZ_index_map.end()){
+            continue;
+        }
+
+        count += h2D_in -> GetBinContent(eta_bin_in + 1, yi);
+    }
+
+    return count;   
+}
+
 double PreparedNdEtaEach::get_EvtCount(TH2D * hist_in, int centrality_bin_in)
 {
     double count = 0;
@@ -1386,9 +1541,21 @@ std::pair<int,int> PreparedNdEtaEach::get_DeltaPhi_SingleBin(TH1D * hist_in, std
     int bin_max = hist_in -> FindBin(range_in.second);
     bin_max = (fabs(hist_in -> GetXaxis() -> GetBinLowEdge(bin_max) - range_in.second) < 1e-9) ? bin_max - 1 : bin_max;
 
+    std::cout<<std::endl;
     std::cout<<"Input range : "<<range_in.first<<", "<<range_in.second<<std::endl;
     std::cout<<"Final selected bins: "<<bin_min<<", "<<bin_max<<std::endl;
     std::cout<<"Output range : "<<hist_in -> GetXaxis() -> GetBinLowEdge(bin_min)<<", "<<hist_in -> GetXaxis() -> GetBinUpEdge(bin_max)<<std::endl;
 
     return std::make_pair(bin_min, bin_max);
+}
+
+void PreparedNdEtaEach::SetH2DNonZeroBins(TH2D* hist_in, double value_in)
+{
+    for (int xi = 1; xi <= hist_in->GetNbinsX(); xi++){
+        for (int yi = 1; yi <= hist_in->GetNbinsY(); yi++){
+            if (hist_in -> GetBinContent(xi, yi) != 0){
+                hist_in -> SetBinContent(xi, yi, value_in);
+            }
+        }
+    }
 }

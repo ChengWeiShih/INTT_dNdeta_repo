@@ -9,12 +9,14 @@ RestDist::RestDist(
     std::string output_directory_in,
 
     std::string output_file_name_suffix_in,
+    std::pair<double, double> vertexXYIncm_in,
 
     bool Apply_cut_in,
     bool ApplyVtxZReWeighting_in,
     std::pair<bool, int> ApplyEvtBcoFullDiffCut_in,
     std::pair<bool, std::pair<double,double>> RequireVtxZRange_in,
-    std::pair<bool, std::pair<double,double>> isClusQA_in // note : true/false, {ADC, phi_size}
+    std::pair<bool, std::pair<double,double>> isClusQA_in, // note : true/false, {ADC, phi_size}
+    bool isRotated_in
 ):
     process_id(process_id_in),
     runnumber(runnumber_in),
@@ -23,11 +25,13 @@ RestDist::RestDist(
     input_file_name(input_file_name_in),
     output_directory(output_directory_in),
     output_file_name_suffix(output_file_name_suffix_in),
+    vertexXYIncm(vertexXYIncm_in),
     Apply_cut(Apply_cut_in),
     ApplyVtxZReWeighting(ApplyVtxZReWeighting_in),
     ApplyEvtBcoFullDiffCut(ApplyEvtBcoFullDiffCut_in),
     RequireVtxZRange(RequireVtxZRange_in),
-    isClusQA(isClusQA_in)
+    isClusQA(isClusQA_in),
+    isRotated(isRotated_in)
 {
     PrepareOutPutFileName();
     PrepareInputFile();
@@ -38,6 +42,11 @@ RestDist::RestDist(
 
     PrepareOutputFile();
     PrepareHist();
+
+    temp_all_pair_vec.clear();
+    temp_all_pair_deltaR_vec.clear();
+    BestPair_h2D_map.clear();
+    BestPair_gr_map.clear();
 
 }
 
@@ -63,6 +72,7 @@ void RestDist::PrepareOutPutFileName()
     output_filename += (Apply_cut) ? "_vtxZQA" : "_NovtxZQA";
     output_filename += (ApplyVtxZReWeighting) ? "_VtxZReWeighting" : "";
     output_filename += (runnumber != -1 && ApplyEvtBcoFullDiffCut.first) ? Form("_EvtBcoFullDiffCut%d", ApplyEvtBcoFullDiffCut.second) : "";
+    output_filename += (isRotated) ? "_Rotated" : "";
 
     if (RequireVtxZRange.first){
         std::string vtxZRange;
@@ -135,6 +145,8 @@ void RestDist::PrepareInputFile()
     
     // note :for MC
     if (branch_map.find("NTruthVtx") != branch_map.end()) {tree_in -> SetBranchStatus("NTruthVtx", 1);}
+    if (branch_map.find("TruthPV_trig_x") != branch_map.end()) {tree_in -> SetBranchStatus("TruthPV_trig_x", 1);}
+    if (branch_map.find("TruthPV_trig_y") != branch_map.end()) {tree_in -> SetBranchStatus("TruthPV_trig_y", 1);}
     if (branch_map.find("TruthPV_trig_z") != branch_map.end()) {tree_in -> SetBranchStatus("TruthPV_trig_z", 1);}
 
 
@@ -223,6 +235,8 @@ void RestDist::PrepareInputFile()
 
     // note : for MC
     if (branch_map.find("NTruthVtx") != branch_map.end()) {tree_in -> SetBranchAddress("NTruthVtx", &NTruthVtx);}
+    if (branch_map.find("TruthPV_trig_x") != branch_map.end()) {tree_in -> SetBranchAddress("TruthPV_trig_x", &TruthPV_trig_x);}
+    if (branch_map.find("TruthPV_trig_y") != branch_map.end()) {tree_in -> SetBranchAddress("TruthPV_trig_y", &TruthPV_trig_y);}
     if (branch_map.find("TruthPV_trig_z") != branch_map.end()) {tree_in -> SetBranchAddress("TruthPV_trig_z", &TruthPV_trig_z);}
 }
 
@@ -248,6 +262,34 @@ void RestDist::PrepareHist()
         std::make_pair(
             "h1D_PairDeltaPhi",
             new TH1D("h1D_PairDeltaPhi","h1D_PairDeltaPhi;Pair #Delta#phi;Entries",nDeltaPhiBin,DeltaPhiEdge_min,DeltaPhiEdge_max)
+        )
+    );
+
+    h1D_map.insert(
+        std::make_pair(
+            "h1D_PairDeltaPhi_Narrow",
+            new TH1D("h1D_PairDeltaPhi_Narrow","h1D_PairDeltaPhi_Narrow;Pair #Delta#phi;Entries",100,-0.05,0.05)
+        )
+    );
+
+    h1D_map.insert(
+        std::make_pair(
+            "h1D_PairDeltaR",
+            new TH1D("h1D_PairDeltaR","h1D_PairDeltaR;Pair #DeltaR;Entries",100, 0, 4)
+        )
+    );
+
+    h1D_map.insert(
+        std::make_pair(
+            "h1D_PairDeltaR_Narrow",
+            new TH1D("h1D_PairDeltaR_Narrow","h1D_PairDeltaR_Narrow;Pair #DeltaR;Entries",100, 0, 0.4)
+        )
+    );
+
+    h1D_map.insert(
+        std::make_pair(
+            "h1D_PairDCA3D",
+            new TH1D("h1D_PairDCA3D","h1D_PairDCA3D;Pair DCA 3D [cm];Entries",100, 0, 25)
         )
     );
 
@@ -341,6 +383,49 @@ void RestDist::PrepareHist()
         )
     );
 
+    h2D_map.insert(
+        std::make_pair(
+            "h2D_PairDCA3D_PairDeltaR",
+            new TH2D("h2D_PairDCA3D_PairDeltaR","h2D_PairDCA3D_PairDeltaR;Pair DCA 3D [cm];Pair #DeltaR", 200, 0, 25, 200, 0, 4)
+        )
+    );
+
+    h2D_map.insert(
+        std::make_pair(
+            "h2D_PairDCA3D_PairDeltaRNarrow",
+            new TH2D("h2D_PairDCA3D_PairDeltaRNarrow","h2D_PairDCA3D_PairDeltaRNarrow;Pair DCA 3D [cm];Pair #DeltaR", 200, 0, 25, 200, 0, 0.4)
+        )
+    );
+
+    h2D_map.insert(
+        std::make_pair(
+            "h2D_PairDCA3D_PairDeltaEta",
+            new TH2D("h2D_PairDCA3D_PairDeltaEta","h2D_PairDCA3D_PairDeltaEta;Pair DCA 3D [cm];Pair #Delta#eta", 200, 0, 25, 200, -2, 2)
+        )
+    );
+
+    h2D_map.insert(
+        std::make_pair(
+            "h2D_PairDCA3D_PairDeltaPhi",
+            new TH2D("h2D_PairDCA3D_PairDeltaPhi","h2D_PairDCA3D_PairDeltaPhi;Pair DCA 3D [cm];Pair #Delta#phi", 200, 0, 25, nDeltaPhiBin, DeltaPhiEdge_min, DeltaPhiEdge_max)
+        )
+    );
+
+    h2D_map.insert(
+        std::make_pair(
+            "h2D_TrackletEta_PairDeltaPhi",
+            new TH2D("h2D_TrackletEta_PairDeltaPhi","h2D_TrackletEta_PairDeltaPhi;Tracklet #eta;Pair #Delta#phi", nEtaBin, EtaEdge_min, EtaEdge_max, nDeltaPhiBin, DeltaPhiEdge_min, DeltaPhiEdge_max)
+        )
+    );
+
+    h2D_map.insert(
+        std::make_pair(
+            "h2D_PairDeltaPhi_DCAXY",
+            new TH2D("h2D_PairDeltaPhi_DCAXY","h2D_PairDeltaPhi_DCAXY;Pair #Delta#phi;DCA 2D [cm]", nDeltaPhiBin, DeltaPhiEdge_min, DeltaPhiEdge_max, 100, -3, 3)
+        )
+    );
+
+
     h2D_map.insert(std::make_pair("h2D_ClusPhiSize_ClusAdc", new TH2D("h2D_ClusPhiSize_ClusAdc","h2D_ClusPhiSize_ClusAdc;Cluster #phi size;Cluster Adc",128,0,128,100,0,10000)));
     h2D_map.insert(std::make_pair("h2D_ClusXY", new TH2D("h2D_ClusXY","h2D_ClusXY;X [cm];Y [cm]",300,-15,15,300,-15,15)));
 
@@ -382,6 +467,9 @@ void RestDist::EvtCleanUp()
 
 void RestDist::PrepareClusterVec()
 {
+    evt_sPH_inner_nocolumn_vec.clear();
+    evt_sPH_outer_nocolumn_vec.clear();
+
     for (int clu_i = 0; clu_i < ClusX -> size(); clu_i++)
     {
         RestDist::clu_info this_clu;
@@ -501,6 +589,8 @@ void RestDist::PrepareEvent()
          
         PrepareClusterVec();
 
+        if(isRotated) {GetRotatedClusterVec(evt_sPH_inner_nocolumn_vec);}
+
         if (Mbin <= Semi_inclusive_bin){
             h1D_map["h1D_confirm_INTTvtxZ_Inclusive70"] -> Fill(INTTvtxZ, INTTvtxZWeighting);
         }
@@ -618,6 +708,9 @@ void RestDist::PrepareEvent()
             outer_clu_phi_map[ int(Clus_OuterPhi_Offset) ].push_back({false,this_clu});            
         }
 
+        // temp_all_pair_vec.clear();
+        // temp_all_pair_deltaR_vec.clear();
+
         for (int inner_phi_i = 0; inner_phi_i < 360; inner_phi_i++) // note : each phi cell (1 degree)
         {
             // note : N cluster in this phi cell
@@ -637,16 +730,101 @@ void RestDist::PrepareEvent()
                     {                        
                         RestDist::clu_info outer_clu = outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second;
 
+                        double PairEta = (inner_clu.eta_INTTz + outer_clu.eta_INTTz)/2.;
                         double deltaEta = inner_clu.eta_INTTz - outer_clu.eta_INTTz;
                         double deltaPhi = inner_clu.phi_avgXY - outer_clu.phi_avgXY;
+                        double deltaR = sqrt(pow(deltaPhi,2)+pow(deltaEta,2));
+                        double DCAXY_sign = calculateAngleBetweenVectors(
+                            outer_clu.x, outer_clu.y,
+                            inner_clu.x, inner_clu.y,
+                            vertexXYIncm.first, vertexXYIncm.second
+                        );
+                        double PairRadius = shortestDistanceLineToPoint(
+                            {inner_clu.x, inner_clu.y, inner_clu.z},
+                            {outer_clu.x, outer_clu.y, outer_clu.z},
+                            {vertexXYIncm.first, vertexXYIncm.second, INTTvtxZ}
+                        );
 
                         h1D_map["h1D_PairDeltaEta"] -> Fill(deltaEta, INTTvtxZWeighting);
                         h1D_map["h1D_PairDeltaPhi"] -> Fill(deltaPhi, INTTvtxZWeighting);
+                        h1D_map["h1D_PairDeltaPhi_Narrow"] -> Fill(deltaPhi, INTTvtxZWeighting);
+
+                        h1D_map["h1D_PairDeltaR"] -> Fill(deltaR, INTTvtxZWeighting);
+                        h1D_map["h1D_PairDeltaR_Narrow"] -> Fill(deltaR, INTTvtxZWeighting);
+
+                        h1D_map["h1D_PairDCA3D"] -> Fill(PairRadius, INTTvtxZWeighting);
+
+                        // todo: require the pair can be linked to the vertex
+                        if (fabs(deltaEta) <= 0.25){h2D_map["h2D_TrackletEta_PairDeltaPhi"] -> Fill(PairEta,deltaPhi,INTTvtxZWeighting);}
+                        h2D_map["h2D_PairDeltaPhi_DCAXY"] -> Fill(deltaPhi, DCAXY_sign,INTTvtxZWeighting);
+
+                        h2D_map["h2D_PairDCA3D_PairDeltaR"] -> Fill(PairRadius,deltaR,INTTvtxZWeighting);
+                        h2D_map["h2D_PairDCA3D_PairDeltaRNarrow"] -> Fill(PairRadius,deltaR,INTTvtxZWeighting);
+                        h2D_map["h2D_PairDCA3D_PairDeltaEta"] -> Fill(PairRadius,deltaEta,INTTvtxZWeighting);
+                        h2D_map["h2D_PairDCA3D_PairDeltaPhi"] -> Fill(PairRadius,deltaPhi,INTTvtxZWeighting);
+
+                        if (i%50 == 0 && fabs(deltaPhi) <= 0.021 && fabs(deltaEta) <= 0.25){
+                            std::cout<<"deltaPhi = "<<deltaPhi<<", deltaEta = "<<deltaEta<<std::endl;
+                            std::cout<<"inner_clu : {"<<inner_clu.x<<", "<<inner_clu.y<<", "<<inner_clu.z<<"}"<<std::endl;
+                            std::cout<<"outer_clu : {"<<outer_clu.x<<", "<<outer_clu.y<<", "<<outer_clu.z<<"}"<<std::endl;
+                            std::cout<<"vertex : {"<<vertexXYIncm.first<<", "<<vertexXYIncm.second<<", "<<INTTvtxZ<<"}"<<std::endl;
+                            std::cout<<"PairRadius = "<<PairRadius<<std::endl;
+                            std::cout<<std::endl;
+                        } 
+
+
+                        // pair_str this_pair;
+                        // this_pair.delta_phi = deltaPhi;
+                        // this_pair.delta_eta = deltaEta;
+                        // this_pair.inner_index = inner_clu.index;                        
+                        // this_pair.outer_index = outer_clu.index;
+                        // temp_all_pair_vec.push_back(this_pair);
+                        // temp_all_pair_deltaR_vec.push_back(deltaR);
 
                     }
                 }
             }
         }         
+
+        // long long vec_size = temp_all_pair_deltaR_vec.size();
+        // long long ind[temp_all_pair_deltaR_vec.size()];
+        // TMath::Sort(vec_size, &temp_all_pair_deltaR_vec[0], ind, false);
+
+        // BestPair_h2D_map.insert(
+        //     std::make_pair(
+        //         i,
+        //         new TH2D(Form("h2D_BestPair_%d",i),Form("h2D_BestPair_%d;Pair Delta Eta;Pair Delta Phi",i),400,-0.5,0.5,400,-0.5,0.5)
+        //     )
+        // );
+
+        // BestPair_gr_map.insert(
+        //     std::make_pair(
+        //         i,
+        //         new TGraph()
+        //     )
+        // ); BestPair_gr_map[i] -> SetTitle(Form("h2D_gr_%d;pair_index;#Delta#phi [rad]",i));
+
+        // std::vector<int> Used_Clus_index_vec; Used_Clus_index_vec.clear();
+        // for (int pair_i = 0; pair_i < vec_size; pair_i++){
+
+        //     pair_str pair = temp_all_pair_vec[ind[pair_i]];
+        //     if (std::find(Used_Clus_index_vec.begin(), Used_Clus_index_vec.end(), pair.inner_index) != Used_Clus_index_vec.end()) {continue;}
+        //     if (std::find(Used_Clus_index_vec.begin(), Used_Clus_index_vec.end(), pair.outer_index) != Used_Clus_index_vec.end()) {continue;}
+
+        //     if (temp_all_pair_deltaR_vec[ind[pair_i]] > 0.5) {break;}
+
+        //     BestPair_h2D_map[i] -> SetBinContent(
+        //         BestPair_h2D_map[i] -> FindBin(pair.delta_eta, pair.delta_phi),
+        //         pair_i
+        //     );
+
+        //     BestPair_gr_map[i] -> SetPoint(BestPair_gr_map[i] -> GetN(), pair_i, pair.delta_phi);
+
+        //     Used_Clus_index_vec.push_back(pair.inner_index);
+        //     Used_Clus_index_vec.push_back(pair.outer_index);
+        // }
+
+        // BestPair_gr_map[i]->GetYaxis()->SetRangeUser(-0.5,0.5);
 
 
         // for (int inner_i = 0; inner_i < evt_sPH_inner_nocolumn_vec.size(); inner_i++){
@@ -657,9 +835,33 @@ void RestDist::PrepareEvent()
 
         //         double deltaEta = inner_clu.eta_INTTz - outer_clu.eta_INTTz;
         //         double deltaPhi = inner_clu.phi_avgXY - outer_clu.phi_avgXY;
+        //         double deltaR = sqrt(pow(deltaPhi,2)+pow(deltaEta,2));
 
         //         h1D_map["h1D_PairDeltaEta"] -> Fill(deltaEta, INTTvtxZWeighting);
         //         h1D_map["h1D_PairDeltaPhi"] -> Fill(deltaPhi, INTTvtxZWeighting);
+        //         h1D_map["h1D_PairDeltaPhi_Narrow"] -> Fill(deltaPhi, INTTvtxZWeighting);
+
+        //         h1D_map["h1D_PairDeltaR"] -> Fill(deltaR, INTTvtxZWeighting);
+
+        //         double PairRadius = shortestDistanceLineToPoint(
+        //             {inner_clu.x, inner_clu.y, inner_clu.z},
+        //             {outer_clu.x, outer_clu.y, outer_clu.z},
+        //             {vertexXYIncm.first, vertexXYIncm.second, INTTvtxZ}
+        //         );
+        //         h1D_map["h1D_PairDCA3D"] -> Fill(PairRadius, INTTvtxZWeighting);
+
+        //         h2D_map["h2D_PairDCA3D_PairDeltaR"] -> Fill(PairRadius,deltaR,INTTvtxZWeighting);
+        //         h2D_map["h2D_PairDCA3D_PairDeltaEta"] -> Fill(PairRadius,deltaEta,INTTvtxZWeighting);
+        //         h2D_map["h2D_PairDCA3D_PairDeltaPhi"] -> Fill(PairRadius,deltaPhi,INTTvtxZWeighting);
+
+        //         if (i%50 == 0 && fabs(deltaPhi) <= 0.021 && fabs(deltaEta) <= 0.25){
+        //             std::cout<<"deltaPhi = "<<deltaPhi<<", deltaEta = "<<deltaEta<<std::endl;
+        //             std::cout<<"inner_clu : {"<<inner_clu.x<<", "<<inner_clu.y<<", "<<inner_clu.z<<"}"<<std::endl;
+        //             std::cout<<"outer_clu : {"<<outer_clu.x<<", "<<outer_clu.y<<", "<<outer_clu.z<<"}"<<std::endl;
+        //             std::cout<<"vertex : {"<<vertexXYIncm.first<<", "<<vertexXYIncm.second<<", "<<INTTvtxZ<<"}"<<std::endl;
+        //             std::cout<<"PairRadius = "<<PairRadius<<std::endl;
+        //             std::cout<<std::endl;
+        //         } 
         //     }
         // }
         
@@ -671,6 +873,12 @@ void RestDist::EndRun()
 {
     file_out -> cd();
     h1D_centrality_bin -> Write();
+
+    // for (auto &pair : BestPair_h2D_map)
+    // {
+    //     pair.second -> Write();
+    //     BestPair_gr_map[pair.first] -> Write(Form("h2D_gr_%d",pair.first));
+    // }
 
     for (auto &hist : h1D_map)
     {
@@ -688,4 +896,129 @@ void RestDist::EndRun()
     h2D_map["h2D_sensor_AvgAdcMap"] -> Write();
 
     file_out -> Close();
+}
+
+double RestDist::shortestDistanceLineToPoint(const std::vector<double> point1, const std::vector<double> point2, const std::vector<double> target) {
+    // note : Ensure the vectors are 3-dimensional
+    if (point1.size() != 3 || point2.size() != 3 || target.size() != 3) {
+        throw std::invalid_argument("All input vectors must have exactly 3 elements.");
+        exit(1);
+    }
+
+    // note : Compute direction vector of the line (point2 - point1)
+    // note : from point1 to point2
+    std::vector<double> lineDir = {
+        point2[0] - point1[0],
+        point2[1] - point1[1],
+        point2[2] - point1[2]
+    };
+
+    // note : Compute vector from point1 to the target point
+    // note : from point1 to target
+    std::vector<double> pointToTarget = {
+        target[0] - point1[0],
+        target[1] - point1[1],
+        target[2] - point1[2]
+    };
+
+    // note : Compute the cross product of lineDir and pointToTarget
+    std::vector<double> crossProduct = {
+        lineDir[1] * pointToTarget[2] - lineDir[2] * pointToTarget[1],
+        lineDir[2] * pointToTarget[0] - lineDir[0] * pointToTarget[2],
+        lineDir[0] * pointToTarget[1] - lineDir[1] * pointToTarget[0]
+    };
+
+    // note : Compute the magnitude of the cross product
+    double crossProductMagnitude = std::sqrt( pow(crossProduct[0],2) + pow(crossProduct[1],2) + pow(crossProduct[2],2) );
+
+    // note : Compute the magnitude of the line direction vector
+    double lineDirMagnitude = std::sqrt( pow(lineDir[0],2) + pow(lineDir[1],2) + pow(lineDir[2],2) );
+
+    // note : Compute and return the shortest distance
+    return crossProductMagnitude / lineDirMagnitude;
+}
+
+void RestDist::GetRotatedClusterVec(std::vector<RestDist::clu_info> &input_cluster_vec)
+{
+    for (RestDist::clu_info &this_clu : input_cluster_vec)
+    {
+        std::pair<double,double> rotated_xy = rotatePoint(this_clu.x, this_clu.y);
+     
+        this_clu.x = rotated_xy.first;
+        this_clu.y = rotated_xy.second;
+
+        this_clu.eta_INTTz = RestDist::get_clu_eta({vertexXYIncm.first, vertexXYIncm.second, INTTvtxZ}, {this_clu.x, this_clu.y, this_clu.z});
+        this_clu.eta_MBDz = RestDist::get_clu_eta({vertexXYIncm.first, vertexXYIncm.second, MBD_z_vtx}, {this_clu.x, this_clu.y, this_clu.z});
+        this_clu.phi_avgXY = atan2(this_clu.y - vertexXYIncm.second, this_clu.x - vertexXYIncm.first);
+
+        if (runnumber == -1){
+            this_clu.eta_TrueXYZ = RestDist::get_clu_eta({TruthPV_trig_x, TruthPV_trig_y, TruthPV_trig_z}, {this_clu.x, this_clu.y, this_clu.z});
+            this_clu.phi_TrueXY = atan2(this_clu.y - TruthPV_trig_y, this_clu.x - TruthPV_trig_x);
+        }
+
+    }
+}
+
+std::pair<double,double> RestDist::rotatePoint(double x, double y)
+{
+    // Convert the rotation angle from degrees to radians
+    double rotation = rotate_phi_angle; // todo rotation is here
+    double angleRad = rotation * M_PI / 180.0;
+
+    // Perform the rotation
+    double xOut = x * cos(angleRad) - y * sin(angleRad);
+    double yOut = x * sin(angleRad) + y * cos(angleRad);
+
+    xOut = (fabs(xOut) < 0.0000001) ? 0 : xOut;
+    yOut = (fabs(yOut) < 0.0000001) ? 0 : yOut;
+
+    // cout<<"Post rotation: "<<xOut<<" "<<yOut<<endl;
+
+    return {xOut,yOut};
+}
+
+
+double RestDist::get_clu_eta(std::vector<double> vertex, std::vector<double> clu_pos)
+{
+    double correct_x = clu_pos[0] - vertex[0];
+    double correct_y = clu_pos[1] - vertex[1];
+    double correct_z = clu_pos[2] - vertex[2];
+    double clu_r = sqrt(pow(correct_x,2) + pow(correct_y,2));
+    // cout<<"correct info : "<<correct_x<<" "<<correct_y<<" "<<correct_z<<" "<<clu_r<<endl;
+
+    return -0.5 * TMath::Log((sqrt(pow(correct_z,2)+pow(clu_r,2))-(correct_z)) / (sqrt(pow(correct_z,2)+pow(clu_r,2))+(correct_z)));
+}
+
+double RestDist::calculateAngleBetweenVectors(double x1, double y1, double x2, double y2, double targetX, double targetY) {
+    // Calculate the vectors vector_1 (point_1 to point_2) and vector_2 (point_1 to target)
+    double vector1X = x2 - x1;
+    double vector1Y = y2 - y1;
+
+    double vector2X = targetX - x1;
+    double vector2Y = targetY - y1;
+
+    // Calculate the cross product of vector_1 and vector_2 (z-component)
+    double crossProduct = vector1X * vector2Y - vector1Y * vector2X;
+    
+    // cout<<" crossProduct : "<<crossProduct<<endl;
+
+    // Calculate the magnitudes of vector_1 and vector_2
+    double magnitude1 = std::sqrt(vector1X * vector1X + vector1Y * vector1Y);
+    double magnitude2 = std::sqrt(vector2X * vector2X + vector2Y * vector2Y);
+
+    // Calculate the angle in radians using the inverse tangent of the cross product and dot product
+    double dotProduct = vector1X * vector2X + vector1Y * vector2Y;
+
+    double angleInRadians = std::atan2(std::abs(crossProduct), dotProduct);
+    // Convert the angle from radians to degrees and return it
+    double angleInDegrees = angleInRadians * 180.0 / M_PI;
+    
+    double angleInRadians_new = std::asin( crossProduct/(magnitude1*magnitude2) );
+    double angleInDegrees_new = angleInRadians_new * 180.0 / M_PI;
+    
+    // cout<<"angle : "<<angleInDegrees_new<<endl;
+
+    double DCA_distance = sin(angleInRadians_new) * magnitude2;
+
+    return DCA_distance;
 }

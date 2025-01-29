@@ -10,18 +10,18 @@ int comp1()
 
     std::vector<std::pair<std::string, std::pair<std::string,std::string>>> data_input_directory_pair_vec = {
         {
-            std::string("/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Dec042024/completed/Run24NewCode_EvtVtxZTracklet/completed/RestDist/completed") + 
-            "/Data_RestDist_vtxZQA_EvtBcoFullDiffCut61_vtxZRangeM10p0to10p0_DataOldVtxXY_00054280_merged.root"
+            std::string("/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Dec042024/completed/Run3/EvtVtxZ/completed/RestDist/completed") + 
+            "/Data_RestDist_vtxZQA_EvtBcoFullDiffCut61_vtxZRangeM10p0to10p0_00054280_merged.root"
             ,
             
-            {"Data, |Reco. VtxZ| < 10 cm, |BcoFullDiff| > 61", "data_old_vtxXY"}
+            {"Data, |Reco. VtxZ| < 10 cm, |BcoFullDiff| > 61", "Data"}
         }
     };
 
     std::vector<std::pair<std::string, std::pair<std::string,std::string>>> MC_input_directory_pair_vec = {
         {
-            std::string("/sphenix/tg/tg01/commissioning/INTT/work/cwshih/sPH_dNdeta/Run24AuAuMC/Sim_Ntuple_HIJING_ana443_20241102/Run24NewCode_EvtVtxZTracklet/completed/RestDist/completed") + 
-            "/MC_RestDist_vtxZQA_VtxZReWeighting_vtxZRangeM10p0to10p0_MCTrueXY_merged.root",
+            std::string("/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_Ntuple_HIJING_ana443_20241102/Run3/EvtVtxZ/completed/RestDist/completed") + 
+            "/MC_RestDist_vtxZQA_VtxZReWeighting_vtxZRangeM10p0to10p0_merged.root",
             {"HIJING, |Reco. VtxZ| < 10 cm", "HIJING_ZWeight"}
         }
     };
@@ -30,7 +30,7 @@ int comp1()
         {
             "Data",
             {
-                std::make_tuple(0.22, 0.8, "Old vertex XY"),
+                // std::make_tuple(0.22, 0.8, "Old vertex XY"),
                 std::make_tuple(0.22, 0.76, "w/ INTT vtxZ QA")
             }
         },
@@ -38,7 +38,7 @@ int comp1()
         {
             "MC",
             {
-                std::make_tuple(0.22, 0.8, "Truth avg VtxXY"),
+                // std::make_tuple(0.22, 0.8, "Truth avg VtxXY"),
                 std::make_tuple(0.22, 0.76, "w/ INTT vtxZ QA"),
                 std::make_tuple(0.22, 0.72, "MC vtxZ Reweighted")
             }
@@ -48,8 +48,8 @@ int comp1()
         {
             "Comp",
             {
-                std::make_tuple(0.22, 0.8, "Data, Old vertex XY"),
-                std::make_tuple(0.22, 0.76, "MC, Truth avg vtxXY"),
+                // std::make_tuple(0.22, 0.8, "Data, Old vertex XY"),
+                // std::make_tuple(0.22, 0.76, "MC, Truth avg vtxXY"),
                 std::make_tuple(0.22, 0.72, "w/ INTT vtxZ QA"),
                 std::make_tuple(0.22, 0.68, "MC vtxZ Reweighted")
             }
@@ -57,7 +57,7 @@ int comp1()
     };
     
 
-    std::string output_directory = "/sphenix/user/ChengWei/INTT/INTT_dNdeta_repo/NewCode2024/PrepareAllDist/vtxZDist_comp/plots/RestDist/Test_20241225_vtxZRang_noClusQA";
+    std::string output_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Dec042024/completed/Run3/EvtVtxZ/completed/RestDist/completed/RestComp_VtxZCut_NoClusQA";
 
     bool WithVtxZReWeighting = false;
 
@@ -88,17 +88,17 @@ int comp2()
 
     std::vector<std::pair<std::string, std::pair<std::string,std::string>>> data_input_directory_pair_vec = {
         {
-            std::string("/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Dec042024/completed/Run24NewCode_EvtVtxZTracklet/completed/RestDist/completed") + 
-            "/Data_RestDist_vtxZQA_EvtBcoFullDiffCut61_vtxZRangeM10p0to10p0_ClusQAAdc35PhiSize200000_DataOldVtxXY_00054280_merged.root",
+            std::string("/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Dec042024/completed/Run3/EvtVtxZ/completed/RestDist/completed") + 
+            "/Data_RestDist_vtxZQA_EvtBcoFullDiffCut61_vtxZRangeM10p0to10p0_ClusQAAdc35PhiSize500_00054280_merged.root",
             
-            {"Data, |MbdVtxZ| < 10 cm, |BcoFullDiff| > 61", "data_old_vtxXY_withClusQA"}
+            {"Data, |MbdVtxZ| < 10 cm, |BcoFullDiff| > 61", "Data"}
         }
     };
 
     std::vector<std::pair<std::string, std::pair<std::string,std::string>>> MC_input_directory_pair_vec = {
         {
-            std::string("/sphenix/tg/tg01/commissioning/INTT/work/cwshih/sPH_dNdeta/Run24AuAuMC/Sim_Ntuple_HIJING_ana443_20241102/Run24NewCode_EvtVtxZTracklet/completed/RestDist/completed") + 
-            "/MC_RestDist_vtxZQA_VtxZReWeighting_vtxZRangeM10p0to10p0_ClusQAAdc35PhiSize200000_MCTrueXY_merged.root",
+            std::string("/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_Ntuple_HIJING_ana443_20241102/Run3/EvtVtxZ/completed/RestDist/completed") + 
+            "/MC_RestDist_vtxZQA_VtxZReWeighting_vtxZRangeM10p0to10p0_ClusQAAdc35PhiSize500_merged.root",
 
             {"HIJING, |MbdVtxZ| < 10 cm", "HIJING_ZWeight_withClusQA"}
         }
@@ -108,7 +108,7 @@ int comp2()
         {
             "Data",
             {
-                std::make_tuple(0.22, 0.8, "Old vertex XY"),
+                // std::make_tuple(0.22, 0.8, "Old vertex XY"),
                 std::make_tuple(0.22, 0.76, "w/ INTT vtxZ QA"),
                 std::make_tuple(0.22, 0.72, "w/ ClusQA")
             }
@@ -117,7 +117,7 @@ int comp2()
         {
             "MC",
             {
-                std::make_tuple(0.22, 0.8, "Truth avg VtxXY"),
+                // std::make_tuple(0.22, 0.8, "Truth avg VtxXY"),
                 std::make_tuple(0.22, 0.76, "w/ INTT vtxZ QA"),
                 std::make_tuple(0.22, 0.72, "w/ ClusQA"),
                 std::make_tuple(0.22, 0.68, "MC vtxZ Reweighted")
@@ -128,8 +128,8 @@ int comp2()
         {
             "Comp",
             {
-                std::make_tuple(0.22, 0.8, "Data, Old vertex XY"),
-                std::make_tuple(0.22, 0.76, "MC, Truth avg vtxXY"),
+                // std::make_tuple(0.22, 0.8, "Data, Old vertex XY"),
+                // std::make_tuple(0.22, 0.76, "MC, Truth avg vtxXY"),
                 std::make_tuple(0.22, 0.72, "w/ INTT vtxZ QA"),
                 std::make_tuple(0.22, 0.68, "w/ ClusQA"),
                 std::make_tuple(0.22, 0.64, "MC vtxZ Reweighted")
@@ -138,7 +138,7 @@ int comp2()
     };
     
 
-    std::string output_directory = "/sphenix/user/ChengWei/INTT/INTT_dNdeta_repo/NewCode2024/PrepareAllDist/vtxZDist_comp/plots/RestDist/Test_20241225_vtxZRang_WithClusQA";
+    std::string output_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Dec042024/completed/Run3/EvtVtxZ/completed/RestDist/completed/RestComp_VtxZCut_ClusQA";
 
     bool WithVtxZReWeighting = false;
 
@@ -169,17 +169,17 @@ int comp3()
 
     std::vector<std::pair<std::string, std::pair<std::string,std::string>>> data_input_directory_pair_vec = {
         {
-            std::string("/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Dec042024/completed/Run24NewCode_EvtVtxZTracklet/completed/RestDist/completed") + 
-            "/Data_RestDist_vtxZQA_EvtBcoFullDiffCut61_DataOldVtxXY_00054280_merged.root",
+            std::string("/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Dec042024/completed/Run3/EvtVtxZ/completed/RestDist/completed") + 
+            "/Data_RestDist_vtxZQA_EvtBcoFullDiffCut61_00054280_merged.root",
             
-            {"Data, |MbdVtxZ| < 60 cm, |BcoFullDiff| > 61", "data_old_vtxXY_novtxZCut_noClusQA"}
+            {"Data, |MbdVtxZ| < 60 cm, |BcoFullDiff| > 61", "data"}
         }
     };
 
     std::vector<std::pair<std::string, std::pair<std::string,std::string>>> MC_input_directory_pair_vec = {
         {
-            std::string("/sphenix/tg/tg01/commissioning/INTT/work/cwshih/sPH_dNdeta/Run24AuAuMC/Sim_Ntuple_HIJING_ana443_20241102/Run24NewCode_EvtVtxZTracklet/completed/RestDist/completed") + 
-            "/MC_RestDist_vtxZQA_VtxZReWeighting_MCTrueXY_merged.root",
+            std::string("/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_Ntuple_HIJING_ana443_20241102/Run3/EvtVtxZ/completed/RestDist/completed") + 
+            "/MC_RestDist_vtxZQA_VtxZReWeighting_merged.root",
 
             {"HIJING, |MbdVtxZ| < 60 cm", "HIJING_ZWeight_noVtxZCut_noClusQA"}
         }
@@ -189,9 +189,9 @@ int comp3()
         {
             "Data",
             {
-                std::make_tuple(0.22, 0.8, "Old vertex XY"),
+                // std::make_tuple(0.22, 0.8, "Old vertex XY"),
                 std::make_tuple(0.22, 0.76, "w/ INTT vtxZ QA"),
-                std::make_tuple(0.22, 0.72, "MC vtxZ Reweighted")
+                // std::make_tuple(0.22, 0.72, "MC vtxZ Reweighted")
                 // std::make_tuple(0.22, 0.72, "w/ ClusQA")
             }
         },
@@ -199,7 +199,7 @@ int comp3()
         {
             "MC",
             {
-                std::make_tuple(0.22, 0.8, "Truth avg VtxXY"),
+                // std::make_tuple(0.22, 0.8, "Truth avg VtxXY"),
                 std::make_tuple(0.22, 0.76, "w/ INTT vtxZ QA"),
                 std::make_tuple(0.22, 0.72, "MC vtxZ Reweighted")
                 // std::make_tuple(0.22, 0.72, "w/ ClusQA")
@@ -210,8 +210,8 @@ int comp3()
         {
             "Comp",
             {
-                std::make_tuple(0.22, 0.8, "Data, Old vertex XY"),
-                std::make_tuple(0.22, 0.76, "MC, Truth avg vtxXY"),
+                // std::make_tuple(0.22, 0.8, "Data, Old vertex XY"),
+                // std::make_tuple(0.22, 0.76, "MC, Truth avg vtxXY"),
                 std::make_tuple(0.22, 0.72, "w/ INTT vtxZ QA"),
                 std::make_tuple(0.22, 0.68, "MC vtxZ Reweighted")
                 // std::make_tuple(0.22, 0.68, "w/ ClusQA")
@@ -220,7 +220,7 @@ int comp3()
     };
     
 
-    std::string output_directory = "/sphenix/user/ChengWei/INTT/INTT_dNdeta_repo/NewCode2024/PrepareAllDist/vtxZDist_comp/plots/RestDist/Test_20241225_novtxZCut_noClusQA";
+    std::string output_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Dec042024/completed/Run3/EvtVtxZ/completed/RestDist/completed/RestComp_NoVtxZCut_NoClusQA";
 
     bool WithVtxZReWeighting = false;
 

@@ -43,7 +43,7 @@ class vtxZDist{
 
             std::string output_file_name_suffix_in = "",
 
-            bool Apply_cut_in = false,
+            bool Apply_cut_in = false, // note : vtxZQA
             bool ApplyVtxZReWeighting_in = false,
             std::pair<bool, int> ApplyEvtBcoFullDiffCut_in = {true, 61}
         );

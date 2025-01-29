@@ -56,7 +56,7 @@ void vtxZDist::PrepareOutPutFileName()
     output_filename = "vtxZDist";
     output_filename = (runnumber != -1) ? "Data_" + output_filename : "MC_" + output_filename;
 
-    output_filename += (Apply_cut) ? "_ApplyCut" : "_NoAddCut";
+    output_filename += (Apply_cut) ? "_VtxZQA" : "_NoVtxZQA";
     output_filename += (ApplyVtxZReWeighting) ? "_VtxZReWeighting" : "";
     output_filename += (runnumber != -1 && ApplyEvtBcoFullDiffCut.first) ? Form("_EvtBcoFullDiffCut%d", ApplyEvtBcoFullDiffCut.second) : "";
 
@@ -442,6 +442,8 @@ void vtxZDist::PrepareEvent()
     {
         tree_in -> GetEntry(i);
 
+        if (i % 500 == 0) {std::cout << "Processing Event " << i << " / " << run_nEvents << std::endl;}
+
         // =======================================================================================================================================================
         // note : hard cut
 
@@ -568,7 +570,7 @@ void vtxZDist::EndRun()
         hist.second -> Write();
     }
 
-    h2D_map["h2D_RecoZEffi_TruthZ_Centrality"] -> Divide(h2D_map["h2D_GoodRecoZ_TruthZ_Centrality"], h2D_map["h2D_TruthCount_TruthZ_Centrality"]);
+    if (runnumber == -1) {h2D_map["h2D_RecoZEffi_TruthZ_Centrality"] -> Divide(h2D_map["h2D_GoodRecoZ_TruthZ_Centrality"], h2D_map["h2D_TruthCount_TruthZ_Centrality"]);}
 
     for (auto &hist : h2D_map)
     {

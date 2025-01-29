@@ -9,11 +9,11 @@ job_lease_duration = 86400
 
 runnumber          = -1
 nEvents            = -1
-input_directory    = /sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_Ntuple_HIJING_ana443_20241102/Run24NewCode_EvtVtxZTracklet/completed
+input_directory    = /sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_Ntuple_HIJING_ana443_20241102/Run3/EvtVtxZ/completed
 job_offset    = 0
 process_shift      = $(Process) + $(job_offset) 
-input_filename     = MC_EvtVtxZProtoTracklet_FieldOff_BcoFullDiff_VtxZReco_Tracklet_TrackletRotate_test20241210_$INT(process_shift,%05d).root
-output_directory   = /sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_Ntuple_HIJING_ana443_20241102/Run24NewCode_ClusHist_WithClusQA_Rand35Hit
+input_filename     = MC_EvtVtxZProtoTracklet_FieldOff_VtxZReco_$INT(process_shift,%05d).root
+output_directory   = /sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_Ntuple_HIJING_ana443_20241102/Run3/EvtVtxZ/completed/ClusHist_WithClusQA
 macro_name         = Run_PrepareHist_MC
 
 Output             = $(output_directory)/cw_log/condor_$INT(process_shift,%05d).out

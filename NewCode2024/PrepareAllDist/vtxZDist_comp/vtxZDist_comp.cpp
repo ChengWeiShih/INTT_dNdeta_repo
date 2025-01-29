@@ -362,6 +362,7 @@ void vtxZDist_comp::MakePlots(std::string draw_method, bool isData)
         for (auto &pair2 : pair.second) // note : pair2.first : hist name
         {   
             c1 -> cd();
+            c1 -> SetLogy(false);
 
             std::string log_text = "";
             if (std::find(h2_logz_plot_vec.begin(), h2_logz_plot_vec.end(), pair2.first) != h2_logz_plot_vec.end())
@@ -400,6 +401,7 @@ void vtxZDist_comp::MakePlots(std::string draw_method, bool isData)
                 )
             );
             c1 -> Clear();
+            c1 -> SetLogz(false);
 
         } // note : end of all the histograms {h2D}
     } // note : end of all the data files {h2D}

@@ -94,6 +94,8 @@ void AvgVtxXY::ReadRootFile()
 
     tree_in -> SetBranchStatus("*", 0);
     tree_in -> SetBranchStatus("MBD_z_vtx", 1);
+    tree_in -> SetBranchStatus("is_min_bias", 1);
+    tree_in -> SetBranchStatus("MBD_centrality", 1);
     tree_in -> SetBranchStatus("NClus", 1);
     tree_in -> SetBranchStatus("ClusX", 1);
     tree_in -> SetBranchStatus("ClusY", 1);
@@ -110,6 +112,9 @@ void AvgVtxXY::ReadRootFile()
     ClusPhiSize = 0;
 
     tree_in -> SetBranchAddress("MBD_z_vtx", &MBD_z_vtx);
+    tree_in -> SetBranchAddress("is_min_bias", &is_min_bias);
+    tree_in -> SetBranchAddress("MBD_centrality", &MBD_centrality);
+
     tree_in -> SetBranchAddress("NClus", &NClus);
     tree_in -> SetBranchAddress("ClusX", &ClusX);
     tree_in -> SetBranchAddress("ClusY", &ClusY);
@@ -334,6 +339,8 @@ void AvgVtxXY::PreparePairs()
         inner_cluster_vec.clear();
         outer_cluster_vec.clear();        
 
+        if (MBD_centrality != MBD_centrality) {continue;}
+        if (is_min_bias != 1) {continue;}
         if (MBD_z_vtx != MBD_z_vtx) {continue;}
         if (MBD_z_vtx < MBD_vtxZ_cut.first || MBD_z_vtx > MBD_vtxZ_cut.second) {continue;}
 
@@ -341,7 +348,7 @@ void AvgVtxXY::PreparePairs()
 
         for (int j = 0; j < NClus; j++)
         {
-            if (ClusAdc->at(j) < ClusAdc_cut) {continue;}
+            if (ClusAdc->at(j) <= ClusAdc_cut) {continue;}
             if (ClusPhiSize->at(j) > ClusPhiSize_cut) {continue;}
 
             if (geo_offset_map.find(Form("%i_%i", ClusLayer->at(j), ClusLadderPhiId->at(j))) == geo_offset_map.end()) {

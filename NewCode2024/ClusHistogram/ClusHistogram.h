@@ -51,6 +51,8 @@ class ClusHistogram{
             std::pair<bool, std::pair<double, double>> isClusQA_in, // note : {adc, phi size}
             bool HaveGeoOffsetTag_in,
             std::pair<bool, int> SetRandomHits_in = {false, 0},
+            bool RandInttZ_in = false,
+            bool ColMulMask_in = false,
             int c_type_in = 0
         );
 
@@ -58,7 +60,18 @@ class ClusHistogram{
         void SetGeoOffset(std::map<std::string, std::vector<double>> input_geo_offset_map) {
             geo_offset_map.clear();
             geo_offset_map = input_geo_offset_map;
+
+            for (auto &pair : geo_offset_map)
+            {
+                std::cout<<pair.first<<" : {"<<pair.second[0]<<", "<<pair.second[1]<<", "<<pair.second[2]<<"}"<<std::endl;
+            }
         }
+
+        std::string GetGoodColMapName() {return GoodColMap_name;}
+        void SetGoodColMap(TH2D * input_h2D_GoodColMap) {
+            h2D_GoodColMap = input_h2D_GoodColMap;
+        }
+
         virtual void MainProcess();
         virtual void EndRun();
 
@@ -82,6 +95,8 @@ class ClusHistogram{
 
         bool HaveGeoOffsetTag;
         std::pair<bool, int> SetRandomHits;
+        bool RandInttZ;
+        bool ColMulMask;
 
         int c_type;
 
@@ -120,16 +135,26 @@ class ClusHistogram{
         std::string output_filename;
 
         // note : ----------------- for the running here -----------------
+        double CheckGeoOffsetMap();
         double get_clu_eta(std::vector<double> vertex, std::vector<double> clu_pos);
         void PrepareUniqueClusXYZ();
         std::map<std::string, std::vector<double>> geo_offset_map;
-        std::map<std::string, std::tuple<double, double, double, int, int>> inner_UniqueClusXYZ_map; // note : X, Y, Z, sensor ID, layerID
-        std::map<std::string, std::tuple<double, double, double, int, int>> outer_UniqueClusXYZ_map; // note : X, Y, Z, sensor ID, layerID
+        std::map<std::string, std::tuple<double, double, double, int, int, int, int, int>> inner_UniqueClusXYZ_map; // note : X, Y, Z, sensor ID, layerID, adc, phi size, ladderPhiID
+        std::map<std::string, std::tuple<double, double, double, int, int, int, int, int>> outer_UniqueClusXYZ_map; // note : X, Y, Z, sensor ID, layerID, adc, phi size, ladderPhiID
         std::vector<std::string> inner_UniqueClusXYZ_vec; 
         std::vector<std::string> outer_UniqueClusXYZ_vec;
         TH1D * h1D_RandClusZ_ref = nullptr;
         TH2D * h2D_RandClusXY_ref = nullptr;
         TRandom3 * rand3 = nullptr;
+
+        // note : ----------------- for the column multiplicity mask -----------------
+        std::string GoodColMap_name = "h2D_MulMap";
+        TH2D * h2D_GoodColMap = nullptr;
+        TH1D * h1D_GoodColMap_ZId;
+        int nZbin = Constants::nZbin;
+        double Zmin = Constants::Zmin;
+        double Zmax = Constants::Zmax;
+
 
 
         // note : ----------------- for the histograms -----------------
@@ -171,10 +196,10 @@ class ClusHistogram{
         int InttBcoFullDiff_next;
 
         // note : trigger tag
-        int MBDNSg2;
-        int MBDNSg2_vtxZ10cm;
-        int MBDNSg2_vtxZ30cm;
-        int MBDNSg2_vtxZ60cm;
+        int MBDNSg2 = 1;
+        int MBDNSg2_vtxZ10cm = 1;
+        int MBDNSg2_vtxZ30cm = 1;
+        int MBDNSg2_vtxZ60cm = 1;
 
         std::vector<float> *ClusX;
         std::vector<float> *ClusY;
@@ -187,7 +212,7 @@ class ClusHistogram{
         std::vector<double> *ClusEta_INTTz;
 
         // note : INTT vertex Z
-        double INTTvtxZ;
+        double INTTvtxZ = std::nan("");
         double INTTvtxZError;
         double NgroupTrapezoidal;
         double NgroupCoarse;
@@ -224,9 +249,14 @@ class ClusHistogram{
         int nEtaBin = 27;
 
         // note : for z
-        double VtxZEdge_min = -45; // note : cm
-        double VtxZEdge_max = 45; // note : cm
-        int nVtxZBin = 18;
+        // double VtxZEdge_min = -45; // note : cm
+        // double VtxZEdge_max = 45; // note : cm
+        // int nVtxZBin = 18;
+        double VtxZEdge_min = -10; // note : cm
+        double VtxZEdge_max = 10; // note : cm
+        int nVtxZBin = 10;
+        int nVtxZBin_FineBin = 500;
+
         TH1D * h1D_vtxz_template;
 
         std::vector<int> typeA_sensorZID = {0,2}; // note : sensor Z ID for type A // note -> 1, 0, 2, 3 

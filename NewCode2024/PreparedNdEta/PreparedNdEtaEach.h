@@ -44,6 +44,8 @@ class PreparedNdEtaEach{
             std::string output_file_name_suffix_in,
 
             bool ApplyAlphaCorr_in,
+            bool ApplyGeoAccCorr_in,
+
             bool isTypeA_in,
             std::pair<double,double> cut_INTTvtxZ_in,
             int SelectedMbin_in // note : 0, 1, ---- 10, 70, 100 
@@ -71,8 +73,27 @@ class PreparedNdEtaEach{
             }
         }
 
+        std::vector<std::string> GetGeoAccCorrNameMap() {return GeoAccCorr_name_map;}
+        
+        void SetGeoAccCorrH2DMap(std::map<std::string, TH2D*> map_in) {
+            h2D_GeoAccCorr_map = map_in;
+
+            for (auto &pair : h2D_GeoAccCorr_map){
+                if (std::find(GeoAccCorr_name_map.begin(), GeoAccCorr_name_map.end(), pair.first) == GeoAccCorr_name_map.end()){
+                    std::cout << "Error : the GeoAccCorr name is not found in the map" << std::endl;
+                    exit(1);
+                }
+            }
+
+        }
+
+
         void SetSelectedEtaRange(std::pair<double, double> cut_EtaRange_in) {
             cut_EtaRange_pair = cut_EtaRange_in;
+        }
+
+        void SetBkgRotated_DeltaPhi_Signal_range(std::pair<double, double> range_in) {
+            BkgRotated_DeltaPhi_Signal_range = range_in;
         }
 
         void PrepareStacks();
@@ -92,6 +113,8 @@ class PreparedNdEtaEach{
         std::string output_directory;
         std::string output_file_name_suffix;
         bool ApplyAlphaCorr;
+        bool ApplyGeoAccCorr;
+
         bool isTypeA;
         std::pair<double,double> cut_INTTvtxZ;
         int SelectedMbin;
@@ -144,8 +167,10 @@ class PreparedNdEtaEach{
         std::vector<double> find_Ngroup(TH1D * hist_in);
         double get_dist_offset(TH1D * hist_in, int check_N_bin);
         double get_hstack2D_GoodProtoTracklet_count(THStack * stack_in, int eta_bin_in);
+        double get_h2D_GoodProtoTracklet_count(TH2D * h2D_in, int eta_bin_in);
         double get_EvtCount(TH2D * hist_in, int centrality_bin_in);
         void Convert_to_PerEvt(TH1D * hist_in, double Nevent);
+        void SetH2DNonZeroBins(TH2D* hist_in, double value_in);
         std::pair<int,int> get_DeltaPhi_SingleBin(TH1D * hist_in, std::pair<double, double> range_in);
 
         std::map<int, int> vtxZ_index_map;
@@ -186,6 +211,10 @@ class PreparedNdEtaEach{
             "h1D_BestPair_alpha_correction",
             "h1D_RotatedBkg_alpha_correction"
         };
+
+        // note : for Geo Acceprance correction
+        std::map<std::string, TH2D*> h2D_GeoAccCorr_map;
+        std::vector<std::string> GeoAccCorr_name_map;
 
         // Division:---fitting------------------------------------------------------------------------------------------------
         std::map<std::string, TF1*> f1_BkgPol2_Fit_map;

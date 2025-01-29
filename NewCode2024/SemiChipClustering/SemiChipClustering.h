@@ -206,6 +206,8 @@ class SemiChipClustering{
         TH2D * h2D_NSize2Clus_NSize1Clus;
         TH2D * h2D_NSize2Clus_LargestSize;
 
+        TH2D * h2D_nChipHit_Size2DistAvg;
+        TH2D * h2D_nChipHit_Size2DistStd;
         TH2D * h2D_NSize2Clus_Size2Dist;
         TH2D * h2D_Size2DistAvg_Size2DistStd;
         TH2D * h2D_Size2DistAvg_Size2DistStd_WithLargeSize;

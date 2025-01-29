@@ -5,12 +5,12 @@ R__LOAD_LIBRARY(../libPreparedNdEtaEach.so)
 void Run_PreparedNdEtaEach(
   int process_id = 1,
   int run_num = -1,
-  string input_directory = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_Ntuple_HIJING_ana443_20241102/Run24NewCode_TrackHist/completed",
-  string input_filename = "MC_TrackletHistogram_vtxZReweight_INTT_vtxZ_QA_SecondRun_merged_001.root",
-  string output_directory = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_Ntuple_HIJING_ana443_20241102/Run24NewCode_dNdEta",
+  string input_directory = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_Ntuple_HIJING_ana443_20241102/Run3/TrackHist_ForGeoOffset/completed",
+  string input_filename = "MC_TrackHist_VtxZQA_ClusQAAdc35PhiSize500_ForGeoOffset_merged.root",
+  string output_directory = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_Ntuple_HIJING_ana443_20241102/Run3/TrackHist_ForGeoOffset/completed/dNdEta",
   
   // todo : modify here
-  std::string output_file_name_suffix = "_SecondRun",
+  std::string output_file_name_suffix = "_ForGeoOffset",
 
   bool ApplyAlphaCorr = false,
   bool isTypeA = false,

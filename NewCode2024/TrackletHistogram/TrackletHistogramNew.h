@@ -26,7 +26,9 @@ class TrackletHistogramNew : public ClusHistogram{
             bool INTT_vtxZ_QA_in,
             std::pair<bool, std::pair<double, double>> isClusQA_in, // note : {adc, phi size}
             bool HaveGeoOffsetTag_in,
-            std::pair<bool, int> SetRandomHits_in = {false, 0}
+            std::pair<bool, int> SetRandomHits_in = {false, 0},
+            bool RandInttZ_in = false,
+            bool ColMulMask_in = true
         );
 
         void MainProcess() override; 
@@ -47,6 +49,13 @@ class TrackletHistogramNew : public ClusHistogram{
 
         TH1D * h1D_eta_template;
 
+        TH1D * h1D_Inner_ClusEta_INTTz;
+        TH1D * h1D_Outer_ClusEta_INTTz;
+
+        TH1D * h1D_INTTvtxZ_FineBin;
+        TH1D * h1D_INTTvtxZ_FineBin_NoVtxZWeight;
+        TH2D * h2D_INTTvtxZFineBin_CentralityBin;
+
         // note : ----------------- for the analysis -----------------
         std::vector<pair_str> evt_TrackletPair_vec;
         std::vector<pair_str> evt_TrackletPairRotate_vec; 
@@ -63,7 +72,7 @@ class TrackletHistogramNew : public ClusHistogram{
         double grEY_stddev(TGraphErrors * input_grr);
         std::pair<double, double> mirrorPolynomial(double a, double b);
         std::pair<double, double> rotatePoint(double x, double y);
-        std::vector<ClusHistogram::clu_info> GetRoatedClusterVec(std::vector<ClusHistogram::clu_info> input_cluster_vec);
+        std::vector<ClusHistogram::clu_info> GetRotatedClusterVec(std::vector<ClusHistogram::clu_info> input_cluster_vec);
         double Get_extrapolation(double given_y, double p0x, double p0y, double p1x, double p1y); // note : x : z, y : r
         
         TGraphErrors * track_gr;

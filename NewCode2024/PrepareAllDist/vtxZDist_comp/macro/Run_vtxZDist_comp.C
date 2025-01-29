@@ -6,18 +6,21 @@ int Run_vtxZDist_comp()
 {
     std::string sPH_labeling = "Internal";
     std::string MC_labeling = "Simulation";
+    std::string output_folder_name = "vtxZ_comp_withVtxZQA";
+
+    std::string data_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Dec042024/completed/Run3/EvtVtxZ/completed/VtxZDist/completed";
 
     std::vector<std::pair<std::string, std::pair<std::string,std::string>>> data_input_directory_pair_vec = {
         {
-            "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Dec042024/completed/Run24NewCode_EvtVtxZTracklet/completed/vtxZDist/completed/Data_vtxZDist_ApplyCut_EvtBcoFullDiffCut61_DataOldVtxXY_00054280_merged.root",
-            {"Data, |MbdVtxZ| < 60 cm, |BcoFullDiff| > 61", "data_OldVtxXY_WithVtxZQA"}
+            data_directory + "/Data_vtxZDist_VtxZQA_EvtBcoFullDiffCut61_00054280_merged.root",
+            {"Data, |MbdVtxZ| < 60 cm, |BcoFullDiff| > 61", "data_VtxZQA"}
         }
     };
 
     std::vector<std::pair<std::string, std::pair<std::string,std::string>>> MC_input_directory_pair_vec = {
         {
-            "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/sPH_dNdeta/Run24AuAuMC/Sim_Ntuple_HIJING_ana443_20241102/Run24NewCode_EvtVtxZTracklet/completed/vtxZDist/completed/MC_vtxZDist_ApplyCut_DataOldVtxXY_merged.root",
-            {"HIJING, |MbdVtxZ| < 60 cm", "HIJING_noZWeight_WithVtxZQA"}
+            "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_Ntuple_HIJING_ana443_20241102/Run3/EvtVtxZ/completed/VtxZDist/completed/MC_vtxZDist_VtxZQA_merged.root",
+            {"HIJING, |MbdVtxZ| < 60 cm", "HIJING_noZWeight_VtxZQA"}
         }
     };
 
@@ -25,16 +28,21 @@ int Run_vtxZDist_comp()
         {
             "Data",
             {
-                std::make_tuple(0.22, 0.8, "Old vertex XY"),
+                // std::make_tuple(0.22, 0.8, "Old vertex XY"),
                 std::make_tuple(0.22, 0.76, "With INTT vtxZ QA")
+
+                // std::make_tuple(0.22, 0.76, "No INTT vtxZ QA")
             }
         },
 
         {
             "MC",
             {
-                std::make_tuple(0.22, 0.8, "Truth avg VtxXY"),
-                std::make_tuple(0.22, 0.76, "With INTT vtxZ QA")
+                // std::make_tuple(0.22, 0.8, "Truth avg VtxXY"),
+                std::make_tuple(0.22, 0.76, "With INTT vtxZ QA"),
+
+                std::make_tuple(0.22, 0.8, "MC no VtxZ weight")
+                // std::make_tuple(0.22, 0.76, "No INTT vtxZ QA")
             }
         },
 
@@ -42,15 +50,19 @@ int Run_vtxZDist_comp()
         {
             "Comp",
             {
-                std::make_tuple(0.22, 0.8, "Data, Old vertex XY"),
-                std::make_tuple(0.22, 0.76, "MC, Truth avg vtxXY"),
-                std::make_tuple(0.22, 0.72, "With INTT vtxZ QA")
+                // std::make_tuple(0.22, 0.8, "Data, Old vertex XY"),
+                // std::make_tuple(0.22, 0.76, "MC, Truth avg vtxXY"),
+                std::make_tuple(0.22, 0.76, "With INTT vtxZ QA"),
+                
+                std::make_tuple(0.22, 0.8, "MC no VtxZ weight")
+                // std::make_tuple(0.22, 0.76, "No INTT vtxZ QA")
             }
         }
     };
     
 
-    std::string output_directory = "/sphenix/user/ChengWei/INTT/INTT_dNdeta_repo/NewCode2024/PrepareAllDist/vtxZDist_comp/plots/Test_20241225_withVtxZQA";
+    std::string output_directory = data_directory + "/" + output_folder_name;
+    system(Form("if [ ! -d %s ]; then mkdir -p %s; fi", output_directory.c_str(), output_directory.c_str()));
 
     bool WithVtxZReWeighting = false;
 

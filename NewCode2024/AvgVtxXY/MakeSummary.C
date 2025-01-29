@@ -62,13 +62,14 @@ vector<string> read_list(string folder_direction, string MC_list_name)
 }
 
 int MakeSummary(
-    int data_type = 0, // note : 1 = MC, 0 = data
-    
-    // std::string input_folder = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_Ntuple_HIJING_ana443_20241102/SplitFile_10k/Run24NewCode_AvgVtxXY/completed",
-    // std::string filename_NoIndex = "MC_AvgVtxXY_test20241209",
 
-    std::string input_folder = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Dec042024/completed/Run24NewCode_AvgVtxXY/completed",
-    std::string filename_NoIndex = "Data_AvgVtxXY_test20241209_00054280",
+    // int data_type = 1, // note : 1 = MC, 0 = data    
+    // std::string input_folder = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_Ntuple_HIJING_ana443_20241102/Run3/AvgVtxXY/completed",
+    // std::string filename_NoIndex = "MC_AvgVtxXY",
+
+    int data_type = 0, // note : 1 = MC, 0 = data    
+    std::string input_folder = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Dec042024/completed/Run3/AvgVtxXY/completed",
+    std::string filename_NoIndex = "Data_AvgVtxXY_00054280",
 
     double frame_shift_forX = 0.03, // note : cm
     double frame_shift_forY = -0.01 // note : cm
@@ -78,6 +79,8 @@ int MakeSummary(
     double X_range_r = (0.05 + frame_shift_forX);
     double Y_range_l = (0.17 + frame_shift_forY);
     double Y_range_r = (0.32 + frame_shift_forY);
+
+    filename_NoIndex = (filename_NoIndex.back() == '_') ? filename_NoIndex.substr(0, filename_NoIndex.size() - 1) : filename_NoIndex;
 
 
     string file_list_name = "file_list.txt";
@@ -98,7 +101,7 @@ int MakeSummary(
 
     // note : to generate the file_list.txt
     // todo: the file_name
-    if(std::filesystem::exists(Form("%s/%s",input_folder.c_str(),file_list_name.c_str())) == false){
+    if(true/*std::filesystem::exists(Form("%s/%s",input_folder.c_str(),file_list_name.c_str())) == false*/){
         system(Form("ls %s/%s_*.root > %s/%s", input_folder.c_str(), filename_NoIndex.c_str(), input_folder.c_str(), file_list_name.c_str()));
         cout<<"----------- file list generated -----------"<<endl;
         system(Form("cat %s/%s", input_folder.c_str(), file_list_name.c_str()));
@@ -203,6 +206,7 @@ int MakeSummary(
     // int accumulate_runEvt = 0;
     int in_start_evt;
     int in_end_evt;
+    int Previous_total_event;
 
     for (int i = 0; i < chain_in -> GetEntries(); i++)
     {
@@ -227,7 +231,8 @@ int MakeSummary(
         // todo : the pros are, this one can handle if there is one file missing in the middle
         // todo : in addition, the number of events used in one file can have the freedom
         // todo : the cons are, it can not handle for the case if each file has different number of events
-        in_start_evt = in_job_index * in_file_total_event;
+
+        in_start_evt = (i == chain_in -> GetEntries() - 1 && in_file_total_event > Previous_total_event) ? in_job_index * Previous_total_event : in_job_index * in_file_total_event;
         in_end_evt = in_start_evt + in_run_nEvents - 1;
 
         starteID_vec.push_back(in_start_evt);
@@ -275,6 +280,8 @@ int MakeSummary(
         // line_filled_covariance_1D -> Fill(in_line_filled_covariance);
 
         // accumulate_runEvt += in_run_nEvents;
+
+        Previous_total_event = in_file_total_event;
     }
 
     for (int i = 0; i < starteID_vec.size(); i++)

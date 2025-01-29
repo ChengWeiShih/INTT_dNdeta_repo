@@ -11,12 +11,12 @@ void Run_AvgVtxXY(
   string output_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280/completed/BCO_check",
   
   // todo : modify here
-  std::string output_file_name_suffix = "_test20241209",
+  std::string output_file_name_suffix = "",
 
   std::pair<double,double> MBD_vtxZ_cut = {-20, 20}, // note : unit : cm
   std::pair<int,int> INTTNClus_cut = {20, 350},
   double ClusAdc_cut = 35,
-  double ClusPhiSize_cut = 8,
+  double ClusPhiSize_cut = 500,
 
   bool HaveGeoOffsetTag = false,
   double random_range_XYZ = 0.02, // note : unit : cm

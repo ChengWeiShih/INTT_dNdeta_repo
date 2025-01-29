@@ -42,12 +42,14 @@ class RestDist{
             std::string output_directory_in,
 
             std::string output_file_name_suffix_in = "",
+            std::pair<double, double> vertexXYIncm_in = {std::nan(""),std::nan("")},
 
             bool Apply_cut_in = false,
             bool ApplyVtxZReWeighting_in = false,
             std::pair<bool, int> ApplyEvtBcoFullDiffCut_in = {true, 61},
             std::pair<bool, std::pair<double,double>> RequireVtxZRange_in = {true, {-10, 10}},
-            std::pair<bool, std::pair<double,double>> isClusQA_in = {false, {0, 0}}
+            std::pair<bool, std::pair<double,double>> isClusQA_in = {false, {0, 0}},
+            bool isRotated_in = false
         );
 
         std::string GetOutputFileName() {return output_filename;}
@@ -64,11 +66,13 @@ class RestDist{
         std::string input_file_name;
         std::string output_directory;
         std::string output_file_name_suffix;
+        std::pair<double, double> vertexXYIncm;
         bool Apply_cut;
         bool ApplyVtxZReWeighting;
         std::pair<bool, int> ApplyEvtBcoFullDiffCut;
         std::pair<bool, std::pair<double,double>> RequireVtxZRange;
         std::pair<bool, std::pair<double,double>> isClusQA;
+        bool isRotated;
 
         // division : ---For input file---------------------------------------------------------------------------------------------------------------------------------------------
         void PrepareInputFile();
@@ -125,6 +129,8 @@ class RestDist{
 
         // note : for MC
         int NTruthVtx;
+        float TruthPV_trig_x;
+        float TruthPV_trig_y;
         float TruthPV_trig_z;
 
 
@@ -165,6 +171,17 @@ class RestDist{
         std::vector<std::vector<std::pair<bool,clu_info>>> inner_clu_phi_map; // note: phi
         std::vector<std::vector<std::pair<bool,clu_info>>> outer_clu_phi_map; // note: phi
 
+        double shortestDistanceLineToPoint(const std::vector<double> point1, const std::vector<double> point2, const std::vector<double> target);
+        void GetRotatedClusterVec(std::vector<RestDist::clu_info> &input_cluster_vec);
+        std::pair<double,double> rotatePoint(double x, double y);
+        double get_clu_eta(std::vector<double> vertex, std::vector<double> clu_pos);
+        double calculateAngleBetweenVectors(double x1, double y1, double x2, double y2, double targetX, double targetY);
+
+        // note : for the best pair quick check
+        std::vector<pair_str> temp_all_pair_vec;
+        std::vector<double> temp_all_pair_deltaR_vec;
+        std::map<int, TH2D*> BestPair_h2D_map;
+        std::map<int, TGraph*> BestPair_gr_map;
 
         // division : ---For output file---------------------------------------------------------------------------------------------------------------------------------------------
         void PrepareOutPutFileName();
@@ -185,6 +202,8 @@ class RestDist{
 
         int HighNClus = Constants::HighNClus;
 
+        double rotate_phi_angle = 180.;
+
         std::vector<double> centrality_edges = Constants::centrality_edges;
         int nCentrality_bin;
 
@@ -203,6 +222,11 @@ class RestDist{
         double DeltaEtaEdge_min = -1.; // note : rad ~ -4 degree
         double DeltaEtaEdge_max = 1.;  // note : rad ~ 4 degree
         int    nDeltaEtaBin = 100;
+
+        double EtaEdge_min = Constants::EtaEdge_min;
+        double EtaEdge_max = Constants::EtaEdge_max;
+        int nEtaBin = Constants::nEtaBin;
+
 
         std::pair<double, double> cut_vtxZDiff = Constants::cut_vtxZDiff;
         std::pair<double, double> cut_TrapezoidalFitWidth = Constants::cut_TrapezoidalFitWidth;

@@ -11,17 +11,19 @@ void Run_vtxZDist(
   string output_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280/completed/BCO_check",
   
   // todo : modify here
-  // std::string output_file_name_suffix = "_DataOldVtxXY", // note : for data
-  std::string output_file_name_suffix = "_TrueXY", // note : for MC
+  std::string output_file_name_suffix = "", // note : for data
+  // std::string output_file_name_suffix = "_TrueXY", // note : for MC
 
 
-  bool Apply_cut = true,
+  bool Apply_cut = false, // note: vtxZQA cut 
   bool ApplyVtxZReWeighting = false,
-  std::pair<bool, int> ApplyEvtBcoFullDiffCut = {false, 61}
+  std::pair<bool, int> ApplyEvtBcoFullDiffCut = {true, 61},
+
+  bool IsVtxZQACutKnown = true
 )
 {
 
-  vtxZDist * VZD = new vtxZDist(
+  vtxZDist * VZD1 = new vtxZDist(
     process_id,
     run_num,
     nevents,
@@ -36,16 +38,45 @@ void Run_vtxZDist(
     ApplyEvtBcoFullDiffCut
   );
 
-  string final_output_file_name = VZD->GetOutputFileName();
-  cout<<"final_output_file_name: "<<final_output_file_name<<endl;
+  string final_output_file_name1 = VZD1->GetOutputFileName();
+  cout<<"final_output_file_name1: "<<final_output_file_name1<<endl;
 
-  system(Form("if [ -f %s/completed/%s ]; then rm %s/completed/%s; fi;", output_directory.c_str(), final_output_file_name.c_str(), output_directory.c_str(), final_output_file_name.c_str()));  
+  system(Form("if [ -f %s/completed/%s ]; then rm %s/completed/%s; fi;", output_directory.c_str(), final_output_file_name1.c_str(), output_directory.c_str(), final_output_file_name1.c_str()));  
 
-  VZD->PrepareEvent();
-  VZD->EndRun();
+  VZD1->PrepareEvent();
+  VZD1->EndRun();
 
 
-  system(Form("mv %s/%s %s/completed", output_directory.c_str(), final_output_file_name.c_str(), output_directory.c_str()));
+  system(Form("mv %s/%s %s/completed", output_directory.c_str(), final_output_file_name1.c_str(), output_directory.c_str()));
+
+  if (IsVtxZQACutKnown && Apply_cut == false)
+  {
+    vtxZDist * VZD2 = new vtxZDist(
+      process_id,
+      run_num,
+      nevents,
+      input_directory,
+      input_filename,
+      output_directory,
+
+      output_file_name_suffix,
+
+      true, // note : vtxZ QA
+      ApplyVtxZReWeighting,
+      ApplyEvtBcoFullDiffCut
+    );
+
+    string final_output_file_name2 = VZD2->GetOutputFileName();
+    cout<<"final_output_file_name2: "<<final_output_file_name2<<endl;
+
+    system(Form("if [ -f %s/completed/%s ]; then rm %s/completed/%s; fi;", output_directory.c_str(), final_output_file_name2.c_str(), output_directory.c_str(), final_output_file_name2.c_str()));  
+
+    VZD2->PrepareEvent();
+    VZD2->EndRun();
+
+
+    system(Form("mv %s/%s %s/completed", output_directory.c_str(), final_output_file_name2.c_str(), output_directory.c_str()));
+  }
 
   return;
 }

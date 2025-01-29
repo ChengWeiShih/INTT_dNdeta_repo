@@ -18,18 +18,19 @@ void Run_PrepareHist_MC(
   string output_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280/completed/BCO_check",
   
   // todo : modify here
-  std::string output_file_name_suffix = "_SecondRun",
-  std::pair<double, double> vertexXYIncm = {-0.02204, 0.2229}, // note : in cm // note : MC
+  std::string output_file_name_suffix = "",
+  std::pair<double, double> vertexXYIncm = {-0.0214921, 0.223299}, // note : in cm // note : MC
 
   std::pair<bool, TH1D*> vtxZReweight = {true, nullptr},
   bool BcoFullDiffCut = false,
   bool INTT_vtxZ_QA = true,
   std::pair<bool, std::pair<double, double>> isClusQA = {true, {35, 500}}, // note : {adc, phi size}
   bool HaveGeoOffsetTag = false,
-  std::pair<bool, int> SetRandomHits = {true, 75},
+  std::pair<bool, int> SetRandomHits = {false, 0},
+  bool RandInttZ = false,
 
-  std::string vtxZReWeighting_input_directory = "/sphenix/user/ChengWei/INTT/INTT_dNdeta_repo/NewCode2024/PrepareAllDist/vtxZDist_comp/plots/Test_20241225_withVtxZQA/INTTvtxZReWeight.root",
-  std::string map_name = "HIJING_noZWeight_WithVtxZQA_Inclusive70"
+  std::string vtxZReWeighting_input_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Dec042024/completed/Run3/EvtVtxZ/completed/VtxZDist/completed/vtxZ_comp_withVtxZQA/INTTvtxZReWeight.root",
+  std::string map_name = "HIJING_noZWeight_VtxZQA_Inclusive70"
 )
 {
 

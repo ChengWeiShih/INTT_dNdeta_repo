@@ -2,6 +2,13 @@
 
 R__LOAD_LIBRARY(../libTrackletHistogramNew.so)
 
+TH2D * GetGoodColMap (std::string ColMulMask_map_dir_in, std::string ColMulMask_map_file_in, std::string map_name_in)
+{
+  TFile * f = TFile::Open(Form("%s/%s", ColMulMask_map_dir_in.c_str(), ColMulMask_map_file_in.c_str()));
+  TH2D * h = (TH2D*)f->Get(map_name_in.c_str());
+  return h;
+}
+
 void Run_PrepareHist(
   int process_id = 0,
   int run_num = 54280,
@@ -11,16 +18,27 @@ void Run_PrepareHist(
   string output_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280/completed/BCO_check",
   
   // todo : modify here
-  std::string output_file_name_suffix = "_SecondRun",
-  std::pair<double, double> vertexXYIncm = {-0.0215087, 0.223197},
+  std::string output_file_name_suffix = "",
+  std::pair<double, double> vertexXYIncm = {-0.0232717, 0.223173},
 
   std::pair<bool, TH1D*> vtxZReweight = {false, nullptr},
   bool BcoFullDiffCut = true,
   bool INTT_vtxZ_QA = true,
-  std::pair<bool, std::pair<double, double>> isClusQA = {true, {35, 500}}, // note : {adc, phi size}
+  std::pair<bool, std::pair<double, double>> isClusQA = {true, {35, 40}}, // note : {adc, phi size}
 
   bool HaveGeoOffsetTag = false,
-  std::pair<bool, int> SetRandomHits = {false, 0}
+  std::pair<bool, int> SetRandomHits = {false, 0},
+  bool RandInttZ = false,
+  bool ColMulMask = true,
+
+  // std::string ColMulMask_map_dir = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Dec042024/completed/Run3/EvtVtxZ/ColumnCheck/completed/MulMap/completed",
+  // std::string ColMulMask_map_file = "MulMap_BcoFullDiffCut_Mbin50_VtxZ-30to30cm_ClusQAAdc35PhiSize500_00054280.root"
+
+  // std::string ColMulMask_map_dir = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Dec042024/completed/Run3/EvtVtxZ/ColumnCheck_NoClusQA/completed/MulMap/completed",
+  // std::string ColMulMask_map_file = "MulMap_BcoFullDiffCut_Mbin50_VtxZ-30to30cm_00054280.root"
+
+  std::string ColMulMask_map_dir = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Dec042024/completed/Run3/EvtVtxZ/ColumnCheck_PhiCut/completed/MulMap/completed",
+  std::string ColMulMask_map_file = "MulMap_BcoFullDiffCut_Mbin50_VtxZ-30to30cm_ClusQAAdc35PhiSize40_00054280.root"
 )
 {
 
@@ -40,8 +58,16 @@ void Run_PrepareHist(
     INTT_vtxZ_QA,
     isClusQA, // note : {adc, phi size}
     HaveGeoOffsetTag,
-    SetRandomHits
+    SetRandomHits,
+    RandInttZ,
+    ColMulMask
   );
+
+  if (ColMulMask){
+    TLHN -> SetGoodColMap(
+      GetGoodColMap(ColMulMask_map_dir, ColMulMask_map_file, TLHN->GetGoodColMapName())
+    );
+  }
 
   string final_output_file_name = TLHN->GetOutputFileName();
   cout<<"final_output_file_name: "<<final_output_file_name<<endl;

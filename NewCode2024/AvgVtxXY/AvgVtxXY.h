@@ -93,6 +93,9 @@ class AvgVtxXY {
         TTree * tree_in;
         std::string input_tree_name = "EventTree";
         float MBD_z_vtx;
+        bool is_min_bias;
+        float MBD_centrality;
+
         int NClus;
         std::vector<float> *ClusX;
         std::vector<float> *ClusY;

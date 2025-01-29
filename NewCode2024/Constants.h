@@ -28,6 +28,16 @@ namespace Constants{
 
     extern double cut_GoodRecoVtxZ; // note : cm
 
+    extern int nZbin;
+    extern double Zmin;
+    extern double Zmax;
+
+    // note : almost no change
+    extern double EtaEdge_min;
+    extern double EtaEdge_max;
+    extern int nEtaBin;
+
+
     //  note : below should never be changed
     extern double typeA_sensor_half_length_incm; // note : [cm]
     extern double typeB_sensor_half_length_incm; // note : [cm] 

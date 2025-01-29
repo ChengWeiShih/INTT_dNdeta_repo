@@ -63,7 +63,7 @@ class EvtVtxZProtoTracklet{
         std::string GetOutputFileName() {return output_filename;}
         void SetGeoOffset(std::map<std::string, std::vector<double>> input_geo_offset_map);
         void MainProcess();
-        void EndRun();
+        void EndRun(int close_file_in = 1);
 
     protected:
         struct clu_info{
@@ -175,6 +175,7 @@ class EvtVtxZProtoTracklet{
     TBranch * b_InttBcoFullDiff_next;
 
     // note : ---------------------- For common ----------------------
+    double CheckGeoOffsetMap();
     void PrepareClusterVec();
     void EvtCleanUp();
     std::vector<clu_info> evt_sPH_inner_nocolumn_vec;
@@ -246,7 +247,7 @@ class EvtVtxZProtoTracklet{
     std::vector<double> fit_mean_width_vec;
 
     // note : ---------------------- For DrawEvtVtxZ ----------------------
-    TFile * INTTvtxZ_EvtDisplay_file_out; 
+    TFile * INTTvtxZ_EvtDisplay_file_out = nullptr; 
     TH1D * line_breakdown_hist_zoomin;
     TCanvas * c1;
     TPad * pad_EvtZDist;

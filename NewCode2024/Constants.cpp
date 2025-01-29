@@ -25,6 +25,16 @@ namespace Constants{
 
     double cut_GoodRecoVtxZ = 1.; // note : cm
 
+    // note : for the column multiplicity correction
+    int nZbin = 100;
+    double Zmin = -25;
+    double Zmax = 25;
+
+    // note : almost no change
+    double EtaEdge_min = -2.7;
+    double EtaEdge_max = 2.7;
+    int nEtaBin = 27;
+
     // note : below should never be changed
     double typeA_sensor_half_length_incm = 0.8; // note : [cm]
     double typeB_sensor_half_length_incm = 1.0; // note : [cm] 

@@ -217,26 +217,28 @@ void SemiChipClustering::PrepareHists()
     h1D_confirm_HitBcoDiff = new TH1D("h1D_confirm_HitBcoDiff","h1D_confirm_HitBcoDiff;Time_bucket;Entries",128, 0, 128);
     h2D_confirm_NClus_MBDChargeSum = new TH2D("h2D_confirm_NClus_MBDChargeSum","h2D_confirm_NClus_MBDChargeSum;INTT NClus; MBD Charge Sum",200, 0, 10000, 200, 0, 3000);
 
-    h2D_NSize2Clus_Size2Dist = new TH2D("h2D_NSize2Clus_Size2Dist","h2D_NSize2Clus_Size2Dist;NSize2Clus;Size2Dist",30,0,30,100,0,20);
+    h2D_nChipHit_Size2DistAvg = new TH2D("h2D_nChipHit_Size2DistAvg","h2D_nChipHit_Size2DistAvg;NChipHits;Avg. Size2Dist",128, 0, 128, 100, 0, 20);
+    h2D_nChipHit_Size2DistStd = new TH2D("h2D_nChipHit_Size2DistStd","h2D_nChipHit_Size2DistStd;NChipHits;StdDev Size2Dist",128, 0, 128, 200, 0, 20);
+    h2D_NSize2Clus_Size2Dist = new TH2D("h2D_NSize2Clus_Size2Dist","h2D_NSize2Clus_Size2Dist;NSize2Clus;Avg. Size2Dist",30,0,30,100,0,20);
     h2D_Size2DistAvg_Size2DistStd = new TH2D("h2D_Size2DistAvg_Size2DistStd","h2D_Size2DistAvg_Size2DistStd;Avg. Size2Dist;StdDev Size2Dist",100,0,20,200,0,20);
     h2D_Size2DistAvg_Size2DistStd_WithLargeSize = new TH2D("h2D_Size2DistAvg_Size2DistStd_WithLargeSize","h2D_Size2DistAvg_Size2DistStd_WithLargeSize;Avg. Size2Dist;StdDev Size2Dist",100,0,20,200,0,20);
 
 
     h2D_Inclusive_Inner_Outer_NClus = new TH2D("h2D_Inclusive_Inner_Outer_NClus","h2D_Inclusive_Inner_Outer_NClus;NClus (Inner);NClus (Outer)",200,0,5000,200,0,5000);
     h2D_Inclusive_NClus_MBDChargeSum = new TH2D("h2D_Inclusive_NClus_MBDChargeSum","h2D_Inclusive_NClus_MBDChargeSum;NClus;MBD charge sum",200,0,10000,200,0,3000);
-    h1D_Inclusive_MBDCentrality = new TH1D("h1D_Inclusive_MBDCentrality","h1D_Inclusive_MBDCentrality;MBD charge sum;Entries",nCentralityFineBin, CentralityFineEdge_min, CentralityFineEdge_max);
+    h1D_Inclusive_MBDCentrality = new TH1D("h1D_Inclusive_MBDCentrality","h1D_Inclusive_MBDCentrality;MBD Centrality [%];Entries",nCentralityFineBin, CentralityFineEdge_min, CentralityFineEdge_max);
     h1D_Inclusive_ClusPhiSize = new TH1D("h1D_Inclusive_ClusPhiSize","h1D_Inclusive_ClusPhiSize;ClusPhiSize;Entries",128,0,128);
     h1D_Inclusive_ClusAdc = new TH1D("h1D_Inclusive_ClusAdc","h1D_Inclusive_ClusAdc;ClusAdc;Entries",200,0,18000);
 
     h2D_Post_Inner_Outer_NClus = new TH2D("h2D_Post_Inner_Outer_NClus","h2D_Post_Inner_Outer_NClus;NClus (Inner);NClus (Outer)",200,0,5000,200,0,5000);
     h2D_Post_NClus_MBDChargeSum = new TH2D("h2D_Post_NClus_MBDChargeSum","h2D_Post_NClus_MBDChargeSum;NClus;MBD charge sum",200,0,10000,200,0,3000);
-    h1D_Post_MBDCentrality = new TH1D("h1D_Post_MBDCentrality","h1D_Post_MBDCentrality;MBD charge sum;Entries",nCentralityFineBin, CentralityFineEdge_min, CentralityFineEdge_max);
+    h1D_Post_MBDCentrality = new TH1D("h1D_Post_MBDCentrality","h1D_Post_MBDCentrality;MBD Centrality [%];Entries",nCentralityFineBin, CentralityFineEdge_min, CentralityFineEdge_max);
     h1D_Post_ClusPhiSize = new TH1D("h1D_Post_ClusPhiSize","h1D_Post_ClusPhiSize;ClusPhiSize;Entries",128,0,128);
     h1D_Post_ClusAdc = new TH1D("h1D_Post_ClusAdc","h1D_Post_ClusAdc;ClusAdc;Entries",200,0,18000);
 
     h2D_Killed_Inner_Outer_NClus = new TH2D("h2D_Killed_Inner_Outer_NClus","h2D_Killed_Inner_Outer_NClus;NClus (Inner);NClus (Outer)",200,0,5000,200,0,5000);
     h2D_Killed_NClus_MBDChargeSum = new TH2D("h2D_Killed_NClus_MBDChargeSum","h2D_Killed_NClus_MBDChargeSum;NClus;MBD charge sum",200,0,10000,200,0,3000);
-    h1D_Killed_MBDCentrality = new TH1D("h1D_Killed_MBDCentrality","h1D_Killed_MBDCentrality;MBD charge sum;Entries",nCentralityFineBin, CentralityFineEdge_min, CentralityFineEdge_max);
+    h1D_Killed_MBDCentrality = new TH1D("h1D_Killed_MBDCentrality","h1D_Killed_MBDCentrality;MBD Centrality [%];Entries",nCentralityFineBin, CentralityFineEdge_min, CentralityFineEdge_max);
     h1D_Killed_ClusPhiSize = new TH1D("h1D_Killed_ClusPhiSize","h1D_Killed_ClusPhiSize;ClusPhiSize;Entries",128,0,128);
     h1D_Killed_ClusAdc = new TH1D("h1D_Killed_ClusAdc","h1D_Killed_ClusAdc;ClusAdc;Entries",200,0,18000);
 
@@ -420,12 +422,23 @@ bool SemiChipClustering::DoSemiChipCluster(
             double avg_size2dist = size2dist_pair.first;
             double std_size2dist = size2dist_pair.second;
 
+            h2D_nChipHit_Size2DistAvg -> Fill(pair.second -> GetEntries(), avg_size2dist);
+            h2D_nChipHit_Size2DistStd -> Fill(pair.second -> GetEntries(), std_size2dist);
+
             h2D_NSize2Clus_Size2Dist -> Fill(NSize2Clus, avg_size2dist);
             h2D_Size2DistAvg_Size2DistStd -> Fill(avg_size2dist, std_size2dist);
 
-            if (avg_size2dist >= 4 && avg_size2dist < 5 && std_size2dist < 0.3){
+            // if (avg_size2dist >= 4 && avg_size2dist < 5 && std_size2dist < 0.3 && pair.second -> GetEntries() > 68){ // todo : the chip hit multiplicity cut
+            //     good_evt_flag = false;
+            // } 
+
+            // if (pair.second -> GetEntries() > 60){
+            //     good_evt_flag = false;
+            // }
+
+            if (clu_info.largest_size > 20 && NSize2Clus > 10){
                 good_evt_flag = false;
-            } 
+            }
             
             if (clu_info.largest_size <= 20) {continue;}    
 
@@ -698,6 +711,8 @@ void SemiChipClustering::EndRun()
     h2D_NSize2Clus_NSize1Clus -> Write();
     h2D_NSize2Clus_LargestSize -> Write();
 
+    h2D_nChipHit_Size2DistStd -> Write();
+    h2D_nChipHit_Size2DistAvg -> Write();
     h2D_NSize2Clus_Size2Dist -> Write();
     h2D_Size2DistAvg_Size2DistStd -> Write();
     h2D_Size2DistAvg_Size2DistStd_WithLargeSize -> Write();

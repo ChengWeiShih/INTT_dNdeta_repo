@@ -83,7 +83,7 @@ class vtxZDist_comp{
             std::string output_filename_in, 
             std::string sub_label_text_in,
             bool set_log_y = false, 
-            bool m_set_log_y = false,
+            bool isData_more = false,
             double MainPlot_y_low = 0, 
             double MainPlot_y_top = -99, 
             double ratio_y_low = 0,

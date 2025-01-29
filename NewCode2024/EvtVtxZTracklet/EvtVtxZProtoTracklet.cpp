@@ -100,7 +100,7 @@ void EvtVtxZProtoTracklet::PrepareOutPutFileName()
     output_filename = "EvtVtxZProtoTracklet";
     output_filename = (runnumber != -1) ? "Data_" + output_filename : "MC_" + output_filename;
     output_filename += (IsFieldOn) ? "_FieldOn" : "_FieldOff";
-    output_filename += (RunInttBcoFullDiff) ? "_BcoFullDiff" : "";
+    output_filename += (RunInttBcoFullDiff && runnumber != -1) ? "_BcoFullDiff" : "";
     output_filename += (RunVtxZReco) ? "_VtxZReco" : ""; 
     output_filename += (RunTrackletPair) ? "_Tracklet" : ""; 
     output_filename += (RunTrackletPairRotate) ? "_TrackletRotate" : ""; 
@@ -111,8 +111,25 @@ void EvtVtxZProtoTracklet::PrepareOutPutFileName()
 
 void EvtVtxZProtoTracklet::SetGeoOffset(std::map<std::string, std::vector<double>> input_geo_offset_map)
 {
+    std::cout<<"In EvtVtxZProtoTracklet, reading geo offset map:"<<std::endl;
+
     geo_offset_map.clear();
     geo_offset_map = input_geo_offset_map;
+
+    for (auto &pair : geo_offset_map)
+    {
+        std::cout<<pair.first<<" : {"<<pair.second[0]<<", "<<pair.second[1]<<", "<<pair.second[2]<<"}"<<std::endl;
+    }
+}
+
+double EvtVtxZProtoTracklet::CheckGeoOffsetMap()
+{
+    double sum = 0;
+    for (auto &pair : geo_offset_map)
+    {
+        sum += fabs(pair.second[0]) + fabs(pair.second[1]) + fabs(pair.second[2]);
+    }
+    return sum;
 }
 
 std::map<std::string, int> EvtVtxZProtoTracklet::GetInputTreeBranches(TTree * m_tree_in)
@@ -251,7 +268,7 @@ void EvtVtxZProtoTracklet::PrepareRootFile()
     tree_out = tree_in->CloneTree(0);
 
     // note : add new branches
-    if (RunInttBcoFullDiff) {b_InttBcoFullDiff_next = tree_out -> Branch("InttBcoFullDiff_next", &out_InttBcoFullDiff_next);}
+    if (RunInttBcoFullDiff && runnumber != -1) {b_InttBcoFullDiff_next = tree_out -> Branch("InttBcoFullDiff_next", &out_InttBcoFullDiff_next);}
 
     if (RunVtxZReco){
         b_INTTvtxZ = tree_out -> Branch("INTTvtxZ", &out_INTTvtxZ);
@@ -786,9 +803,9 @@ void EvtVtxZProtoTracklet::GetTrackletPair(std::vector<pair_str> &input_Tracklet
 
                     // temp_pair_str.inner_phi_id = inner_clu_phi_map[inner_phi_i][inner_phi_clu_i].second.ladderPhiID;
                     // temp_pair_str.inner_layer_id = inner_clu_phi_map[inner_phi_i][inner_phi_clu_i].second.layerID;
-                    // temp_pair_str.inner_zid = inner_clu_phi_map[inner_phi_i][inner_phi_clu_i].second.sensorZID;
-                    // temp_pair_str.inner_phi_size = inner_clu_phi_map[inner_phi_i][inner_phi_clu_i].second.phi_size;
-                    // temp_pair_str.inner_adc = inner_clu_phi_map[inner_phi_i][inner_phi_clu_i].second.adc;
+                    temp_pair_str.inner_zid = inner_clu_phi_map[inner_phi_i][inner_phi_clu_i].second.sensorZID;
+                    temp_pair_str.inner_phi_size = inner_clu_phi_map[inner_phi_i][inner_phi_clu_i].second.phi_size;
+                    temp_pair_str.inner_adc = inner_clu_phi_map[inner_phi_i][inner_phi_clu_i].second.adc;
                     temp_pair_str.inner_x = inner_clu_phi_map[inner_phi_i][inner_phi_clu_i].second.x;
                     temp_pair_str.inner_y = inner_clu_phi_map[inner_phi_i][inner_phi_clu_i].second.y;
                     // temp_pair_str.inner_z = inner_clu_phi_map[inner_phi_i][inner_phi_clu_i].second.z;
@@ -798,9 +815,9 @@ void EvtVtxZProtoTracklet::GetTrackletPair(std::vector<pair_str> &input_Tracklet
                     
                     // temp_pair_str.outer_phi_id = outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.ladderPhiID;
                     // temp_pair_str.outer_layer_id = outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.layerID;
-                    // temp_pair_str.outer_zid = outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.sensorZID;
-                    // temp_pair_str.outer_phi_size = outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.phi_size;
-                    // temp_pair_str.outer_adc = outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.adc;
+                    temp_pair_str.outer_zid = outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.sensorZID;
+                    temp_pair_str.outer_phi_size = outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.phi_size;
+                    temp_pair_str.outer_adc = outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.adc;
                     temp_pair_str.outer_x = outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.x;
                     temp_pair_str.outer_y = outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.y;
                     // temp_pair_str.outer_z = outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.z;
@@ -820,8 +837,17 @@ void EvtVtxZProtoTracklet::GetTrackletPair(std::vector<pair_str> &input_Tracklet
 
 void EvtVtxZProtoTracklet::MainProcess()
 {
+    if (HaveGeoOffsetTag == true && CheckGeoOffsetMap() <= 0) {
+        std::cout<<"The HaveGeoOffsetTag is true, but the GeoOffsetMap is empty, please check the GeoOffsetMap"<<std::endl;
+        exit(1);
+    }
+
     for (int i = 0; i < run_nEvents; i++){
         tree_in -> GetEntry(i);
+
+        if (i % 20 == 0) {
+            std::cout<<"In EvtVtxZProtoTracklet, Processing event: "<<i<<std::endl;
+        }
 
         EvtCleanUp();
 
@@ -849,7 +875,7 @@ void EvtVtxZProtoTracklet::MainProcess()
             GetTrackletPair(out_evt_TrackletPairRotate_vec, true);
         }
 
-        if (RunInttBcoFullDiff){
+        if (RunInttBcoFullDiff && runnumber != -1){
             if (i != run_nEvents -1){
                 ULong_t this_InttBcoFull = INTT_BCO;
 
@@ -950,17 +976,23 @@ void EvtVtxZProtoTracklet::EvtCleanUp()
 
 }
 
-void EvtVtxZProtoTracklet::EndRun()
+void EvtVtxZProtoTracklet::EndRun(int close_file_in)
 {   
     file_out -> cd();
     tree_out -> Write();
     file_out -> Close();
+    
+    if (DrawEvtVtxZ && INTTvtxZ_EvtDisplay_file_out != nullptr)
+    {
+        INTTvtxZ_EvtDisplay_file_out -> cd();
+        INTTvtxZ_EvtDisplay_file_out -> Close();
+    }
 
-    INTTvtxZ_EvtDisplay_file_out -> cd();
-    INTTvtxZ_EvtDisplay_file_out -> Close();
 
-    file_in -> cd();
-    file_in -> Close();
+    if (close_file_in == 1){
+        file_in -> cd();
+        file_in -> Close();
+    }
 }
 
 double EvtVtxZProtoTracklet::get_radius(double x, double y)

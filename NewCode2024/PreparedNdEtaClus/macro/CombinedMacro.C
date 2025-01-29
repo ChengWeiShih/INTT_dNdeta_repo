@@ -407,15 +407,15 @@ int McMcComp(string MC1_directory_in, string MC2_directory_in, string output_dir
 int CombinedMacro()
 {   
     // note : for all common
-    std::string output_file_name_suffix = "_SecondRun"; 
+    std::string output_file_name_suffix = ""; 
 
-    std::pair<bool, int> isMCWithNoiseHit = {true, 75};
-    bool isTypeA = true;
+    std::pair<bool, int> isMCWithNoiseHit = {false, 0};
+    bool isTypeA = false;
     std::pair<double,double> cut_INTTvtxZ = {-10, 10};
     int SelectedMbin = 70;
-    std::pair<double,double> cut_EtaRange = {-1.1, 1.1};
+    std::pair<double,double> cut_EtaRange = {-1.9, 1.9};
     
-    string output_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Dec042024/completed/Run24NewCode_ClusHist_WithClusQA/completed";
+    string output_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Dec042024/completed/Run3/EvtVtxZ/completed/ClusHist_WithClusQA/completed";
     string output_suffix = "dNdEta";
     
     
@@ -427,26 +427,26 @@ int CombinedMacro()
     // string alpha_correction_input_directory = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_Ntuple_HIJING_ana443_20241102/Run24NewCode_dNdEta/completed/MC_PreparedNdEtaClusEach_AllSensor_VtxZ10_Mbin70_SecondRun_00001_dNdEta.root";    
     
     // note : MC common
-    string MC_input_directory = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_Ntuple_HIJING_ana443_20241102/Run24NewCode_ClusHist_WithClusQA_Rand35Hit/completed";
+    string MC_input_directory = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_Ntuple_HIJING_ana443_20241102/Run3/EvtVtxZ/completed/ClusHist_WithClusQA/completed";
     string MC_output_directory = final_output_directory;
 
     // note : MC1 deriving the alpha corrections
-    string MC1_input_filename = "MC_ClusHist_vtxZReweight_VtxZQA_ClusQAAdc35PhiSize500_Rand75Hits_SecondRun_merged_001.root";
+    string MC1_input_filename = "MC_ClusHist_vtxZReweight_VtxZQA_ClusQAAdc35PhiSize500_merged_001.root";
     int    MC1_process_id = 1;
     int    MC1_run_num = -1;
     bool   MC1_ApplyAlphaCorr = false;
     std::pair<bool, std::pair<double,double>> MC1_setEtaRange = {false, cut_EtaRange};
 
     // note : MC2 applying the alpha corrections
-    string MC2_input_filename = "MC_ClusHist_vtxZReweight_VtxZQA_ClusQAAdc35PhiSize500_Rand75Hits_SecondRun_merged_002.root";
+    string MC2_input_filename = "MC_ClusHist_vtxZReweight_VtxZQA_ClusQAAdc35PhiSize500_merged_002.root";
     int    MC2_process_id = 2;
     int    MC2_run_num = -1;
     bool   MC2_ApplyAlphaCorr = true;
     std::pair<bool, std::pair<double,double>> MC2_setEtaRange = {true, cut_EtaRange};
     
     // note : for data
-    string data_input_directory  = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Dec042024/completed/Run24NewCode_ClusHist_WithClusQA/completed";
-    string data_input_filename   = "Data_ClusHist_BcoFullDiffCut_VtxZQA_ClusQAAdc35PhiSize500_SecondRun_00054280_merged.root";
+    string data_input_directory  = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Dec042024/completed/Run3/EvtVtxZ/completed/ClusHist_WithClusQA/completed";
+    string data_input_filename   = "Data_ClusHist_BcoFullDiffCut_VtxZQA_ClusQAAdc35PhiSize500_00054280_merged.root";
     string data_output_directory = final_output_directory;
     int    data_process_id = 0;
     int    data_run_num = 54280;

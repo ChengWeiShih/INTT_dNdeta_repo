@@ -2,12 +2,13 @@
 
 int TCanvasInTFile_MakePlot()
 {   
-    string input_directory = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_Ntuple_HIJING_ana443_20241102/Run24NewCode_EvtVtxZTracklet/completed";
-    string intput_filename = "Plot_MC_EvtVtxZProtoTracklet_FieldOff_BcoFullDiff_VtxZReco_test20241210_00000.root";
+    string input_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Dec042024/completed/Run24NewCode_EvtVtxZTracklet/completed";
+    string intput_filename = "Plot_Data_EvtVtxZProtoTracklet_FieldOff_BcoFullDiff_VtxZReco_Tracklet_TrackletRotate_FirstRun20241218_00054280_00000.root";
     string output_direcotry = input_directory + "/INTTvtxZEventDisplay";
     bool isInternal = true;
     string plot_text = (isInternal) ? "Internal" : "Preliminary";
     string Bid_pad_name = "pad_EvtZDist";
+    bool DrawLegend = true;
 
     system(Form("if [ ! -d %s ]; then mkdir -p %s; fi",output_direcotry.c_str(),output_direcotry.c_str()));
 
@@ -36,6 +37,12 @@ int TCanvasInTFile_MakePlot()
     ltx->SetNDC();
     ltx->SetTextSize(0.045);
     ltx->SetTextAlign(31);
+
+    TLegend * leg = new TLegend(0.2,0.68,0.8,0.77);
+    leg -> SetNColumns(2);
+    leg -> SetBorderSize(0);
+    leg -> SetTextSize(0.02);
+    leg -> SetMargin(0.2);
 
     for (TObject* keyAsObj : *file_in->GetListOfKeys())
     {
@@ -87,6 +94,11 @@ int TCanvasInTFile_MakePlot()
                             data_TF1_map[Form("%s_%s",pair.first.c_str(),tf1->GetName())] -> SetLineWidth(1);
                             // cout<<Form("%s_%s",pair.first.c_str(),tf1->GetName())<<" get range: "<<data_TF1_map[Form("%s_%s",pair.first.c_str(),tf1->GetName())]->GetXmin()<<" ~ "<<data_TF1_map[Form("%s_%s",pair.first.c_str(),tf1->GetName())]->GetXmax()<<endl;
 
+                            double fit_xmin, fit_xmax;
+                            data_TF1_map[Form("%s_%s",pair.first.c_str(),tf1->GetName())] -> GetRange(fit_xmin, fit_xmax);
+
+                            leg -> AddEntry(data_TF1_map[Form("%s_%s",pair.first.c_str(),tf1->GetName())], Form("Gaus, range: [%.2f, %.2f] cm", fit_xmin, fit_xmax), "l");
+
                             line_count++;
                         }
                     }
@@ -98,8 +110,10 @@ int TCanvasInTFile_MakePlot()
             data_canvas_map[canvas_name.c_str()] -> cd();
             data_pad_map[Form("%s_%s", canvas_name.c_str(), Bid_pad_name.c_str())]->cd();
             ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
+            if (DrawLegend) {leg->Draw("same");}
             data_canvas_map[canvas_name.c_str()]->Print(Form("%s/%s.pdf",output_direcotry.c_str(),canvas_name.c_str()));
             
+            leg -> Clear();
             std::cout<<"------------------------------------------------------------------------------------"<<std::endl;
 
         }

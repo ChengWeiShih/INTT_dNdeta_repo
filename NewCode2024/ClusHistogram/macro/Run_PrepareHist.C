@@ -11,12 +11,16 @@ void Run_PrepareHist(
   string output_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280/completed/BCO_check",
   
   // todo : modify here
-  std::string output_file_name_suffix = "_SecondRun",
+  std::string output_file_name_suffix = "",
+  std::pair<double, double> vertexXYIncm = {-0.0232717, 0.223173}, // note : in cm // note : data
 
   std::pair<bool, TH1D*> vtxZReweight = {false, nullptr},
   bool BcoFullDiffCut = true,
   bool INTT_vtxZ_QA = true,
-  std::pair<bool, std::pair<double, double>> isClusQA = {true, {35, 500}} // note : {adc, phi size}
+  std::pair<bool, std::pair<double, double>> isClusQA = {true, {35, 500}}, // note : {adc, phi size}
+  bool HaveGeoOffsetTag = false,
+  std::pair<bool, int> SetRandomHits = {false, 0},
+  bool RandInttZ = false
 )
 {
 
@@ -29,11 +33,15 @@ void Run_PrepareHist(
     output_directory,
 
     output_file_name_suffix,
+    vertexXYIncm,
 
     vtxZReweight,
     BcoFullDiffCut,
     INTT_vtxZ_QA,
-    isClusQA
+    isClusQA,
+    HaveGeoOffsetTag,
+    SetRandomHits,
+    RandInttZ
   );
 
   string final_output_file_name = CSH->GetOutputFileName();

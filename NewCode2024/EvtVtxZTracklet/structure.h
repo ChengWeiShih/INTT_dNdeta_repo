@@ -43,10 +43,16 @@ struct pair_str {
     double pair_eta_fit;
 
     int inner_index;
+    int inner_zid;
+    int inner_phi_size;
+    double inner_adc;
     double inner_x;
     double inner_y;
     
     int outer_index;
+    int outer_zid;
+    int outer_phi_size;
+    double outer_adc;
     double outer_x;
     double outer_y;
 

@@ -17,7 +17,9 @@ ClusHistogram::ClusHistogram(
         std::pair<bool, std::pair<double, double>> isClusQA_in, // note : {adc, phi size}
         bool HaveGeoOffsetTag_in,
         std::pair<bool, int> SetRandomHits_in,
-        int c_type_in
+        bool RandInttZ_in,
+        bool ColMulMask_in,
+        int c_type_in // note : constructor type
 ):
     process_id(process_id_in),
     runnumber(runnumber_in),
@@ -35,6 +37,9 @@ ClusHistogram::ClusHistogram(
     isClusQA(isClusQA_in),
     HaveGeoOffsetTag(HaveGeoOffsetTag_in),
     SetRandomHits(SetRandomHits_in),
+    RandInttZ(RandInttZ_in),
+    ColMulMask(ColMulMask_in),
+
     c_type(c_type_in) // note : the constructor switch
 {
     PrepareInputRootFile();
@@ -55,7 +60,12 @@ ClusHistogram::ClusHistogram(
         }
     }
 
-    if (SetRandomHits.first){
+    if (RandInttZ && INTT_vtxZ_QA){
+        std::cout << "RandInttZ and INTT_vtxZ_QA cannot be true at the same time" << std::endl;
+        exit(1);
+    }
+
+    if (SetRandomHits.first || RandInttZ){
         rand3 = new TRandom3(0);
     }
 
@@ -116,8 +126,8 @@ void ClusHistogram::PrepareInputRootFile()
     if(branch_map.find("MBD_nhitsoverths_south") != branch_map.end()){tree_in -> SetBranchStatus("MBD_nhitsoverths_south",0);}
     if(branch_map.find("MBD_nhitsoverths_north") != branch_map.end()){tree_in -> SetBranchStatus("MBD_nhitsoverths_north",0);}
     
-    if(branch_map.find("TrackletPair") != branch_map.end())tree_in -> SetBranchStatus("TrackletPair", 0);
-    if(branch_map.find("TrackletPairRotate") != branch_map.end())tree_in -> SetBranchStatus("TrackletPairRotate", 0);
+    if(branch_map.find("TrackletPair") != branch_map.end()) {tree_in -> SetBranchStatus("TrackletPair", 0);}
+    if(branch_map.find("TrackletPairRotate") != branch_map.end()) {tree_in -> SetBranchStatus("TrackletPairRotate", 0);}
 
 
     // note: for reading 
@@ -148,14 +158,18 @@ void ClusHistogram::PrepareInputRootFile()
     tree_in -> SetBranchAddress("MBD_north_charge_sum", &MBD_north_charge_sum);
     tree_in -> SetBranchAddress("MBD_charge_sum", &MBD_charge_sum);
     tree_in -> SetBranchAddress("MBD_charge_asymm", &MBD_charge_asymm);
-    tree_in -> SetBranchAddress("InttBcoFullDiff_next", &InttBcoFullDiff_next);
+    if (runnumber != -1) {
+        if(branch_map.find("InttBcoFullDiff_next") != branch_map.end()){
+            tree_in -> SetBranchAddress("InttBcoFullDiff_next", &InttBcoFullDiff_next);
+        }
+    }
 
     // note : trigger tag
     if (runnumber != -1){ // note : for data
-        tree_in -> SetBranchAddress("MBDNSg2", &MBDNSg2);
-        tree_in -> SetBranchAddress("MBDNSg2_vtxZ10cm", &MBDNSg2_vtxZ10cm);
-        tree_in -> SetBranchAddress("MBDNSg2_vtxZ30cm", &MBDNSg2_vtxZ30cm);
-        tree_in -> SetBranchAddress("MBDNSg2_vtxZ60cm", &MBDNSg2_vtxZ60cm);
+        if(branch_map.find("MBDNSg2") != branch_map.end()) {tree_in -> SetBranchAddress("MBDNSg2", &MBDNSg2);}
+        if(branch_map.find("MBDNSg2_vtxZ10cm") != branch_map.end()) {tree_in -> SetBranchAddress("MBDNSg2_vtxZ10cm", &MBDNSg2_vtxZ10cm);}
+        if(branch_map.find("MBDNSg2_vtxZ30cm") != branch_map.end()) {tree_in -> SetBranchAddress("MBDNSg2_vtxZ30cm", &MBDNSg2_vtxZ30cm);}
+        if(branch_map.find("MBDNSg2_vtxZ60cm") != branch_map.end()) {tree_in -> SetBranchAddress("MBDNSg2_vtxZ60cm", &MBDNSg2_vtxZ60cm);}
     }
 
     tree_in -> SetBranchAddress("ClusX", &ClusX);
@@ -166,15 +180,15 @@ void ClusHistogram::PrepareInputRootFile()
     tree_in -> SetBranchAddress("ClusLadderPhiId", &ClusLadderPhiId);
     tree_in -> SetBranchAddress("ClusAdc", &ClusAdc);
     tree_in -> SetBranchAddress("ClusPhiSize", &ClusPhiSize);
-    tree_in -> SetBranchAddress("ClusEta_INTTz", &ClusEta_INTTz);
+    if(branch_map.find("ClusEta_INTTz") != branch_map.end()) {tree_in -> SetBranchAddress("ClusEta_INTTz", &ClusEta_INTTz);}
 
     // note : INTT vertex Z
-    tree_in -> SetBranchAddress("INTTvtxZ", &INTTvtxZ);
-    tree_in -> SetBranchAddress("INTTvtxZError", &INTTvtxZError);
-    tree_in -> SetBranchAddress("NgroupTrapezoidal", &NgroupTrapezoidal);
-    tree_in -> SetBranchAddress("NgroupCoarse", &NgroupCoarse);
-    tree_in -> SetBranchAddress("TrapezoidalFitWidth", &TrapezoidalFitWidth);
-    tree_in -> SetBranchAddress("TrapezoidalFWHM", &TrapezoidalFWHM);
+    if(branch_map.find("INTTvtxZ") != branch_map.end()) {tree_in -> SetBranchAddress("INTTvtxZ", &INTTvtxZ);}
+    if(branch_map.find("INTTvtxZError") != branch_map.end()) {tree_in -> SetBranchAddress("INTTvtxZError", &INTTvtxZError);}
+    if(branch_map.find("NgroupTrapezoidal") != branch_map.end()) {tree_in -> SetBranchAddress("NgroupTrapezoidal", &NgroupTrapezoidal);}
+    if(branch_map.find("NgroupCoarse") != branch_map.end()) {tree_in -> SetBranchAddress("NgroupCoarse", &NgroupCoarse);}
+    if(branch_map.find("TrapezoidalFitWidth") != branch_map.end()) {tree_in -> SetBranchAddress("TrapezoidalFitWidth", &TrapezoidalFitWidth);}
+    if(branch_map.find("TrapezoidalFWHM") != branch_map.end()) {tree_in -> SetBranchAddress("TrapezoidalFWHM", &TrapezoidalFWHM);}
 
     // note : the tracklet pair
     // tree_in -> SetBranchAddress("TrackletPair", &evt_TrackletPair_vec);
@@ -218,8 +232,10 @@ void ClusHistogram::PrepareOutPutFileName()
     output_filename += (BcoFullDiffCut && runnumber != -1) ? "_BcoFullDiffCut" : "";
     output_filename += (INTT_vtxZ_QA) ? "_VtxZQA" : "";
     output_filename += (isClusQA.first) ? Form("_ClusQAAdc%.0fPhiSize%.0f",isClusQA.second.first,isClusQA.second.second) : "";
+    output_filename += (ColMulMask) ? "_ColMulMask" : "";
     output_filename += (HaveGeoOffsetTag) ? "_GeoOffset" : "";
     output_filename += (SetRandomHits.first) ? Form("_Rand%dHits",SetRandomHits.second) : "";
+    output_filename += (RandInttZ) ? "_RandInttZ" : "";
     output_filename += output_file_name_suffix;
     output_filename += (runnumber != -1) ? Form("_%s_%s.root",runnumber_str.c_str(),job_index.c_str()) : Form("_%s.root",job_index.c_str());
 }
@@ -272,6 +288,8 @@ void ClusHistogram::PrepareHistograms()
     h1D_centrality_bin_weighted = new TH1D("h1D_centrality_bin_weighted","h1D_centrality_bin_weighted;Centrality [%];Entries",nCentrality_bin,&centrality_edges[0]); // note : the 0-5%
 
     h1D_vtxz_template = new TH1D("h1D_vtxz_template", "h1D_vtxz_template", nVtxZBin, VtxZEdge_min, VtxZEdge_max); // note : coarse
+
+    h1D_GoodColMap_ZId = new TH1D("h1D_GoodColMap_ZId","h1D_GoodColMap_ZId;ClusZ [cm];Entries",nZbin, Zmin, Zmax);
 
     h1D_centrality_map.clear();
     h1D_centrality_map.insert( std::make_pair(
@@ -358,28 +376,28 @@ void ClusHistogram::PrepareHistograms()
         h2D_NClusEtaVtxZ_map.insert( // note : all, inner
             std::make_pair(
                 Form("h2D_inner_NClusEta_Mbin%d_FineBin", Mbin),
-                new TH2D(Form("h2D_inner_NClusEta_Mbin%d_FineBin", Mbin), Form("h2D_inner_NClusEta_Mbin%d_FineBin; Clus #eta (inner);INTT vtxZ [cm]", Mbin), 400, EtaEdge_min, EtaEdge_max, 400, VtxZEdge_min, VtxZEdge_max)
+                new TH2D(Form("h2D_inner_NClusEta_Mbin%d_FineBin", Mbin), Form("h2D_inner_NClusEta_Mbin%d_FineBin; Clus #eta (inner);INTT vtxZ [cm]", Mbin), 540, EtaEdge_min, EtaEdge_max, 450, VtxZEdge_min, VtxZEdge_max)
             )
         );
 
         h2D_NClusEtaVtxZ_map.insert( // note : all, outer
             std::make_pair(
                 Form("h2D_outer_NClusEta_Mbin%d_FineBin", Mbin),
-                new TH2D(Form("h2D_outer_NClusEta_Mbin%d_FineBin", Mbin), Form("h2D_outer_NClusEta_Mbin%d_FineBin; Clus #eta (outer);INTT vtxZ [cm]", Mbin), 400, EtaEdge_min, EtaEdge_max, 400, VtxZEdge_min, VtxZEdge_max)
+                new TH2D(Form("h2D_outer_NClusEta_Mbin%d_FineBin", Mbin), Form("h2D_outer_NClusEta_Mbin%d_FineBin; Clus #eta (outer);INTT vtxZ [cm]", Mbin), 540, EtaEdge_min, EtaEdge_max, 450, VtxZEdge_min, VtxZEdge_max)
             )
         );
 
         h2D_NClusEtaVtxZ_map.insert( // note : typeA, inner
             std::make_pair(
                 Form("h2D_typeA_inner_NClusEta_Mbin%d_FineBin", Mbin),
-                new TH2D(Form("h2D_typeA_inner_NClusEta_Mbin%d_FineBin", Mbin), Form("h2D_typeA_inner_NClusEta_Mbin%d_FineBin; Clus #eta (inner, type A);INTT vtxZ [cm]", Mbin), 400, EtaEdge_min, EtaEdge_max, 400, VtxZEdge_min, VtxZEdge_max)
+                new TH2D(Form("h2D_typeA_inner_NClusEta_Mbin%d_FineBin", Mbin), Form("h2D_typeA_inner_NClusEta_Mbin%d_FineBin; Clus #eta (inner, type A);INTT vtxZ [cm]", Mbin), 540, EtaEdge_min, EtaEdge_max, 450, VtxZEdge_min, VtxZEdge_max)
             )
         );
 
         h2D_NClusEtaVtxZ_map.insert( // note : typeA, outer
             std::make_pair(
                 Form("h2D_typeA_outer_NClusEta_Mbin%d_FineBin", Mbin),
-                new TH2D(Form("h2D_typeA_outer_NClusEta_Mbin%d_FineBin", Mbin), Form("h2D_typeA_outer_NClusEta_Mbin%d_FineBin; Clus #eta (outer, type A);INTT vtxZ [cm]", Mbin), 400, EtaEdge_min, EtaEdge_max, 400, VtxZEdge_min, VtxZEdge_max)
+                new TH2D(Form("h2D_typeA_outer_NClusEta_Mbin%d_FineBin", Mbin), Form("h2D_typeA_outer_NClusEta_Mbin%d_FineBin; Clus #eta (outer, type A);INTT vtxZ [cm]", Mbin), 540, EtaEdge_min, EtaEdge_max, 450, VtxZEdge_min, VtxZEdge_max)
             )
         );
     } // note : end of the Mbin loop for h2D    
@@ -412,7 +430,7 @@ void ClusHistogram::PrepareHistograms()
 
             h2D_TrueEtaVtxZ_map.insert( std::make_pair(
                     Form("h2D_TrueEtaVtxZ_Mbin%d_FineBin", Mbin),
-                    new TH2D(Form("h2D_TrueEtaVtxZ_Mbin%d_FineBin", Mbin), Form("h2D_TrueEtaVtxZ_Mbin%d_FineBin;PHG4Particle #eta;TruthPV_trig_z [cm]", Mbin), 400, EtaEdge_min, EtaEdge_max, 400, VtxZEdge_min, VtxZEdge_max)
+                    new TH2D(Form("h2D_TrueEtaVtxZ_Mbin%d_FineBin", Mbin), Form("h2D_TrueEtaVtxZ_Mbin%d_FineBin;PHG4Particle #eta;TruthPV_trig_z [cm]", Mbin), 540, EtaEdge_min, EtaEdge_max, 450, VtxZEdge_min, VtxZEdge_max)
                 )
             );
         }
@@ -460,6 +478,27 @@ void ClusHistogram::PrepareClusterVec()
         //     this_clu.eta_TrueXYZ = ClusEta_TrueXYZ -> at(clu_i);
         //     this_clu.phi_TrueXY  = ClusPhi_TrueXY  -> at(clu_i);
         // }
+        // todo: test
+        // if (this_clu.sensorZID == 0 && (this_clu.layerID == 4) && this_clu.ladderPhiID == 0) {continue;}
+        // if (this_clu.sensorZID == 0 && (this_clu.layerID == 6) && this_clu.ladderPhiID == 0) {continue;}
+        // if (this_clu.sensorZID == 0) {continue;}
+
+        if (ColMulMask){
+            
+            // note : start from 1 or -1 for outliers 
+            int GoodColMap_ZId = h1D_GoodColMap_ZId -> Fill(ClusZ -> at(clu_i)); // note : to be free from the geometry offset
+            if (GoodColMap_ZId == -1) {continue;}
+
+            int GoodColMap_XId = (this_clu.layerID - 3) * 20 + this_clu.ladderPhiID + 1; // note : Layer 4, phiID 9 -> 30
+
+            if (
+                h2D_GoodColMap != nullptr && 
+                h2D_GoodColMap -> GetBinContent(GoodColMap_XId, GoodColMap_ZId) == 0
+            )
+            {
+                continue;
+            }
+        }
 
         if (isClusQA.first && this_clu.adc <= isClusQA.second.first) {continue;} // note : adc
         if (isClusQA.first && this_clu.phi_size > isClusQA.second.second) {continue;} // note : phi size
@@ -481,27 +520,30 @@ void ClusHistogram::PrepareClusterVec()
 
             int inner_or_outer = (rand() % 2 == 0) ? 0 : 1; // note : 0 -> inner, 1 -> outer
 
-            std::map<std::string, std::tuple<double, double, double, int, int>>* p_UniqueClusXYZ_map = (inner_or_outer == 0) ? (&inner_UniqueClusXYZ_map) : (&outer_UniqueClusXYZ_map);
-            std::vector<std::string>* p_UniqueClusXYZ_vec                                            = (inner_or_outer == 0) ? (&inner_UniqueClusXYZ_vec) : (&outer_UniqueClusXYZ_vec);
+            std::map<std::string, std::tuple<double, double, double, int, int, int, int, int>>* p_UniqueClusXYZ_map = (inner_or_outer == 0) ? (&inner_UniqueClusXYZ_map) : (&outer_UniqueClusXYZ_map);
+            std::vector<std::string>* p_UniqueClusXYZ_vec                                                           = (inner_or_outer == 0) ? (&inner_UniqueClusXYZ_vec) : (&outer_UniqueClusXYZ_vec);
             int Rand_index = int(rand3 -> Uniform(0, p_UniqueClusXYZ_vec -> size()));
 
-            double selected_x      = std::get<0>(p_UniqueClusXYZ_map -> at(p_UniqueClusXYZ_vec -> at(Rand_index)));
-            double selected_y      = std::get<1>(p_UniqueClusXYZ_map -> at(p_UniqueClusXYZ_vec -> at(Rand_index)));
-            double selected_z      = std::get<2>(p_UniqueClusXYZ_map -> at(p_UniqueClusXYZ_vec -> at(Rand_index)));
-            int selected_sensorZID = std::get<3>(p_UniqueClusXYZ_map -> at(p_UniqueClusXYZ_vec -> at(Rand_index)));
-            int selected_layerID   = std::get<4>(p_UniqueClusXYZ_map -> at(p_UniqueClusXYZ_vec -> at(Rand_index)));
+            double selected_x        = std::get<0>(p_UniqueClusXYZ_map -> at(p_UniqueClusXYZ_vec -> at(Rand_index)));
+            double selected_y        = std::get<1>(p_UniqueClusXYZ_map -> at(p_UniqueClusXYZ_vec -> at(Rand_index)));
+            double selected_z        = std::get<2>(p_UniqueClusXYZ_map -> at(p_UniqueClusXYZ_vec -> at(Rand_index)));
+            int selected_sensorZID   = std::get<3>(p_UniqueClusXYZ_map -> at(p_UniqueClusXYZ_vec -> at(Rand_index)));
+            int selected_layerID     = std::get<4>(p_UniqueClusXYZ_map -> at(p_UniqueClusXYZ_vec -> at(Rand_index)));
+            int selected_adc         = std::get<5>(p_UniqueClusXYZ_map -> at(p_UniqueClusXYZ_vec -> at(Rand_index)));
+            int selected_phi_size    = std::get<6>(p_UniqueClusXYZ_map -> at(p_UniqueClusXYZ_vec -> at(Rand_index)));
+            int selected_ladderPhiID = std::get<7>(p_UniqueClusXYZ_map -> at(p_UniqueClusXYZ_vec -> at(Rand_index)));
 
             this_clu.x = selected_x;
             this_clu.y = selected_y;
             this_clu.z = selected_z;
-            this_clu.sensorZID = selected_sensorZID;
             this_clu.eta_INTTz = get_clu_eta({vertexXYIncm.first, vertexXYIncm.second, INTTvtxZ}, {selected_x, selected_y, selected_z});
+            this_clu.sensorZID = selected_sensorZID;
             this_clu.layerID = selected_layerID;
+            this_clu.adc = selected_adc;
+            this_clu.phi_size = selected_phi_size;
+            this_clu.ladderPhiID = selected_ladderPhiID;
 
-            this_clu.index = -999;
-            this_clu.adc = -1;
-            this_clu.phi_size = -1;
-            this_clu.ladderPhiID = -1;
+            this_clu.index = ClusX -> size() + clu_i;
 
             std::vector<ClusHistogram::clu_info>* p_evt_sPH_nocolumn_vec =
             (inner_or_outer == 0) ? (&evt_sPH_inner_nocolumn_vec) : (&evt_sPH_outer_nocolumn_vec);
@@ -545,20 +587,45 @@ void ClusHistogram::PrepareUniqueClusXYZ()
             
             // std::cout<<4444<<std::endl;
 
-            std::string clu_key = Form("%.2f_%.2f_%.2f", clu_x, clu_y, clu_z);
+            // std::string clu_key = Form("%.2f_%.2f_%.2f", clu_x, clu_y, clu_z);
+            std::string clu_key = Form("%.2f_%.2f_%d", clu_x, clu_y, h1D_RandClusZ_ref->FindBin(clu_z));
 
             // std::cout<<555<<std::endl;
 
-            std::map<std::string, std::tuple<double, double, double, int, int>>* p_UniqueClusXYZ_map = (ClusLayer -> at(clu_i) == 3 || ClusLayer -> at(clu_i) == 4) ? (&inner_UniqueClusXYZ_map) : (&outer_UniqueClusXYZ_map);
-            std::vector<std::string>* p_UniqueClusXYZ_vec                                            = (ClusLayer -> at(clu_i) == 3 || ClusLayer -> at(clu_i) == 4) ? (&inner_UniqueClusXYZ_vec) : (&outer_UniqueClusXYZ_vec);
+            std::map<std::string, std::tuple<double, double, double, int, int, int, int, int>>* p_UniqueClusXYZ_map = (ClusLayer -> at(clu_i) == 3 || ClusLayer -> at(clu_i) == 4) ? (&inner_UniqueClusXYZ_map) : (&outer_UniqueClusXYZ_map);
+            std::vector<std::string>* p_UniqueClusXYZ_vec                                                           = (ClusLayer -> at(clu_i) == 3 || ClusLayer -> at(clu_i) == 4) ? (&inner_UniqueClusXYZ_vec) : (&outer_UniqueClusXYZ_vec);
 
             // std::cout<<666<<std::endl;
+
+            if (ColMulMask){
+                
+                // note : start from 1 or -1 for outliers 
+                int GoodColMap_ZId = h1D_GoodColMap_ZId -> Fill(ClusZ -> at(clu_i)); // note : to be free from the geometry offset
+                if (GoodColMap_ZId == -1) {continue;}
+
+                int GoodColMap_XId = (ClusLayer->at(clu_i) - 3) * 20 + ClusLadderPhiId->at(clu_i) + 1; // note : Layer 4, phiID 9 -> 30
+
+                if (
+                    h2D_GoodColMap != nullptr && 
+                    h2D_GoodColMap -> GetBinContent(GoodColMap_XId, GoodColMap_ZId) == 0
+                )
+                {
+                    continue;
+                }
+            }
 
             if (p_UniqueClusXYZ_map -> find(clu_key) == p_UniqueClusXYZ_map -> end()){
                 p_UniqueClusXYZ_map -> insert( 
                     std::make_pair(
                         clu_key,
-                        std::make_tuple(clu_x, clu_y, clu_z, ClusLadderZId->at(clu_i), ClusLayer -> at(clu_i))
+                        std::make_tuple(
+                            clu_x, clu_y, clu_z, 
+                            ClusLadderZId->at(clu_i), 
+                            ClusLayer -> at(clu_i),
+                            ClusAdc -> at(clu_i),
+                            ClusPhiSize -> at(clu_i),
+                            ClusLadderPhiId -> at(clu_i)
+                        )
                     ) 
                 );
                 
@@ -577,15 +644,55 @@ void ClusHistogram::PrepareUniqueClusXYZ()
     }
 }
 
+double ClusHistogram::CheckGeoOffsetMap()
+{
+    double sum = 0;
+    for (auto &pair : geo_offset_map)
+    {
+        sum += fabs(pair.second[0]) + fabs(pair.second[1]) + fabs(pair.second[2]);
+    }
+    return sum;
+}
+
 void ClusHistogram::MainProcess()
 {
     if (SetRandomHits.first){PrepareUniqueClusXYZ();}
+
+    if (ColMulMask && h2D_GoodColMap == nullptr){
+        std::cout<<"The GoodColMap is not set correctly"<<std::endl;
+        exit(1);
+    }
+
+    if (
+        ColMulMask &&
+        (
+            h1D_GoodColMap_ZId -> GetNbinsX() != h2D_GoodColMap -> GetNbinsY() ||
+            fabs(h1D_GoodColMap_ZId -> GetXaxis() -> GetXmin() - h2D_GoodColMap -> GetYaxis() -> GetXmin()) > 0.0000001 ||
+            fabs(h1D_GoodColMap_ZId -> GetXaxis() -> GetXmax() - h2D_GoodColMap -> GetYaxis() -> GetXmax()) > 0.0000001
+        )
+
+    ){
+        std::cout<<"The setting of h1D_GoodColMap_ZId is different from h2D_GoodColMap"<<std::endl;
+        std::cout<<"h1D_GoodColMap_ZId : "<<h1D_GoodColMap_ZId -> GetNbinsX()<<" "<<h1D_GoodColMap_ZId -> GetXaxis() -> GetXmin()<<" "<<h1D_GoodColMap_ZId -> GetXaxis() -> GetXmax()<<std::endl;
+        std::cout<<"h2D_GoodColMap : "<<h2D_GoodColMap -> GetNbinsY()<<" "<<h2D_GoodColMap -> GetYaxis() -> GetXmin()<<" "<<h2D_GoodColMap -> GetYaxis() -> GetXmax()<<std::endl;
+        exit(1);
+    }
+
+    if (HaveGeoOffsetTag && CheckGeoOffsetMap() <= 0){
+        std::cout<<"The geo offset map is not set correctly"<<std::endl;
+        exit(1);
+    }
 
     for (int i = 0; i < run_nEvents; i++)
     {
         tree_in -> GetEntry(i);
 
         EvtCleanUp();
+
+        if (RandInttZ){
+            INTTvtxZ = rand3 -> Uniform(VtxZEdge_min,VtxZEdge_max);
+            INTTvtxZError = 0;
+        }
 
         if (i % 10 == 0) {std::cout << "Processing event " << i<<", NClus : "<< ClusX -> size() << std::endl;}
 

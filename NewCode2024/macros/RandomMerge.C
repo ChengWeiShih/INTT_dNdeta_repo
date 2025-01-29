@@ -14,16 +14,21 @@ std::vector<std::string> ReadList(std::string filename)
 }
 
 // note : to split the input vector randomly into N vectors
-std::vector<std::vector<std::string>> RandomSplit(std::vector<std::string> list, int N)
+std::vector<std::vector<std::string>> RandomSplit(std::vector<std::string> list, int N, bool IsShuffle = true)
 {
     std::vector<std::vector<std::string>> output(N);
     std::random_device rd;
     std::mt19937 g(rd());
-    std::shuffle(list.begin(), list.end(), g);
+    if (IsShuffle){std::shuffle(list.begin(), list.end(), g);}
+
+    int N_each = int(list.size()) / N;
 
     for (int i = 0; i < list.size(); i++)
     {
-        output[i % N].push_back(list[i]);
+        // output[i % N].push_back(list[i]);
+        int corresponding_file_index = i / N_each;
+        corresponding_file_index = (corresponding_file_index >= N) ? N - 1 : corresponding_file_index;
+        output[corresponding_file_index].push_back(list[i]);
     }
 
     return output;
@@ -50,19 +55,29 @@ std::string get_merged_suffix(int file_index, int total_file)
     return "";
 }
 
-int RandomMerge()
+int RandomMerge(
+    bool IsShuffle,
+    int N_merged_files,
+    string input_directory,
+    string input_filename
+)
 {
-    int N_merged_files = 2;
-    string input_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/sPH_dNdeta/Run24AuAuMC/Sim_Ntuple_HIJING_ana443_20241102/TrackHistNew_WithClusQA/completed";
-    string input_filename = "MC_TrackHist_vtxZReweight_VtxZQA_ClusQAAdc35PhiSize500_SecondRun_00072.root"; // note : xxxxx_00001.root
+    std::cout<<std::endl;
+    std::cout<<"!!! Be careful, the code can currently only handle the maximal number of files is 10000, [00000 - 09999] !!!"<<std::endl;
+
+    // bool IsShuffle = false;
+    // int N_merged_files = 1;
+    // string input_directory = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_Ntuple_HIJING_ana443_20241102/Run3/EvtVtxZ/completed/RestDist/completed";
+    // string input_filename = "MC_RestDist_vtxZQA_VtxZReWeighting_vtxZRangeM10p0to10p0_ClusQAAdc35PhiSize500_00000.root"; // note : xxxxx_00001.root
 
     string input_filename_no_number = input_filename.substr(0, input_filename.find_last_of("_"));
 
     std::cout<<"input_directory: "<<input_directory<<std::endl;
     std::cout<<"input_filename: "<<input_filename<<std::endl;
     std::cout<<"input_filename_no_number: "<<input_filename_no_number<<std::endl;
+    std::cout<<std::endl;
 
-    system(Form("ls %s/%s_*.root > %s/file_list.txt", input_directory.c_str(), input_filename_no_number.c_str(), input_directory.c_str()));
+    system(Form("ls %s/%s_0*.root > %s/file_list.txt", input_directory.c_str(), input_filename_no_number.c_str(), input_directory.c_str())); // todo: the maximal number of files is 10000
 
     std::vector<std::string> list = ReadList(Form("%s/file_list.txt", input_directory.c_str()));
     for (int i = 0; i < list.size(); i++)
@@ -86,7 +101,7 @@ int RandomMerge()
     //     std::cout<<"filename: "<<filename<<std::endl;
     // }
 
-    std::vector<std::vector<std::string>> list_splitted = RandomSplit(list, N_merged_files);
+    std::vector<std::vector<std::string>> list_splitted = RandomSplit(list, N_merged_files, IsShuffle);
 
     for (int i = 0; i < N_merged_files; i++)
     {
@@ -100,13 +115,14 @@ int RandomMerge()
             all_in_one += filename + " ";
         }
 
+        std::cout<<std::endl;
         system(Form("time hadd %s/%s_merged%s.root %s", input_directory.c_str(), input_filename_no_number.c_str(), get_merged_suffix(i, N_merged_files).c_str(), all_in_one.c_str()));
 
-        system(Form("mkdir -p %s/merged_files%s", input_directory.c_str(), get_merged_suffix(i, N_merged_files).c_str()));
+        system(Form("mkdir -p %s/merged_files_%s_%s", input_directory.c_str(), input_filename_no_number.c_str(), get_merged_suffix(i, N_merged_files).c_str()));
 
         for (auto filename : list_splitted[i])
         {
-            system(Form("mv %s %s/merged_files%s", filename.c_str(), input_directory.c_str(), get_merged_suffix(i, N_merged_files).c_str()));
+            system(Form("mv %s %s/merged_files_%s_%s", filename.c_str(), input_directory.c_str(), input_filename_no_number.c_str(), get_merged_suffix(i, N_merged_files).c_str()));
         }
     }
 
