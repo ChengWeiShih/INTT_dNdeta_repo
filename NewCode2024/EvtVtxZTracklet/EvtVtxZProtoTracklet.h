@@ -28,6 +28,8 @@
 
 #include <TObjArray.h>
 
+#include <ROOT/RVec.hxx>
+
 #include "structure.h"
 
 class EvtVtxZProtoTracklet{
@@ -119,15 +121,25 @@ class EvtVtxZProtoTracklet{
     // int event;
     float MBD_z_vtx;
     ULong_t INTT_BCO;
-    std::vector<float> *ClusX;
-    std::vector<float> *ClusY;
-    std::vector<float> *ClusZ;
-    std::vector<int> *ClusLayer;
-    std::vector<unsigned char> *ClusLadderZId;
-    std::vector<unsigned char> *ClusLadderPhiId;
-    std::vector<int> *ClusAdc;
-    std::vector<float> *ClusPhiSize;
-    std::vector<int> *firedTriggers;
+    // std::vector<float> *ClusX;
+    // std::vector<float> *ClusY;
+    // std::vector<float> *ClusZ;
+    // std::vector<int> *ClusLayer;
+    // std::vector<unsigned char> *ClusLadderZId;
+    // std::vector<unsigned char> *ClusLadderPhiId;
+    // std::vector<int> *ClusAdc;
+    // std::vector<float> *ClusPhiSize;
+    // std::vector<int> *firedTriggers;
+
+    ROOT::VecOps::RVec<float> *ClusX;
+    ROOT::VecOps::RVec<float> *ClusY;
+    ROOT::VecOps::RVec<float> *ClusZ;
+    ROOT::VecOps::RVec<int> *ClusLayer;
+    ROOT::VecOps::RVec<unsigned char> *ClusLadderZId;
+    ROOT::VecOps::RVec<unsigned char> *ClusLadderPhiId;
+    ROOT::VecOps::RVec<int> *ClusAdc;
+    ROOT::VecOps::RVec<float> *ClusPhiSize;
+    ROOT::VecOps::RVec<int> *firedTriggers;
 
     float TruthPV_trig_x;
     float TruthPV_trig_y;

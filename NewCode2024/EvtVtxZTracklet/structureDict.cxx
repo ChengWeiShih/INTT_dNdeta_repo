@@ -10,7 +10,7 @@
 #include <string.h>
 #include <assert.h>
 #define G__DICTIONARY
-#include "RConfig.h"
+#include "ROOT/RConfig.hxx"
 #include "TClass.h"
 #include "TDictAttributeMap.h"
 #include "TInterpreter.h"
@@ -68,10 +68,10 @@ namespace ROOT {
    }
    TGenericClassInfo *GenerateInitInstance(const ::pair_str*)
    {
-      return GenerateInitInstanceLocal((::pair_str*)nullptr);
+      return GenerateInitInstanceLocal(static_cast<::pair_str*>(nullptr));
    }
    // Static variable to force the class initialization
-   static ::ROOT::TGenericClassInfo *_R__UNIQUE_DICT_(Init) = GenerateInitInstanceLocal((const ::pair_str*)nullptr); R__UseDummy(_R__UNIQUE_DICT_(Init));
+   static ::ROOT::TGenericClassInfo *_R__UNIQUE_DICT_(Init) = GenerateInitInstanceLocal(static_cast<const ::pair_str*>(nullptr)); R__UseDummy(_R__UNIQUE_DICT_(Init));
 } // end of namespace ROOT
 
 //______________________________________________________________________________
@@ -131,14 +131,14 @@ namespace ROOT {
    }
    // Wrapper around operator delete
    static void delete_pair_str(void *p) {
-      delete ((::pair_str*)p);
+      delete (static_cast<::pair_str*>(p));
    }
    static void deleteArray_pair_str(void *p) {
-      delete [] ((::pair_str*)p);
+      delete [] (static_cast<::pair_str*>(p));
    }
    static void destruct_pair_str(void *p) {
       typedef ::pair_str current_t;
-      ((current_t*)p)->~current_t();
+      (static_cast<current_t*>(p))->~current_t();
    }
 } // end of namespace ROOT for class ::pair_str
 
@@ -157,7 +157,7 @@ namespace ROOT {
       vector<pair_str> *ptr = nullptr;
       static ::TVirtualIsAProxy* isa_proxy = new ::TIsAProxy(typeid(vector<pair_str>));
       static ::ROOT::TGenericClassInfo 
-         instance("vector<pair_str>", -2, "vector", 423,
+         instance("vector<pair_str>", -2, "vector", 428,
                   typeid(vector<pair_str>), ::ROOT::Internal::DefineBehavior(ptr, ptr),
                   &vectorlEpair_strgR_Dictionary, isa_proxy, 4,
                   sizeof(vector<pair_str>) );
@@ -168,15 +168,15 @@ namespace ROOT {
       instance.SetDestructor(&destruct_vectorlEpair_strgR);
       instance.AdoptCollectionProxyInfo(TCollectionProxyInfo::Generate(TCollectionProxyInfo::Pushback< vector<pair_str> >()));
 
-      ::ROOT::AddClassAlternate("vector<pair_str>","std::vector<pair_str, std::allocator<pair_str> >");
+      instance.AdoptAlternate(::ROOT::AddClassAlternate("vector<pair_str>","std::vector<pair_str, std::allocator<pair_str> >"));
       return &instance;
    }
    // Static variable to force the class initialization
-   static ::ROOT::TGenericClassInfo *_R__UNIQUE_DICT_(Init) = GenerateInitInstanceLocal((const vector<pair_str>*)nullptr); R__UseDummy(_R__UNIQUE_DICT_(Init));
+   static ::ROOT::TGenericClassInfo *_R__UNIQUE_DICT_(Init) = GenerateInitInstanceLocal(static_cast<const vector<pair_str>*>(nullptr)); R__UseDummy(_R__UNIQUE_DICT_(Init));
 
    // Dictionary for non-ClassDef classes
    static TClass *vectorlEpair_strgR_Dictionary() {
-      TClass* theClass =::ROOT::GenerateInitInstanceLocal((const vector<pair_str>*)nullptr)->GetClass();
+      TClass* theClass =::ROOT::GenerateInitInstanceLocal(static_cast<const vector<pair_str>*>(nullptr))->GetClass();
       vectorlEpair_strgR_TClassManip(theClass);
    return theClass;
    }
@@ -189,21 +189,21 @@ namespace ROOT {
 namespace ROOT {
    // Wrappers around operator new
    static void *new_vectorlEpair_strgR(void *p) {
-      return  p ? ::new((::ROOT::Internal::TOperatorNewHelper*)p) vector<pair_str> : new vector<pair_str>;
+      return  p ? ::new(static_cast<::ROOT::Internal::TOperatorNewHelper*>(p)) vector<pair_str> : new vector<pair_str>;
    }
    static void *newArray_vectorlEpair_strgR(Long_t nElements, void *p) {
-      return p ? ::new((::ROOT::Internal::TOperatorNewHelper*)p) vector<pair_str>[nElements] : new vector<pair_str>[nElements];
+      return p ? ::new(static_cast<::ROOT::Internal::TOperatorNewHelper*>(p)) vector<pair_str>[nElements] : new vector<pair_str>[nElements];
    }
    // Wrapper around operator delete
    static void delete_vectorlEpair_strgR(void *p) {
-      delete ((vector<pair_str>*)p);
+      delete (static_cast<vector<pair_str>*>(p));
    }
    static void deleteArray_vectorlEpair_strgR(void *p) {
-      delete [] ((vector<pair_str>*)p);
+      delete [] (static_cast<vector<pair_str>*>(p));
    }
    static void destruct_vectorlEpair_strgR(void *p) {
       typedef vector<pair_str> current_t;
-      ((current_t*)p)->~current_t();
+      (static_cast<current_t*>(p))->~current_t();
    }
 } // end of namespace ROOT for class vector<pair_str>
 
@@ -214,7 +214,7 @@ namespace {
 nullptr
     };
     static const char* includePaths[] = {
-"/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/root-6.26.06.p01/include/",
+"/cvmfs/sphenix.sdcc.bnl.gov/alma9.2-gcc-14.2.0/opt/sphenix/core/root-6.32.06/include/",
 "/gpfs/mnt/gpfs02/sphenix/user/ChengWei/INTT/INTT_dNdeta_repo/NewCode2024/EvtVtxZTracklet/",
 nullptr
     };
@@ -224,7 +224,7 @@ nullptr
 #pragma clang diagnostic ignored "-Wignored-attributes"
 #pragma clang diagnostic ignored "-Wreturn-type-c-linkage"
 extern int __Cling_AutoLoading_Map;
-struct __attribute__((annotate(R"ATTRDUMP(ROOT macro for dictionary generation)ATTRDUMP"))) __attribute__((annotate("$clingAutoload$structure.h")))  pair_str;
+struct __attribute__((annotate("$clingAutoload$structure.h")))  pair_str;
 namespace std{template <typename _Tp> class __attribute__((annotate("$clingAutoload$bits/allocator.h")))  __attribute__((annotate("$clingAutoload$string")))  allocator;
 }
 )DICTFWDDCLS";
