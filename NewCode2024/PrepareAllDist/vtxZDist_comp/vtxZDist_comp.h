@@ -164,7 +164,19 @@ class vtxZDist_comp{
             "#abdda4",
             "#f46d43",
             "#e6f598",
-            "#00A1FF"
+            "#00A1FF",
+
+            "#1b9e77",  // Teal Green  
+            "#d95f02",  // Deep Orange  
+            "#7570b3",  // Muted Purple  
+            "#e7298a",  // Vivid Pink  
+            "#66a61e",  // Olive Green  
+            "#a6761d",  // Brown  
+            "#666666",  // Dark Gray  
+            "#f781bf",  // Light Pink  
+            "#0173b2",  // Rich Blue  
+            "#ff7f00"   // Bright Orange  
+
         };
 
         const std::vector<int> ROOT_color_code = {

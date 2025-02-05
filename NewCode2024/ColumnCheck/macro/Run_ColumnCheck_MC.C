@@ -19,13 +19,13 @@ void Run_ColumnCheck_MC(
   
   // todo : modify here
   std::string output_file_name_suffix = "",
-  std::pair<double, double> vertexXYIncm = {-0.0214921, 0.223299},
-  double SetMbinFloat = 0.5, // note : 0 - 1
+  std::pair<double, double> vertexXYIncm = {-0.0217356, 0.223402},
+  double SetMbinFloat = 70, // note : 0 - 100
             
   std::pair<double, double> VtxZRange = {-30, 30},
   bool IsZClustering = false,
   bool BcoFullDiffCut = false,
-  std::pair<bool, std::pair<double, double>> isClusQA = {true, {35,40}}, // note : {adc, phi size}
+  std::pair<bool, std::pair<double, double>> isClusQA = {true, {35,39}}, // note : {adc, phi size}
 
   bool ColMulMask = false,
   std::string ColMulMask_map_dir = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Dec042024/completed/Run3/EvtVtxZ/ColumnCheck/completed/MulMap/completed",

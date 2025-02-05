@@ -96,6 +96,10 @@ void AvgVtxXY::ReadRootFile()
     tree_in -> SetBranchStatus("MBD_z_vtx", 1);
     tree_in -> SetBranchStatus("is_min_bias", 1);
     tree_in -> SetBranchStatus("MBD_centrality", 1);
+    if (runnumber != -1) {
+        tree_in -> SetBranchStatus("InttBco_IsToBeRemoved", 1);
+    }
+
     tree_in -> SetBranchStatus("NClus", 1);
     tree_in -> SetBranchStatus("ClusX", 1);
     tree_in -> SetBranchStatus("ClusY", 1);
@@ -114,6 +118,9 @@ void AvgVtxXY::ReadRootFile()
     tree_in -> SetBranchAddress("MBD_z_vtx", &MBD_z_vtx);
     tree_in -> SetBranchAddress("is_min_bias", &is_min_bias);
     tree_in -> SetBranchAddress("MBD_centrality", &MBD_centrality);
+    if (runnumber != -1) {
+        tree_in -> SetBranchAddress("InttBco_IsToBeRemoved", &InttBco_IsToBeRemoved);
+    }
 
     tree_in -> SetBranchAddress("NClus", &NClus);
     tree_in -> SetBranchAddress("ClusX", &ClusX);
@@ -343,6 +350,7 @@ void AvgVtxXY::PreparePairs()
         if (is_min_bias != 1) {continue;}
         if (MBD_z_vtx != MBD_z_vtx) {continue;}
         if (MBD_z_vtx < MBD_vtxZ_cut.first || MBD_z_vtx > MBD_vtxZ_cut.second) {continue;}
+        if (runnumber != -1 && InttBco_IsToBeRemoved == 1) {continue;}
 
         if (NClus < INTTNClus_cut.first || NClus > INTTNClus_cut.second) {continue;}
 

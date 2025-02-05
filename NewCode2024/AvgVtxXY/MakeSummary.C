@@ -63,13 +63,15 @@ vector<string> read_list(string folder_direction, string MC_list_name)
 
 int MakeSummary(
 
-    // int data_type = 1, // note : 1 = MC, 0 = data    
-    // std::string input_folder = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_Ntuple_HIJING_ana443_20241102/Run3/AvgVtxXY/completed",
-    // std::string filename_NoIndex = "MC_AvgVtxXY",
+    // note: MC
+    int data_type = 1, // note : 1 = MC, 0 = data    
+    std::string input_folder = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_ananew_20250131/Run4/AvgVtxXY/completed",
+    std::string filename_NoIndex = "MC_AvgVtxXY",
 
-    int data_type = 0, // note : 1 = MC, 0 = data    
-    std::string input_folder = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Dec042024/completed/Run3/AvgVtxXY/completed",
-    std::string filename_NoIndex = "Data_AvgVtxXY_00054280",
+    // note : data
+    // int data_type = 0, // note : 1 = MC, 0 = data    
+    // std::string input_folder = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Jan172025/Run4/AvgVtxXY/completed",
+    // std::string filename_NoIndex = "Data_AvgVtxXY_00054280",
 
     double frame_shift_forX = 0.03, // note : cm
     double frame_shift_forY = -0.01 // note : cm

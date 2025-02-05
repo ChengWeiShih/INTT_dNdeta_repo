@@ -304,8 +304,7 @@ void EvtVtxZProtoTracklet::PrepareRootFile()
 
 void EvtVtxZProtoTracklet::GetTriggerInfo()
 {
-    // std::vector<int> firedTriggers_vec =  *(firedTriggers);
-    std::vector<int> firedTriggers_vec(firedTriggers->begin(), firedTriggers->end());
+    std::vector<int> firedTriggers_vec =  *(firedTriggers);
     std::map<int, int> firedTriggers_map; firedTriggers_map.clear();
 
     for (int trig : firedTriggers_vec){
@@ -892,6 +891,7 @@ void EvtVtxZProtoTracklet::MainProcess()
             }
         }
         
+
         tree_out -> Fill();
         // if (RunInttBcoFullDiff) {b_InttBcoFullDiff_next -> Fill();}
         // if (RunVtxZReco){

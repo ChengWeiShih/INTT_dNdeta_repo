@@ -76,7 +76,7 @@ class FinalResult{
         void PrepareClusPhiSizeError(std::vector<std::string> file_directory_vec_in);
         void PrepareMCMergedError(std::vector<std::string> file_directory_vec_in); // note : the errror due to different ways of MC merged
         void PrepareFinalError();
-        void PrepareFinalResult();
+        void PrepareFinalResult(double Hist_Y_max);
         void EndRun();
 
         

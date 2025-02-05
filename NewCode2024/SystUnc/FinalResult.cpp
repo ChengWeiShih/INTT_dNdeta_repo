@@ -374,7 +374,7 @@ void FinalResult::PrepareFinalError()
     h1D_error_Final -> SetLineWidth(2);
     h1D_error_Final -> SetLineColor(1);
     h1D_error_Final -> GetXaxis() -> SetTitle("#eta");
-    h1D_error_Final -> GetYaxis() -> SetTitle("Relative uncertainty [%]");
+    h1D_error_Final -> GetYaxis() -> SetTitle("Relative uncertainty");
 
     leg_errors -> AddEntry(h1D_error_Final, "Total Uncertainty", "l");
     if (h1D_error_statistic != nullptr) {leg_errors -> AddEntry(h1D_error_statistic, "Stat. Unc.", "p");}
@@ -417,7 +417,7 @@ void FinalResult::PrepareFinalError()
     }
 }
 
-void FinalResult::PrepareFinalResult()
+void FinalResult::PrepareFinalResult(double Hist_Y_max)
 {
     h1D_data_standard -> SetMarkerStyle(20);
     h1D_data_standard -> SetMarkerSize(0.8);
@@ -464,18 +464,18 @@ void FinalResult::PrepareFinalResult()
         << std::endl;
     }
 
-    gE_data_final -> GetYaxis() -> SetRangeUser(0, 400);
+    gE_data_final -> GetYaxis() -> SetRangeUser(0, Hist_Y_max);
     gE_data_final -> GetXaxis() -> SetTitle("#eta");
     gE_data_final -> GetYaxis() -> SetTitle("dN_{ch}/d#eta");
 
     h1D_data_standard -> SetMinimum(0);
-    h1D_data_standard -> SetMaximum(400); // todo: the maximum
+    h1D_data_standard -> SetMaximum(Hist_Y_max); // todo: the maximum
     h1D_data_standard -> GetXaxis() -> SetTitle("#eta");
     h1D_data_standard -> GetYaxis() -> SetTitle("dN_{ch}/d#eta");
 
 
     h1D_truth_standard -> SetMinimum(0);
-    h1D_truth_standard -> SetMaximum(400); // todo: the maximum
+    h1D_truth_standard -> SetMaximum(Hist_Y_max); // todo: the maximum
     h1D_truth_standard -> SetLineColor(TColor::GetColor("#3288bd"));
     h1D_truth_standard -> SetLineWidth(2);
     h1D_truth_standard -> SetFillColorAlpha(1,0);

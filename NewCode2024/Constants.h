@@ -2,9 +2,11 @@
 #define CONSTANTS_H
 
 #include <vector>
+#include <string>
 
 namespace Constants{
     extern std::vector<double> centrality_edges;
+    extern std::vector<std::string> centrality_text;
 
     // note : vtxZQA
     extern std::pair<double, double> cut_vtxZDiff; // note : MBDz - INTTz
@@ -19,6 +21,7 @@ namespace Constants{
     extern int cut_InttBcoFullDIff_next;
 
     extern int Semi_inclusive_bin;
+    extern int Semi_inclusive_interval; // note : 70, for example
 
     extern int HighNClus;
 

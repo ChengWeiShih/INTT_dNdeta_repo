@@ -12,17 +12,20 @@ void Run_ColumnCheck(
   
   // todo : modify here
   std::string output_file_name_suffix = "",
-  std::pair<double, double> vertexXYIncm = {-0.0232717, 0.223173},
-  double SetMbinFloat = 0.5, // note : 0 - 1
+  double SetMbinFloat = 70, // note : 0 - 100
             
-  std::pair<double, double> VtxZRange = {-30, 30},
+  std::pair<double, double> VtxZRange = {-30, 30}, // note: MBD vtx Z
   bool IsZClustering = false,
-  bool BcoFullDiffCut = true,
-  std::pair<bool, std::pair<double, double>> isClusQA = {true, {35,40}}, // note : {adc, phi size}
+  std::pair<bool, std::pair<double, double>> isClusQA = {true, {50,39}}, // note : {adc, phi size}
  
   bool ColMulMask = false
 )
 {
+  std::pair<double, double> vertexXYIncm_data = {-0.0230601, 0.223231};
+  std::pair<double, double> vertexXYIncm_MC = {-0.0217356, 0.223402};
+
+  std::pair<double, double> vertexXYIncm = (run_num == -1) ? vertexXYIncm_MC : vertexXYIncm_data;
+  bool BcoFullDiffCut = (run_num == -1) ? false : true;
 
   ColumnCheck * CC = new ColumnCheck(
     process_id,

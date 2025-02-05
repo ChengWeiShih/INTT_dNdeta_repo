@@ -43,7 +43,7 @@ ColumnCheck::ColumnCheck(
 ), 
 IsZClustering(IsZClustering_in),
 VtxZRange(VtxZRange_in),
-SetMbinFloat(SetMbinFloat_in) // note : 0-1
+SetMbinFloat(SetMbinFloat_in) // note : 0-100
 
 {
     PrepareOutPutFileName();
@@ -71,7 +71,7 @@ void ColumnCheck::PrepareOutPutFileName()
     output_filename = (runnumber != -1) ? "Data_" + output_filename : "MC_" + output_filename;
     output_filename += (BcoFullDiffCut && runnumber != -1) ? "_BcoFullDiffCut" : "";
     output_filename += (IsZClustering) ? "_ZClustering" : "";
-    output_filename += Form("_Mbin%.0f",SetMbinFloat * 100);
+    output_filename += Form("_Mbin%.0f",SetMbinFloat);
     output_filename += (ColMulMask) ? "_ColMulMask" : "";
     output_filename += Form("_VtxZ%.0fto%.0fcm",VtxZRange.first,VtxZRange.second);
     output_filename += (isClusQA.first) ? Form("_ClusQAAdc%.0fPhiSize%.0f",isClusQA.second.first,isClusQA.second.second) : "";
@@ -145,7 +145,7 @@ void ColumnCheck::MainProcess()
         if (is_min_bias != 1) {continue;}
         if (MBD_z_vtx != MBD_z_vtx) {continue;}
         if (MBD_centrality != MBD_centrality) {continue;}
-        if (MBD_centrality < 0 || MBD_centrality > 1) {continue;}
+        if (MBD_centrality < 0 || MBD_centrality > 100) {continue;}
         if (INTTvtxZ != INTTvtxZ) {continue;}
 
         if (MBD_centrality > SetMbinFloat) {continue;}

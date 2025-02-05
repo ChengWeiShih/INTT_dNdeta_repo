@@ -123,7 +123,7 @@ void GetMultiplicityMap::PrepareOutPutFileName()
 
     output_filename += (BcoFullDiffCut) ? "_BcoFullDiffCut" : "";
     output_filename += (IsZClustering) ? "_ZClustering" : "";
-    output_filename += Form("_Mbin%.0f",SetMbinFloat * 100);
+    output_filename += Form("_Mbin%.0f",SetMbinFloat);
     output_filename += Form("_VtxZ%.0fto%.0fcm",VtxZRange.first,VtxZRange.second);
     output_filename += (isClusQA.first) ? Form("_ClusQAAdc%.0fPhiSize%.0f",isClusQA.second.first,isClusQA.second.second) : "";
 

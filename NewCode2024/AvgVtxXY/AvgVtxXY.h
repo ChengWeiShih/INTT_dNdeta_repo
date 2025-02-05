@@ -95,6 +95,7 @@ class AvgVtxXY {
         float MBD_z_vtx;
         bool is_min_bias;
         float MBD_centrality;
+        bool InttBco_IsToBeRemoved;
 
         int NClus;
         std::vector<float> *ClusX;

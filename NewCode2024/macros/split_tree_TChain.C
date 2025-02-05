@@ -30,14 +30,16 @@ std::vector<std::string> readFileToVector(const std::string& filePath) {
 
 void split_tree_TChain() {
 
-    string input_directory = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_Ntuple_HIJING_ana443_20241102";
-    string input_filelist = "aaa_FileList.txt"; 
+    string input_directory = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_ananew_20250131";
+    string input_filelist = "FileList.txt"; 
     string TreeName = "EventTree";
     int nEvent_EachFile = 10000;
+    string output_directory = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_ananew_20250131/per10k";
+    string input_filename_NoSuffix = "ntuple_per10k";
 
     std::vector<std::string> file_list = readFileToVector(input_directory + "/" + input_filelist);
-    std::string first_filename = file_list[0].substr(file_list[0].find_last_of("/")+1);
-    string input_filename_NoSuffix = first_filename.substr(0, first_filename.find("."));
+    // std::string first_filename = file_list[0].substr(file_list[0].find_last_of("/")+1);
+    // string input_filename_NoSuffix = first_filename.substr(0, first_filename.find("."));
 
     TChain * inputTree = new TChain(TreeName.c_str());
     for (const auto& file : file_list) {
@@ -73,7 +75,7 @@ void split_tree_TChain() {
 
         // note : Create output file name
         string output_filename = input_filename_NoSuffix + "_" + job_index + ".root";
-        TFile *outputFile = TFile::Open((input_directory+"/"+output_filename).c_str(), "RECREATE");
+        TFile *outputFile = TFile::Open((output_directory+"/"+output_filename).c_str(), "RECREATE");
 
         // note : Create a new TTree with the subset of events
         TTree *outputTree = inputTree->CopyTree(Form("Entry$ >= %lld && Entry$ <= %lld", startEvent, endEvent));

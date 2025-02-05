@@ -12,7 +12,7 @@ nEvents            = -1
 input_directory    = /sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Jan172025
 job_offset    = 0
 process_shift      = $(Process) + $(job_offset) 
-input_filename     = ntuple_wEvtBcoDiff_$INT(process_shift,%05d).root
+input_filename     = ntuple_$INT(process_shift,%05d).root
 output_directory   = /sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Jan172025/Run4/EvtVtxZ
 
 Output             = $(output_directory)/cw_log/condor_$INT(process_shift,%05d).out

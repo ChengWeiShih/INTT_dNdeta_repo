@@ -710,7 +710,7 @@ void ClusHistogram::MainProcess()
         if (is_min_bias != 1) {continue;}
         if (MBD_z_vtx != MBD_z_vtx) {continue;}
         if (MBD_centrality != MBD_centrality) {continue;}
-        if (MBD_centrality < 0 || MBD_centrality > 1) {continue;}
+        if (MBD_centrality < 0 || MBD_centrality > 100) {continue;}
         if (INTTvtxZ != INTTvtxZ) {continue;}
         if (MBD_z_vtx < cut_GlobalMBDvtxZ.first || MBD_z_vtx > cut_GlobalMBDvtxZ.second) {continue;} // todo: the hard cut 60 cm 
         // =======================================================================================================================================================

@@ -225,6 +225,7 @@ class PreparedNdEtaEach{
 
         // Division:---Constants------------------------------------------------------------------------------------------------
         int Semi_inclusive_Mbin = Constants::Semi_inclusive_bin;
+        int Semi_inclusive_interval = Constants::Semi_inclusive_interval;
 
         const std::vector<int> ROOT_color_code = {
             51, 61, 70, 79, 88, 98

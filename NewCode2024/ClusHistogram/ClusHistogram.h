@@ -239,8 +239,8 @@ class ClusHistogram{
         // note : ----------------- for constants -----------------
 
         // note : for centrality fine
-        double CentralityFineEdge_min = -0.005;
-        double CentralityFineEdge_max = 1.005;
+        double CentralityFineEdge_min = -0.5;
+        double CentralityFineEdge_max = 100.5;
         int nCentralityFineBin = 101;
         
         // note : for eta (tracklet)
@@ -254,7 +254,7 @@ class ClusHistogram{
         // int nVtxZBin = 18;
         double VtxZEdge_min = -10; // note : cm
         double VtxZEdge_max = 10; // note : cm
-        int nVtxZBin = 10;
+        int nVtxZBin = 4;
         int nVtxZBin_FineBin = 500;
 
         TH1D * h1D_vtxz_template;

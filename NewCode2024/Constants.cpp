@@ -1,7 +1,31 @@
 #include "Constants.h"
 
 namespace Constants{
-    std::vector<double> centrality_edges = {0, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0};
+    // std::vector<double> centrality_edges = {0, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0};
+    std::vector<double> centrality_edges = {0, 3, 6, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100};
+    std::vector<std::string> centrality_text = {
+        "0-3%",
+        "3-6%",
+        "6-10%",
+        "10-15%",
+        "15-20%",
+        "20-25%",
+        "25-30%",
+        "30-35%",
+        "35-40%",
+        "40-45%",
+        "45-50%",
+        "50-55%",
+        "55-60%",
+        "60-65%",
+        "65-70%",
+        "70-75%",
+        "75-80%",
+        "80-85%",
+        "85-90%",
+        "90-95%",
+        "95-100%"
+    };
 
     // note : vtxZQA
     std::pair<double, double> cut_vtxZDiff = {-3, 4.}; // note : MBDz - INTTz
@@ -11,29 +35,31 @@ namespace Constants{
 
     // note : for analysis
     std::pair<double, double> cut_GlobalMBDvtxZ = {-60, 60};
-    std::pair<double, double> cut_AnaVtxZ = {-10, 10};
+    std::pair<double, double> cut_AnaVtxZ = {-10, 10}; // note : used by vtxZDist.cpp
 
     int cut_InttBcoFullDIff_next = 61;
 
-    int Semi_inclusive_bin = 7;
+    int Semi_inclusive_bin = 14;
+    int Semi_inclusive_interval = 70; // note : 70, for example
 
     int HighNClus = 500;
 
-    double VtxZEdge_min = -45; // note : cm
-    double VtxZEdge_max = 45; // note : cm
-    int nVtxZBin = 18;
+    double VtxZEdge_min = -45; // note : cm // note : used by vtxZDist.cpp
+    double VtxZEdge_max = 45; // note : cm  // note : used by vtxZDist.cpp
+    int nVtxZBin = 18;                      // note : used by vtxZDist.cpp
 
-    double cut_GoodRecoVtxZ = 1.; // note : cm
+    double cut_GoodRecoVtxZ = 1.; // note : cm // note : used by vtxZDist.cpp
 
     // note : for the column multiplicity correction
+    // note : this is for the ZID
     int nZbin = 100;
     double Zmin = -25;
     double Zmax = 25;
 
     // note : almost no change
-    double EtaEdge_min = -2.7;
-    double EtaEdge_max = 2.7;
-    int nEtaBin = 27;
+    double EtaEdge_min = -2.7; // note : used by RestDist.h
+    double EtaEdge_max = 2.7;  // note : used by RestDist.h
+    int nEtaBin = 27;          // note : used by RestDist.h
 
     // note : below should never be changed
     double typeA_sensor_half_length_incm = 0.8; // note : [cm]

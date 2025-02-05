@@ -30,7 +30,7 @@ PreparedNdEtaEach::PreparedNdEtaEach(
 {
     PrepareInputRootFie();
 
-    if (SelectedMbin >= nCentrality_bin && SelectedMbin != Semi_inclusive_Mbin*10 && SelectedMbin != 100){
+    if (SelectedMbin >= nCentrality_bin && SelectedMbin != Semi_inclusive_interval && SelectedMbin != 100){
         std::cout << "Error : SelectedMbin is out of range" << std::endl;
         std::cout << "SelectedMbin : " << SelectedMbin <<", but : nCentrality_bin: "<< nCentrality_bin << std::endl;
         exit(1);
@@ -581,7 +581,7 @@ void PreparedNdEtaEach::PrepareStacks()
             if (isTypeA == l_typeA){ // note : {isTypeA == 0 -> inclusive, l_typeA should be zero}, {isTypeA == 1 -> typeA, l_typeA should be 1}
                 if  (
                         SelectedMbin == 100 || 
-                        (SelectedMbin == Semi_inclusive_Mbin * 10 && l_Mbin <= Semi_inclusive_Mbin) ||
+                        (SelectedMbin == Semi_inclusive_interval && l_Mbin <= Semi_inclusive_Mbin) ||
                         SelectedMbin == l_Mbin
                     )
                 { // note : inclusive centrality
@@ -647,7 +647,7 @@ void PreparedNdEtaEach::PrepareStacks()
                 hstack1D_TrueEta_map[Form("hstack1D_TrueEta")] -> Add(pair.second);
             }
 
-            else if (SelectedMbin == Semi_inclusive_Mbin * 10){
+            else if (SelectedMbin == Semi_inclusive_interval){
                 if (l_Mbin > Semi_inclusive_Mbin) {continue;}
 
                 pair.second->SetFillColor(ROOT_color_code[hstack1D_TrueEta_map[Form("hstack1D_TrueEta")]->GetNhists() % ROOT_color_code.size()]);
@@ -668,7 +668,7 @@ void PreparedNdEtaEach::PrepareStacks()
         if (pair.first.find("h1D") != std::string::npos && pair.first.find("BestPair") != std::string::npos && isTypeA == l_typeA){
             if (
                     SelectedMbin == 100 ||
-                    (SelectedMbin == Semi_inclusive_Mbin * 10 && l_Mbin <= Semi_inclusive_Mbin) ||
+                    (SelectedMbin == Semi_inclusive_interval && l_Mbin <= Semi_inclusive_Mbin) ||
                     SelectedMbin == l_Mbin
                 ){
                 if (pair.first.find("ClusPhiSize") != std::string::npos){
@@ -723,7 +723,7 @@ void PreparedNdEtaEach::PrepareStacks()
             hstack2D_GoodProtoTracklet_map["hstack2D_GoodProtoTracklet_EtaVtxZ_FineBin"] -> Add(h2D_input_map[Form("h2D_GoodProtoTracklet_EtaVtxZ_Mbin%d_FineBin",Mbin)]);
             hstack2D_GoodProtoTracklet_map["hstack2D_GoodProtoTracklet_EtaVtxZ_rotated"] -> Add(h2D_input_map[Form("h2D_GoodProtoTracklet_EtaVtxZ_Mbin%d_rotated",Mbin)]);
         }
-        else if (isTypeA == 0 && SelectedMbin == Semi_inclusive_Mbin * 10){
+        else if (isTypeA == 0 && SelectedMbin == Semi_inclusive_interval){
             if (Mbin > Semi_inclusive_Mbin) {continue;}
 
             hstack2D_GoodProtoTracklet_map["hstack2D_GoodProtoTracklet_EtaVtxZ"] -> Add(h2D_input_map[Form("h2D_GoodProtoTracklet_EtaVtxZ_Mbin%d",Mbin)]);
@@ -742,7 +742,7 @@ void PreparedNdEtaEach::PrepareStacks()
             hstack2D_GoodProtoTracklet_map["hstack2D_GoodProtoTracklet_EtaVtxZ_FineBin"] -> Add(h2D_input_map[Form("h2D_typeA_GoodProtoTracklet_EtaVtxZ_Mbin%d_FineBin",Mbin)]);
             hstack2D_GoodProtoTracklet_map["hstack2D_GoodProtoTracklet_EtaVtxZ_rotated"] -> Add(h2D_input_map[Form("h2D_typeA_GoodProtoTracklet_EtaVtxZ_Mbin%d_rotated",Mbin)]);
         }
-        else if (isTypeA == 1 && SelectedMbin == Semi_inclusive_Mbin * 10){
+        else if (isTypeA == 1 && SelectedMbin == Semi_inclusive_interval){
             if (Mbin > Semi_inclusive_Mbin) {continue;}
 
             hstack2D_GoodProtoTracklet_map["hstack2D_GoodProtoTracklet_EtaVtxZ"] -> Add(h2D_input_map[Form("h2D_typeA_GoodProtoTracklet_EtaVtxZ_Mbin%d",Mbin)]);
@@ -783,7 +783,7 @@ void PreparedNdEtaEach::PrepareStacks()
                         std::cout<<"wtf_TrueEtaVtxZ_inclusive100: "<<pair.first<<std::endl;
                     }
                 }
-                else if (SelectedMbin == Semi_inclusive_Mbin * 10){
+                else if (SelectedMbin == Semi_inclusive_interval){
                     if (l_Mbin > Semi_inclusive_Mbin) {continue;}
 
                     if (l_finebin == 0){
@@ -793,7 +793,7 @@ void PreparedNdEtaEach::PrepareStacks()
                         hstack2D_TrueEtaVtxZ_map["hstack2D_TrueEtaVtxZ_FineBin"] -> Add(pair.second);
                     }
                     else {
-                        std::cout<<"wtf_TrueEtaVtxZ_inclusive"<<Semi_inclusive_Mbin * 10<<" : "<<pair.first<<std::endl;
+                        std::cout<<"wtf_TrueEtaVtxZ_inclusive"<<Semi_inclusive_interval<<" : "<<pair.first<<std::endl;
                     }
                 }
                 else if (SelectedMbin == l_Mbin){
@@ -825,7 +825,7 @@ void PreparedNdEtaEach::PrepareStacks()
 
         if (
                 SelectedMbin == 100 ||
-                (SelectedMbin == Semi_inclusive_Mbin * 10 && Mbin <= Semi_inclusive_Mbin) ||
+                (SelectedMbin == Semi_inclusive_interval && Mbin <= Semi_inclusive_Mbin) ||
                 SelectedMbin == Mbin
             )
         {
@@ -1496,7 +1496,7 @@ double PreparedNdEtaEach::get_EvtCount(TH2D * hist_in, int centrality_bin_in)
         }
     }
     // todo: 
-    else if (centrality_bin_in == Semi_inclusive_Mbin * 10){
+    else if (centrality_bin_in == Semi_inclusive_interval){
         for (int xi = 1; xi <= hist_in->GetNbinsX(); xi++){ // note : vtxZ bin
 
             if (vtxZ_index_map.find(xi - 1) == vtxZ_index_map.end()){

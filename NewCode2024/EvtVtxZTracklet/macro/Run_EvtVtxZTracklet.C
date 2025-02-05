@@ -12,9 +12,6 @@ void Run_EvtVtxZTracklet(
   
   // todo : modify here
   std::string output_file_name_suffix = "",
-
-  std::pair<double, double> vertexXYIncm = {-0.0217356, 0.223402}, // note : in cm // note : MC
-  // std::pair<double, double> vertexXYIncm = {-0.0230601, 0.223231}, // note : in cm // note : data
   
   bool IsFieldOn = false,
   bool IsDCACutApplied = 1,
@@ -26,7 +23,7 @@ void Run_EvtVtxZTracklet(
   bool PrintRecoDetails = 1,
   bool DrawEvtVtxZ = 1,
 
-  bool RunInttBcoFullDiff = false,
+  bool RunInttBcoFullDiff = true,
   bool RunVtxZReco = 1,
   bool RunTrackletPair = false,
   bool RunTrackletPairRotate = false,
@@ -34,6 +31,11 @@ void Run_EvtVtxZTracklet(
   bool HaveGeoOffsetTag = false
 )
 {
+
+  std::pair<double, double> vertexXYIncm_MC = {-0.0217356, 0.223402}; // note : in cm // note : MC
+  std::pair<double, double> vertexXYIncm_data = {-0.0230601, 0.223231}; // note : in cm // note : data
+
+  std::pair<double, double> vertexXYIncm = (run_num == -1) ? vertexXYIncm_MC : vertexXYIncm_data;
 
   std::cout<<"RunNumber: "<<run_num<<std::endl;
   std::cout<<"ProcessID: "<<process_id<<std::endl;
