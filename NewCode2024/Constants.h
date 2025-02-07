@@ -3,10 +3,12 @@
 
 #include <vector>
 #include <string>
+#include <map>
 
 namespace Constants{
     extern std::vector<double> centrality_edges;
-    extern std::vector<std::string> centrality_text;
+    extern std::map<int, std::string> centrality_text;
+    extern std::map<int, double> centrality_Hist_Ymax;
 
     // note : vtxZQA
     extern std::pair<double, double> cut_vtxZDiff; // note : MBDz - INTTz

@@ -5,10 +5,10 @@ R__LOAD_LIBRARY(../libGetMultiplicityMap.so)
 int Run_GetMultiplicityMap()
 {
     int runnumber = 54280;
-    std::string data_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Jan172025/Run4/EvtVtxZ/ColumnCheck_noAdcCut/completed";
-    std::string data_file_name = "Data_ColumnCheck_BcoFullDiffCut_Mbin70_VtxZ-30to30cm_ClusQAAdc0PhiSize39_00054280_merged.root";
-    std::string MC_directory = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_ananew_20250131/Run4/EvtVtxZ/ColumnCheck_noAdcCut/completed";
-    std::string MC_file_name = "MC_ColumnCheck_Mbin70_VtxZ-30to30cm_ClusQAAdc0PhiSize39_merged.root";
+    std::string data_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Jan172025/Run4/EvtVtxZ/ColumnCheck_50AdcCut/completed";
+    std::string data_file_name = "Data_ColumnCheck_BcoFullDiffCut_Mbin70_VtxZ-30to30cm_ClusQAAdc50PhiSize39_00054280_merged.root";
+    std::string MC_directory = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_ananew_20250131/Run4/EvtVtxZ/ColumnCheck_50AdcCut/completed";
+    std::string MC_file_name = "MC_ColumnCheck_Mbin70_VtxZ-30to30cm_ClusQAAdc50PhiSize39_merged.root";
     std::string output_directory = data_directory + "/MulMap"; // note : NOT AUTO
 
     std::string output_file_name_suffix = "";
@@ -17,7 +17,7 @@ int Run_GetMultiplicityMap()
     std::pair<double, double> VtxZRange = {-30, 30}; // note : cm
     bool IsZClustering = false;
     bool BcoFullDiffCut = true;
-    std::pair<bool, std::pair<double, double>> isClusQA = {true, {0,39}}; // note : {adc, phi size}
+    std::pair<bool, std::pair<double, double>> isClusQA = {true, {50,39}}; // note : {adc, phi size}
 
 
     GetMultiplicityMap * GMM = new GetMultiplicityMap(
