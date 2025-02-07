@@ -428,7 +428,7 @@ void vtxZDist_comp::MakeVtxZCheckPlot()
         {
             make_comparison(
                 {
-                    {Form("Centrality %s", Constants::centrality_text[i].c_str()), (TH1D*)(pair.second[Form("h1D_INTTz_Mbin%d", i)])->Clone(Form("h1D_INTTz_Mbin%d", i))}
+                    {Form("Centrality [%s]%", Constants::centrality_text[i].c_str()), (TH1D*)(pair.second[Form("h1D_INTTz_Mbin%d", i)])->Clone(Form("h1D_INTTz_Mbin%d", i))}
                 },
                 {
                     {"Inclusive70", (TH1D*)(pair.second["h1D_INTTz_Inclusive70"])->Clone("h1D_INTTz_Inclusive70")}
@@ -444,7 +444,7 @@ void vtxZDist_comp::MakeVtxZCheckPlot()
 
             all_Mbin_vtxZ_map.push_back(
                 std::make_pair(
-                    Form("Centrality %s", Constants::centrality_text[i].c_str()),
+                    Form("Centrality [%s]%", Constants::centrality_text[i].c_str()),
                     (TH1D*) pair.second[Form("h1D_INTTz_Mbin%d", i)] -> Clone(Form("h1D_INTTz_Mbin%d", i))
                 )
             );
@@ -474,7 +474,7 @@ void vtxZDist_comp::MakeVtxZCheckPlot()
         {
             make_comparison(
                 {
-                    {Form("Centrality %s", Constants::centrality_text[i].c_str()), (TH1D*)(pair.second[Form("h1D_INTTz_Mbin%d", i)])->Clone(Form("h1D_INTTz_Mbin%d", i))}
+                    {Form("Centrality [%s]%", Constants::centrality_text[i].c_str()), (TH1D*)(pair.second[Form("h1D_INTTz_Mbin%d", i)])->Clone(Form("h1D_INTTz_Mbin%d", i))}
                 },
                 {
                     {"Inclusive70", (TH1D*)(pair.second["h1D_INTTz_Inclusive70"])->Clone("h1D_INTTz_Inclusive70")}
@@ -490,7 +490,7 @@ void vtxZDist_comp::MakeVtxZCheckPlot()
 
             all_Mbin_vtxZ_map.push_back(
                 std::make_pair(
-                    Form("Centrality %s", Constants::centrality_text[i].c_str()),
+                    Form("Centrality [%s]%", Constants::centrality_text[i].c_str()),
                     (TH1D*) pair.second[Form("h1D_INTTz_Mbin%d", i)] -> Clone(Form("h1D_INTTz_Mbin%d", i))
                 )
             );

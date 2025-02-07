@@ -31,6 +31,8 @@ FinalResult::FinalResult(
     file_in_MC_standard = TFile::Open(Form("%s/%s", StandardMC_directory.c_str(), StandardMC_file_name.c_str()));
     h1D_truth_standard = (TH1D*) file_in_MC_standard -> Get(StandardTruth_h1D_name.c_str());
 
+    h1D_MC_closure_standard = (TH1D*) file_in_MC_standard -> Get(StandardData_h1D_name.c_str());
+
     if (
         h1D_data_standard == nullptr ||
         h1D_truth_standard == nullptr || 
@@ -51,6 +53,10 @@ FinalResult::FinalResult(
     SetsPhenixStyle();
     c1 = new TCanvas("c1", "c1", 950, 800);
 
+    // pad1 = new TPad("pad1", "pad1", 0, 0., 1, 0.7);
+    // pad1->Draw();
+    // pad1->cd();
+
     ltx = new TLatex();
     ltx->SetNDC();
     ltx->SetTextSize(0.045);
@@ -64,12 +70,50 @@ FinalResult::FinalResult(
     leg_errors -> SetBorderSize(0);
     leg_errors -> SetTextSize(0.03);
 
-    leg_final = new TLegend(0.45,0.8,0.8,0.85);
+    leg_variation = new TLegend(0.21,0.7,0.41,1);
+    leg_variation -> SetBorderSize(0);
+    leg_variation -> SetTextSize(0.03);
+
+    leg_final = new TLegend(0.45,0.78,0.8,0.87);
     leg_final -> SetBorderSize(0);
     leg_final -> SetTextSize(0.03);
 
+    leg_TruthReco = new TLegend(0.52,0.81,0.72,0.9);
+    leg_TruthReco -> SetBorderSize(0);
+    leg_TruthReco -> SetTextSize(0.025);
+    leg_TruthReco -> SetMargin(0.2);
+
     file_out = new TFile(Form("%s/%s.root", final_output_directory.c_str(), output_folder_name.c_str()), "RECREATE");
+    tree_out = new TTree("tree","max min unc.");
+
+    tree_out -> Branch("UncRange_StatUnc", &UncRange_StatUnc);
+    tree_out -> Branch("UncRange_RunSegment", &UncRange_RunSegment);
+    tree_out -> Branch("UncRange_ClusAdc", &UncRange_ClusAdc);
+    tree_out -> Branch("UncRange_GeoOffset", &UncRange_GeoOffset);
+    tree_out -> Branch("UncRange_DeltaPhi", &UncRange_DeltaPhi);
+    tree_out -> Branch("UncRange_ClusPhiSize", &UncRange_ClusPhiSize);
+    tree_out -> Branch("UncRange_Final", &UncRange_Final);
+
+    gStyle->SetPaintTextFormat("1.3f");
     
+}
+
+void FinalResult::PrepareBaseLineTGraph()
+{
+    gr_dNdEta_baseline = h1D_to_TGraph(h1D_data_standard);
+    gr_dNdEta_baseline -> SetMarkerStyle(20);
+    gr_dNdEta_baseline -> SetMarkerSize(0.8);
+    gr_dNdEta_baseline -> SetMarkerColor(1);
+    gr_dNdEta_baseline -> GetXaxis() -> SetTitle("Pseudorapidity #eta");
+    gr_dNdEta_baseline -> GetYaxis() -> SetTitle("dN_{ch}/d#eta");
+}
+
+void FinalResult::PrepareMCClosureTGraph()
+{
+    gr_MC_closure_standard = h1D_to_TGraph(h1D_MC_closure_standard);
+    gr_MC_closure_standard -> SetMarkerStyle(20);
+    gr_MC_closure_standard -> SetMarkerSize(0.8);
+    gr_MC_closure_standard -> SetMarkerColor(2);
 }
 
 void FinalResult::PrepareOutputFolderName()
@@ -104,19 +148,47 @@ void FinalResult::PrepareStatisticalError()
     h1D_error_statistic -> SetLineWidth(0);
     h1D_error_statistic -> SetLineColorAlpha(1,0);
     h1D_error_statistic -> SetMarkerColor(TColor::GetColor(color_code[0].c_str()));
-    
+
+    UncRange_StatUnc = GetH1DMinMax(h1D_error_statistic);
 }
 
 
-void FinalResult::PrepareRunSegmentError(std::vector<std::string> file_directory_vec_in)
+void FinalResult::PrepareRunSegmentError(std::vector<std::string> file_directory_vec_in, std::vector<std::string> file_title_in, std::string leg_header_in)
 {
     TFile * temp_file_in;
 
-    for (std::string file_dir : file_directory_vec_in)
+    c1 -> Clear();
+    c1 -> cd();
+    pad1 = new TPad("pad1", "pad1", 0, 0., 1, 0.7);
+    pad1 -> Draw();
+    pad1 -> cd();
+
+    // todo : set the range of the graph here
+    gr_dNdEta_baseline -> GetYaxis() -> SetRangeUser(
+        gr_dNdEta_baseline -> GetYaxis() -> GetXmin() * 0.8,
+        gr_dNdEta_baseline -> GetYaxis() -> GetXmax() * 1.2
+    );
+    gr_dNdEta_baseline -> Draw("ap");
+    leg_variation -> AddEntry(gr_dNdEta_baseline, file_title_in.back().c_str(), "p");
+    leg_variation -> SetHeader(leg_header_in.c_str());
+
+    std::vector<TGraph*> gr_variation_vec; gr_variation_vec.clear();
+
+    for (int i = 0; i < file_directory_vec_in.size(); i++)
     {
-        temp_file_in = TFile::Open(file_dir.c_str());
+        temp_file_in = TFile::Open(file_directory_vec_in[i].c_str());
 
         h1D_RunSegmentError_vec.push_back( (TH1D*) temp_file_in -> Get(StandardData_h1D_name.c_str()) );
+
+        gr_variation_vec.push_back( h1D_to_TGraph(h1D_RunSegmentError_vec.back()) );
+        gr_variation_vec.back() -> SetMarkerStyle(marker_code[i]);
+        gr_variation_vec.back() -> SetMarkerSize(0.8);
+        gr_variation_vec.back() -> SetMarkerColor(TColor::GetColor(color_code[i].c_str()));
+        std::cout<<"test, run seg variation: "<<gr_variation_vec.back() -> GetN()<<", "<<gr_variation_vec.back() -> GetPointY(0)<<std::endl;
+        gr_variation_vec.back() -> Draw("p same");
+
+        leg_variation -> AddEntry(gr_variation_vec.back(), file_title_in[i].c_str(), "p");
+
         h1D_RunSegmentError_vec.back() -> Divide(h1D_data_standard);
         h1D_to_AbsRatio(h1D_RunSegmentError_vec.back());
     }
@@ -128,17 +200,48 @@ void FinalResult::PrepareRunSegmentError(std::vector<std::string> file_directory
     h1D_error_Run_segmentation -> SetLineWidth(0);
     h1D_error_Run_segmentation -> SetLineColorAlpha(1,0);
     h1D_error_Run_segmentation -> SetMarkerColor(TColor::GetColor(color_code[1].c_str()));
+
+    UncRange_RunSegment = GetH1DMinMax(h1D_error_Run_segmentation);
+
+    c1 -> cd();
+    leg_variation -> Draw("same");
+    c1 -> Print(Form("%s/RunSegmentationVariation_Mbin%d.pdf", final_output_directory.c_str(), Mbin));
+    c1 -> Clear();
+    leg_variation -> Clear();
 }
 
-void FinalResult::PrepareClusAdcError(std::vector<std::string> file_directory_vec_in)
+void FinalResult::PrepareClusAdcError(std::vector<std::string> file_directory_vec_in, std::vector<std::string> file_title_in, std::string leg_header_in)
 {
     TFile * temp_file_in;
 
-    for (std::string file_dir : file_directory_vec_in)
+    c1 -> Clear();
+    c1 -> cd();
+    pad1 = new TPad("pad1", "pad1", 0, 0., 1, 0.7);
+    pad1 -> Draw();
+    pad1 -> cd();
+
+    gr_dNdEta_baseline -> Draw("ap");
+    leg_variation -> AddEntry(gr_dNdEta_baseline, file_title_in.back().c_str(), "p");
+    leg_variation -> SetHeader(leg_header_in.c_str());
+
+    std::vector<TGraph*> gr_variation_vec; gr_variation_vec.clear();
+
+    for (int i = 0; i < file_directory_vec_in.size(); i++)
     {
-        temp_file_in = TFile::Open(file_dir.c_str());
+        temp_file_in = TFile::Open(file_directory_vec_in[i].c_str());
 
         h1D_ClusAdcError_vec.push_back( (TH1D*) temp_file_in -> Get(StandardData_h1D_name.c_str()) );
+
+
+        gr_variation_vec.push_back( h1D_to_TGraph(h1D_ClusAdcError_vec.back()) );
+        gr_variation_vec.back() -> SetMarkerStyle(marker_code[i]);
+        gr_variation_vec.back() -> SetMarkerSize(0.8);
+        gr_variation_vec.back() -> SetMarkerColor(TColor::GetColor(color_code[i].c_str()));
+        gr_variation_vec.back() -> Draw("p same");
+
+        leg_variation -> AddEntry(gr_variation_vec.back(), file_title_in[i].c_str(), "p");
+
+
         h1D_ClusAdcError_vec.back() -> Divide(h1D_data_standard);
         h1D_to_AbsRatio(h1D_ClusAdcError_vec.back());
     }
@@ -150,6 +253,14 @@ void FinalResult::PrepareClusAdcError(std::vector<std::string> file_directory_ve
     h1D_error_ClusAdc -> SetLineWidth(0);
     h1D_error_ClusAdc -> SetLineColorAlpha(1,0);
     h1D_error_ClusAdc -> SetMarkerColor(TColor::GetColor(color_code[2].c_str()));
+
+    UncRange_ClusAdc = GetH1DMinMax(h1D_error_ClusAdc);
+
+    c1 -> cd();
+    leg_variation -> Draw("same");
+    c1 -> Print(Form("%s/RunClusAdcVariation_Mbin%d.pdf", final_output_directory.c_str(), Mbin));
+    c1 -> Clear();
+    leg_variation -> Clear();
 
 }
 
@@ -182,18 +293,43 @@ void FinalResult::PrepareGeoOffsetError(std::string file_directory_in, std::stri
     h1D_error_GeoOffset -> SetLineWidth(0);
     h1D_error_GeoOffset -> SetLineColorAlpha(1,0);
     h1D_error_GeoOffset -> SetMarkerColor(TColor::GetColor(color_code[3].c_str()));
+
+    UncRange_GeoOffset = GetH1DMinMax(h1D_error_GeoOffset);
 }
 
 
-void FinalResult::PrepareDeltaPhiError(std::vector<std::string> file_directory_vec_in)
+void FinalResult::PrepareDeltaPhiError(std::vector<std::string> file_directory_vec_in, std::vector<std::string> file_title_in, std::string leg_header_in)
 {
     TFile * temp_file_in;
 
-    for (std::string file_dir : file_directory_vec_in)
+    c1 -> Clear();
+    c1 -> cd();
+    pad1 = new TPad("pad1", "pad1", 0, 0., 1, 0.7);
+    pad1 -> Draw();
+    pad1 -> cd();
+
+    gr_dNdEta_baseline -> Draw("ap");
+    leg_variation -> AddEntry(gr_dNdEta_baseline, file_title_in.back().c_str(), "p");
+    leg_variation -> SetHeader(leg_header_in.c_str());
+
+    std::vector<TGraph*> gr_variation_vec; gr_variation_vec.clear();
+
+    for (int i = 0; i < file_directory_vec_in.size(); i++)
     {
-        temp_file_in = TFile::Open(file_dir.c_str());
+        temp_file_in = TFile::Open(file_directory_vec_in[i].c_str());
 
         h1D_DeltaPhiError_vec.push_back( (TH1D*) temp_file_in -> Get(StandardData_h1D_name.c_str()) );
+
+
+        gr_variation_vec.push_back( h1D_to_TGraph(h1D_DeltaPhiError_vec.back()) );
+        gr_variation_vec.back() -> SetMarkerStyle(marker_code[i]);
+        gr_variation_vec.back() -> SetMarkerSize(0.8);
+        gr_variation_vec.back() -> SetMarkerColor(TColor::GetColor(color_code[i].c_str()));
+        gr_variation_vec.back() -> Draw("p same");
+
+        leg_variation -> AddEntry(gr_variation_vec.back(), file_title_in[i].c_str(), "p");
+
+
         h1D_DeltaPhiError_vec.back() -> Divide(h1D_data_standard);
         h1D_to_AbsRatio(h1D_DeltaPhiError_vec.back());
     }
@@ -205,17 +341,49 @@ void FinalResult::PrepareDeltaPhiError(std::vector<std::string> file_directory_v
     h1D_error_DeltaPhi -> SetLineWidth(0);
     h1D_error_DeltaPhi -> SetLineColorAlpha(1,0);
     h1D_error_DeltaPhi -> SetMarkerColor(TColor::GetColor(color_code[4].c_str()));
+
+    UncRange_DeltaPhi = GetH1DMinMax(h1D_error_DeltaPhi);
+
+    c1 -> cd();
+    leg_variation -> Draw("same");
+    c1 -> Print(Form("%s/RunDeltaPhiVariation_Mbin%d.pdf", final_output_directory.c_str(), Mbin));
+    c1 -> Clear();
+    leg_variation -> Clear();
+
 }
 
-void FinalResult::PrepareClusPhiSizeError(std::vector<std::string> file_directory_vec_in)
+void FinalResult::PrepareClusPhiSizeError(std::vector<std::string> file_directory_vec_in, std::vector<std::string> file_title_in, std::string leg_header_in)
 {
     TFile * temp_file_in;
 
-    for (std::string file_dir : file_directory_vec_in)
+    c1 -> Clear();
+    c1 -> cd();
+    pad1 = new TPad("pad1", "pad1", 0, 0., 1, 0.7);
+    pad1 -> Draw();
+    pad1 -> cd();
+
+    gr_dNdEta_baseline -> Draw("ap");
+    leg_variation -> AddEntry(gr_dNdEta_baseline, file_title_in.back().c_str(), "p");
+    leg_variation -> SetHeader(leg_header_in.c_str());
+
+    std::vector<TGraph*> gr_variation_vec; gr_variation_vec.clear();
+
+    for (int i = 0; i < file_directory_vec_in.size(); i++)
     {
-        temp_file_in = TFile::Open(file_dir.c_str());
+        temp_file_in = TFile::Open(file_directory_vec_in[i].c_str());
 
         h1D_ClusPhiSizeError_vec.push_back( (TH1D*) temp_file_in -> Get(StandardData_h1D_name.c_str()) );
+
+
+        gr_variation_vec.push_back( h1D_to_TGraph(h1D_ClusPhiSizeError_vec.back()) );
+        gr_variation_vec.back() -> SetMarkerStyle(marker_code[i]);
+        gr_variation_vec.back() -> SetMarkerSize(0.8);
+        gr_variation_vec.back() -> SetMarkerColor(TColor::GetColor(color_code[i].c_str()));
+        gr_variation_vec.back() -> Draw("p same");
+
+        leg_variation -> AddEntry(gr_variation_vec.back(), file_title_in[i].c_str(), "p");
+
+
         h1D_ClusPhiSizeError_vec.back() -> Divide(h1D_data_standard);
         h1D_to_AbsRatio(h1D_ClusPhiSizeError_vec.back());
     }
@@ -227,6 +395,14 @@ void FinalResult::PrepareClusPhiSizeError(std::vector<std::string> file_director
     h1D_error_ClusPhiSize -> SetLineWidth(0);
     h1D_error_ClusPhiSize -> SetLineColorAlpha(1,0);
     h1D_error_ClusPhiSize -> SetMarkerColor(TColor::GetColor(color_code[5].c_str()));
+
+    UncRange_ClusPhiSize = GetH1DMinMax(h1D_error_ClusPhiSize);
+
+    c1 -> cd();
+    leg_variation -> Draw("same");
+    c1 -> Print(Form("%s/RunClusPhiSizeVariation_Mbin%d.pdf", final_output_directory.c_str(), Mbin));
+    c1 -> Clear();
+    leg_variation -> Clear();
 
 }
 
@@ -370,10 +546,10 @@ void FinalResult::PrepareFinalError()
     // Division : ------------------------------------------------------------------------------------------------------------------------------------
     // h1D_error_Final -> SetMaximum(h1D_error_Final -> GetBinContent(h1D_error_Final -> GetMaximumBin()) * 2.);
     h1D_error_Final -> SetMinimum(0);
-    h1D_error_Final -> SetMaximum(0.11);
+    h1D_error_Final -> SetMaximum(SystUncPlot_Ymax); // todo : the syst unc. Y max
     h1D_error_Final -> SetLineWidth(2);
     h1D_error_Final -> SetLineColor(1);
-    h1D_error_Final -> GetXaxis() -> SetTitle("#eta");
+    h1D_error_Final -> GetXaxis() -> SetTitle("Pseudorapidity #eta");
     h1D_error_Final -> GetYaxis() -> SetTitle("Relative uncertainty");
 
     leg_errors -> AddEntry(h1D_error_Final, "Total Uncertainty", "l");
@@ -382,13 +558,15 @@ void FinalResult::PrepareFinalError()
     if (h1D_error_ClusAdc != nullptr) {leg_errors -> AddEntry(h1D_error_ClusAdc, "Cluster ADC variation", "p");}
     if (h1D_error_GeoOffset != nullptr) {leg_errors -> AddEntry(h1D_error_GeoOffset, "Geo. misalignment variation", "p");}
     if (h1D_error_DeltaPhi != nullptr) {leg_errors -> AddEntry(h1D_error_DeltaPhi, "#Delta#phi cut variation", "p");}
-    if (h1D_error_ClusPhiSize != nullptr) {leg_errors -> AddEntry(h1D_error_ClusPhiSize, "Cluster #phi size variation", "p");}
+    if (h1D_error_ClusPhiSize != nullptr) {leg_errors -> AddEntry(h1D_error_ClusPhiSize, "Cluster#kern[0.4]{#phi} size variation", "p");}
     if (h1D_error_MCMerged != nullptr) {leg_errors -> AddEntry(h1D_error_MCMerged, "MC merge variation", "p");}
 
     file_out -> cd();
     
     c1 -> cd();
     h1D_error_Final -> Draw("hist");
+
+    UncRange_Final = GetH1DMinMax(h1D_error_Final);
 
     if (h1D_error_statistic != nullptr) {h1D_error_statistic -> Draw("p same");}
     if (h1D_error_Run_segmentation != nullptr) {h1D_error_Run_segmentation -> Draw("p same");}
@@ -406,14 +584,14 @@ void FinalResult::PrepareFinalError()
 
     leg_errors -> Draw("same");
 
-    c1 -> Print(Form("%s/SystUnc_Summary.pdf", final_output_directory.c_str()));
+    c1 -> Print(Form("%s/SystUnc_Summary_Mbin%d.pdf", final_output_directory.c_str(), Mbin));
     c1 -> Write("SystUnc_Summary");
 
     c1 -> Clear();
     c1 -> cd();
     if (h1D_error_statistic != nullptr) {
         h1D_error_statistic -> Draw("p");
-        c1 -> Print(Form("%s/SystUnc_Stat.pdf", final_output_directory.c_str()));
+        c1 -> Print(Form("%s/SystUnc_Stat_Mbin%d.pdf", final_output_directory.c_str(), Mbin));
     }
 }
 
@@ -465,15 +643,16 @@ void FinalResult::PrepareFinalResult(double Hist_Y_max)
     }
 
     gE_data_final -> GetYaxis() -> SetRangeUser(0, Hist_Y_max);
-    gE_data_final -> GetXaxis() -> SetTitle("#eta");
+    gE_data_final -> GetXaxis() -> SetTitle("Pseudorapidity #eta");
     gE_data_final -> GetYaxis() -> SetTitle("dN_{ch}/d#eta");
 
     h1D_data_standard -> SetMinimum(0);
     h1D_data_standard -> SetMaximum(Hist_Y_max); // todo: the maximum
-    h1D_data_standard -> GetXaxis() -> SetTitle("#eta");
+    h1D_data_standard -> GetXaxis() -> SetTitle("Pseudorapidity #eta");
     h1D_data_standard -> GetYaxis() -> SetTitle("dN_{ch}/d#eta");
 
-
+    h1D_truth_standard -> GetXaxis() -> SetTitle("Pseudorapidity #eta");
+    h1D_truth_standard -> GetYaxis() -> SetTitle("dN_{ch}/d#eta");
     h1D_truth_standard -> SetMinimum(0);
     h1D_truth_standard -> SetMaximum(Hist_Y_max); // todo: the maximum
     h1D_truth_standard -> SetLineColor(TColor::GetColor("#3288bd"));
@@ -482,6 +661,7 @@ void FinalResult::PrepareFinalResult(double Hist_Y_max)
 
     leg_final -> AddEntry(h1D_data_standard, Final_Data_MC_text.first.c_str(), "fp");
     leg_final -> AddEntry(h1D_truth_standard, Final_Data_MC_text.second.c_str(), "l");
+    leg_final -> AddEntry(gr_MC_closure_standard, "MC closure test", "p");
 
     // Division : ------------------------------------------------------------------------------------------------------------------------------------
     file_out -> cd();
@@ -490,6 +670,7 @@ void FinalResult::PrepareFinalResult(double Hist_Y_max)
     
     // h1D_data_standard -> Draw("E3");
     h1D_truth_standard -> Draw("hist");
+    gr_MC_closure_standard -> Draw("p same");
     gE_data_final -> Draw("E3");
     gE_data_final -> Draw("p same");
     // h1D_data_standard -> Draw("p same");
@@ -505,16 +686,31 @@ void FinalResult::PrepareFinalResult(double Hist_Y_max)
     ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", sPH_label.c_str()));
     leg_final -> Draw("same");
 
-    c1 -> Print(Form("%s/FinalResult.pdf", final_output_directory.c_str()));
+    c1 -> Print(Form("%s/FinalResult_Mbin%d.pdf", final_output_directory.c_str(), Mbin));
     c1 -> Write("FinalResult");
 
 }
 
 void FinalResult::EndRun()
-{
+{   
+    tree_out -> Fill();
+    tree_out -> Write();
+
+    std::cout<<"========================================================================================="<<std::endl;
+    std::cout<<Form("StatUnc,     min: %.4f%, max: %.4f%", 100 * UncRange_StatUnc.first, 100 * UncRange_StatUnc.second)<<std::endl;
+    std::cout<<Form("RunSegment,  min: %.4f%, max: %.4f%", 100 * UncRange_RunSegment.first, 100 * UncRange_RunSegment.second)<<std::endl;
+    std::cout<<Form("ClusAdc,     min: %.4f%, max: %.4f%", 100 * UncRange_ClusAdc.first, 100 * UncRange_ClusAdc.second)<<std::endl;
+    std::cout<<Form("GeoOffset,   min: %.4f%, max: %.4f%", 100 * UncRange_GeoOffset.first, 100 * UncRange_GeoOffset.second)<<std::endl;
+    std::cout<<Form("DeltaPhi,    min: %.4f%, max: %.4f%", 100 * UncRange_DeltaPhi.first, 100 * UncRange_DeltaPhi.second)<<std::endl;
+    std::cout<<Form("ClusPhiSize, min: %.4f%, max: %.4f%", 100 * UncRange_ClusPhiSize.first, 100 * UncRange_ClusPhiSize.second)<<std::endl;
+    std::cout<<Form("Final,       min: %.4f%, max: %.4f%", 100 * UncRange_Final.first, 100 * UncRange_Final.second)<<std::endl;
+    std::cout<<"========================================================================================="<<std::endl;
+
     gE_data_final -> Write("gE_dNdEta_reco");
     h1D_data_standard -> Write("h1D_dNdEta_reco");
     h1D_truth_standard -> Write("h1D_dNdEta_truth");
+    h1D_MC_closure_standard -> Write("h1D_MC_closure");
+    gr_MC_closure_standard -> Write("gr_MC_closure");
     file_out -> Close();
 }
 
@@ -540,4 +736,176 @@ TH1D * FinalResult::h1D_FindLargestOnes(std::string hist_name, std::vector<TH1D*
     }
 
     return h1D_out;
+}
+
+TGraph * FinalResult::h1D_to_TGraph(TH1D * hist_in)
+{
+    TGraph * g_out = new TGraph();
+
+    // todo: there is a eta_range cut 
+    for (int i = 1; i <= hist_in -> GetNbinsX(); i++){
+        
+        double H1DBinCenterX = hist_in -> GetXaxis() -> GetBinCenter(i);
+
+        if (H1DBinCenterX < eta_range.first || H1DBinCenterX > eta_range.second){
+            continue;
+        }
+
+        g_out -> SetPoint(g_out -> GetN(), H1DBinCenterX, hist_in -> GetBinContent(i));
+    }
+
+    return g_out;
+}
+
+void FinalResult::DrawAlphaCorrectionPlots(
+    std::string AlphaCorr_file_directory, 
+    std::vector<std::tuple<double,double,std::string>> additional_text,
+    std::vector<std::tuple<int, std::string, std::string>> legend_text
+)
+{
+    c1 -> cd();
+    TFile * temp_file_in = TFile::Open(AlphaCorr_file_directory.c_str());
+    
+    TH1D * h1D_AlphaCorr = (TH1D*) temp_file_in -> Get(h1D_AlphaCorr_name.c_str());
+    h1D_AlphaCorr -> GetXaxis() -> SetTitle("Pseudorapidity #eta");
+    h1D_AlphaCorr -> GetYaxis() -> SetTitle("Effi. correction (Reco. / Gen.)");
+    h1D_AlphaCorr -> SetMinimum(0);
+    h1D_AlphaCorr -> SetMaximum(1.3);
+    h1D_AlphaCorr -> SetLineWidth(2);
+
+    h1D_AlphaCorr -> SetMarkerSize(1);
+    h1D_AlphaCorr -> Draw("hist TEXT90");
+
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} Simulation"));
+
+    for (auto text : additional_text){
+        double x = std::get<0>(text);
+        double y = std::get<1>(text);
+        std::string text_str = std::get<2>(text);
+
+        draw_text -> DrawLatex(x, y, text_str.c_str());
+    }
+
+    c1 -> Print(Form("%s/h1D_AlphaCorrection_Mbin%d.pdf", final_output_directory.c_str(), Mbin));
+    c1 -> Clear();
+
+
+    // Division : ------------------------------------------------------------------------------------------------------------------------------------
+    TH1D * h1D_truth_hadron_001 = (TH1D*) temp_file_in -> Get(StandardTruth_h1D_name.c_str());
+    TH1D * h1D_recoTracklet_001 = (TH1D*) temp_file_in -> Get(h1D_RecoTracklet_name.c_str());
+
+    h1D_truth_hadron_001  -> SetMarkerColor(std::get<0>(legend_text[0]));
+    h1D_truth_hadron_001    -> SetLineColor(std::get<0>(legend_text[0]));
+    leg_TruthReco -> AddEntry(h1D_truth_hadron_001, std::get<1>(legend_text[0]).c_str(), std::get<2>(legend_text[0]).c_str());
+    h1D_truth_hadron_001 -> SetMinimum(0);
+    h1D_truth_hadron_001 -> SetMaximum(
+        h1D_truth_hadron_001 -> GetBinContent(h1D_truth_hadron_001 -> GetMaximumBin()) * 1.45
+    );
+    h1D_truth_hadron_001 -> GetXaxis() -> SetTitle("Pseudorapidity #eta");
+    h1D_truth_hadron_001 -> GetYaxis() -> SetTitle("Avg. Multiplicity per event");
+    h1D_truth_hadron_001 -> SetLineWidth(2);
+
+    h1D_recoTracklet_001  -> SetMarkerColor(std::get<0>(legend_text[1]));
+    h1D_recoTracklet_001    -> SetLineColor(std::get<0>(legend_text[1]));
+    leg_TruthReco -> AddEntry(h1D_recoTracklet_001, std::get<1>(legend_text[1]).c_str(), std::get<2>(legend_text[1]).c_str());
+    h1D_recoTracklet_001 -> SetLineWidth(2);
+
+    c1 -> cd();
+    h1D_truth_hadron_001 -> Draw("hist");
+    h1D_recoTracklet_001 -> Draw("hist same");
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} Simulation"));
+
+    for (auto text : additional_text){
+        double x = std::get<0>(text);
+        double y = std::get<1>(text);
+        std::string text_str = std::get<2>(text);
+
+        draw_text -> DrawLatex(x, y, text_str.c_str());
+    }
+
+    leg_TruthReco -> Draw("same");
+
+    c1 -> Print(Form("%s/h1D_TruthReco_Mbin%d.pdf", final_output_directory.c_str(), Mbin));
+    c1 -> Clear();
+    leg_TruthReco -> Clear();
+
+    temp_file_in -> Close();
+}
+
+void FinalResult::DrawGoodPair2DFineBinPlot(std::vector<std::tuple<double,double,std::string>> additional_text)
+{
+
+    c1 -> cd();
+    
+    TH2D * h2D_GoodPair = (TH2D*) file_in_data_standard -> Get(h2D_GoodProtoTracklet_EtaVtxZ_FineBin_name.c_str());
+    h2D_GoodPair -> GetXaxis() -> SetTitle("Pair #eta");
+    h2D_GoodPair -> GetYaxis() -> SetTitle("INTT vtxZ [cm]");
+    h2D_GoodPair -> Draw("colz0");
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", sPH_label.c_str()));
+
+    c1 -> Print(Form("%s/GoodPair2DFineBin_Mbin%d.pdf", final_output_directory.c_str(), Mbin));
+    c1 -> Clear();
+}
+
+void FinalResult::DrawRecoTrackletDataMCPlot(
+    std::vector<std::tuple<double,double,std::string>> additional_text,
+    std::vector<std::tuple<int, std::string, std::string>> legend_text
+)
+{
+    TH1D * h1D_recoTracklet_data = (TH1D*) file_in_data_standard -> Get(h1D_RecoTracklet_name.c_str());
+    TH1D * h1D_recoTracklet_MC = (TH1D*) file_in_MC_standard -> Get(h1D_RecoTracklet_name.c_str());
+
+    h1D_recoTracklet_data  -> SetMarkerColor(std::get<0>(legend_text[0]));
+    h1D_recoTracklet_data    -> SetLineColor(std::get<0>(legend_text[0]));
+    leg_TruthReco -> AddEntry(h1D_recoTracklet_data, std::get<1>(legend_text[0]).c_str(), std::get<2>(legend_text[0]).c_str());
+    h1D_recoTracklet_data -> SetMinimum(0);
+    h1D_recoTracklet_data -> SetMaximum(
+        h1D_recoTracklet_data -> GetBinContent(h1D_recoTracklet_data -> GetMaximumBin()) * 1.45
+    );
+    h1D_recoTracklet_data -> GetXaxis() -> SetTitle("Pseudorapidity #eta");
+    h1D_recoTracklet_data -> GetYaxis() -> SetTitle("Avg. Reco. Tracklets per event");
+
+    h1D_recoTracklet_MC  -> SetMarkerColor(std::get<0>(legend_text[1]));
+    h1D_recoTracklet_MC    -> SetLineColor(std::get<0>(legend_text[1]));
+    h1D_recoTracklet_MC    -> SetLineWidth(2);
+    leg_TruthReco -> AddEntry(h1D_recoTracklet_MC, std::get<1>(legend_text[1]).c_str(), std::get<2>(legend_text[1]).c_str());
+
+    c1 -> cd();
+    h1D_recoTracklet_data -> Draw("ep");
+    h1D_recoTracklet_MC -> Draw("hist same");
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", sPH_label.c_str()));
+
+    for (auto text : additional_text){
+        double x = std::get<0>(text);
+        double y = std::get<1>(text);
+        std::string text_str = std::get<2>(text);
+
+        draw_text -> DrawLatex(x, y, text_str.c_str());
+    }
+
+    leg_TruthReco -> Draw("same");
+
+    c1 -> Print(Form("%s/h1D_RecoTrackletDataMC_Mbin%d.pdf", final_output_directory.c_str(), Mbin));
+    c1 -> Clear();
+    leg_TruthReco -> Clear();
+
+}
+
+std::pair<double, double> FinalResult::GetH1DMinMax(TH1D * h1D_in)
+{
+    double min = 99999;
+    double max = -99999;
+
+    for (int i = 1; i <= h1D_in -> GetNbinsX(); i++){
+
+        if (h1D_in->GetXaxis()->GetBinCenter(i) < eta_range.first || h1D_in->GetXaxis()->GetBinCenter(i) > eta_range.second){
+            continue;
+        }
+
+        double content = h1D_in -> GetBinContent(i);
+        if (content < min) {min = content;}
+        if (content > max) {max = content;}
+    }
+
+    return std::make_pair(min, max);
 }
