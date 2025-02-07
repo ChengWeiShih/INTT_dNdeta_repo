@@ -24,12 +24,12 @@ int quick_check_truedNdEta(
     // tree_in -> SetBranchStatus("ClusLayer", 1);
     // tree_in -> SetBranchStatus("ClusEta_INTTz", 1);
 
-    // tree_in -> SetBranchStatus("INTTvtxZ", 1);
-    // tree_in -> SetBranchStatus("INTTvtxZError", 1);
-    // tree_in -> SetBranchStatus("NgroupTrapezoidal", 1);
-    // tree_in -> SetBranchStatus("NgroupCoarse", 1);
-    // tree_in -> SetBranchStatus("TrapezoidalFitWidth", 1);
-    // tree_in -> SetBranchStatus("TrapezoidalFWHM", 1);
+    tree_in -> SetBranchStatus("INTTvtxZ", 1);
+    tree_in -> SetBranchStatus("INTTvtxZError", 1);
+    tree_in -> SetBranchStatus("NgroupTrapezoidal", 1);
+    tree_in -> SetBranchStatus("NgroupCoarse", 1);
+    tree_in -> SetBranchStatus("TrapezoidalFitWidth", 1);
+    tree_in -> SetBranchStatus("TrapezoidalFWHM", 1);
 
     tree_in -> SetBranchStatus("NTruthVtx", 1);
     tree_in -> SetBranchStatus("PrimaryG4P_Pt", 1);
@@ -89,12 +89,12 @@ int quick_check_truedNdEta(
     // tree_in -> SetBranchAddress("ClusLayer", &ClusLayer);
     // tree_in -> SetBranchAddress("ClusEta_INTTz", &ClusEta_INTTz);
 
-    // tree_in -> SetBranchAddress("INTTvtxZ", &INTTvtxZ);
-    // tree_in -> SetBranchAddress("INTTvtxZError", &INTTvtxZError);
-    // tree_in -> SetBranchAddress("NgroupTrapezoidal", &NgroupTrapezoidal);
-    // tree_in -> SetBranchAddress("NgroupCoarse", &NgroupCoarse);
-    // tree_in -> SetBranchAddress("TrapezoidalFitWidth", &TrapezoidalFitWidth);
-    // tree_in -> SetBranchAddress("TrapezoidalFWHM", &TrapezoidalFWHM);
+    tree_in -> SetBranchAddress("INTTvtxZ", &INTTvtxZ);
+    tree_in -> SetBranchAddress("INTTvtxZError", &INTTvtxZError);
+    tree_in -> SetBranchAddress("NgroupTrapezoidal", &NgroupTrapezoidal);
+    tree_in -> SetBranchAddress("NgroupCoarse", &NgroupCoarse);
+    tree_in -> SetBranchAddress("TrapezoidalFitWidth", &TrapezoidalFitWidth);
+    tree_in -> SetBranchAddress("TrapezoidalFWHM", &TrapezoidalFWHM);
 
     tree_in -> SetBranchAddress("NTruthVtx", &NTruthVtx);
     tree_in -> SetBranchAddress("PrimaryG4P_Pt", &PrimaryG4P_Pt);
@@ -112,7 +112,7 @@ int quick_check_truedNdEta(
     int job_index_len = 5;
     job_index.insert(0, job_index_len - job_index.size(), '0');
 
-    std::string output_filename = Form("MBDz_QuickCheck_%s.root", job_index.c_str());
+    std::string output_filename = Form("INTTz_New_QuickCheck_%s.root", job_index.c_str());
 
     system(Form("if [ -f %s/completed/%s ]; then rm %s/completed/%s; fi", output_directory.c_str(), output_filename.c_str(), output_directory.c_str(), output_filename.c_str()));
 
@@ -125,10 +125,12 @@ int quick_check_truedNdEta(
     {
         tree_in -> GetEntry(i);
 
-        if (i % 10 == 0)
-        {
-            std::cout<<"i: "<<i<<std::endl;
-        }    
+        // if (i % 10 == 0)
+        // {
+        //     std::cout<<"i: "<<i<<std::endl;
+        // }    
+
+        int nHadron_count = 0;
 
         // note : for MC
         // if (NTruthVtx != 1) {continue;}
@@ -164,8 +166,14 @@ int quick_check_truedNdEta(
             if (PrimaryG4P_isChargeHadron -> at(true_i) == 1)
             {
                 h1D_NHadronCount -> Fill(PrimaryG4P_Eta -> at(true_i));
+
+                if (fabs(PrimaryG4P_Eta->at(true_i)) < 4){
+                    nHadron_count++;
+                }
             }
         } 
+
+        std::cout<<"eID: "<<i<<", nHadron_count: "<<nHadron_count<<", TruthPV_trig_z: "<<TruthPV_trig_z<<std::endl;
 
         h1D_TrueEvtCount -> Fill(INTTvtxZ);
     }    

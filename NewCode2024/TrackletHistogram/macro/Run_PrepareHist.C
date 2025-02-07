@@ -24,7 +24,7 @@ void Run_PrepareHist(
   std::pair<bool, TH1D*> vtxZReweight = {false, nullptr},
   bool BcoFullDiffCut = true,
   bool INTT_vtxZ_QA = true,
-  std::pair<bool, std::pair<double, double>> isClusQA = {true, {0, 39}}, // note : {adc, phi size}
+  std::pair<bool, std::pair<double, double>> isClusQA = {true, {35, 350}}, // note : {adc, phi size}
 
   bool HaveGeoOffsetTag = false,
   std::pair<bool, int> SetRandomHits = {false, 0},
@@ -37,8 +37,8 @@ void Run_PrepareHist(
   // std::string ColMulMask_map_dir = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Dec042024/completed/Run3/EvtVtxZ/ColumnCheck_NoClusQA/completed/MulMap/completed",
   // std::string ColMulMask_map_file = "MulMap_BcoFullDiffCut_Mbin50_VtxZ-30to30cm_00054280.root"
 
-  std::string ColMulMask_map_dir = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Jan172025/Run4/EvtVtxZ/ColumnCheck_noAdcCut/completed/MulMap/completed",
-  std::string ColMulMask_map_file = "MulMap_BcoFullDiffCut_Mbin70_VtxZ-30to30cm_ClusQAAdc0PhiSize39_00054280.root"
+  std::string ColMulMask_map_dir = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Jan172025/Run4/EvtVtxZ/ColumnCheck_noPhiCut/completed/MulMap/completed",
+  std::string ColMulMask_map_file = "MulMap_BcoFullDiffCut_Mbin70_VtxZ-30to30cm_ClusQAAdc35PhiSize350_00054280.root"
 )
 {
 

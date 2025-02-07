@@ -13,7 +13,7 @@ input_directory    = /sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_an
 job_offset    = 0
 process_shift      = $(Process) + $(job_offset) 
 input_filename     = MC_EvtVtxZProtoTracklet_FieldOff_VtxZReco_$INT(process_shift,%05d).root
-output_directory   = /sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_ananew_20250131/Run4/EvtVtxZ/TrackHist_noAdcCut
+output_directory   = /sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_ananew_20250131/Run4/EvtVtxZ/TrackHist_noPhiCut
 macro_name         = Run_PrepareHist_MC
 
 Output             = $(output_directory)/cw_log/condor_$INT(process_shift,%05d).out
