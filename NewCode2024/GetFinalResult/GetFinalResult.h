@@ -53,6 +53,10 @@ class GetFinalResult{
             std::string output_directory_in
         );
 
+        std::string GetSetResultRangeFolderName() {
+            return SetResultRangeFolderName;
+        }
+
         // note : here are for preparing the reco. dNdEta
         void PrepareBaseLine(
             std::string data_input_directory,
@@ -73,8 +77,9 @@ class GetFinalResult{
         ); // note : two times
         
         void PrepareClusAdcCut(
+            int run_index, // note : 0, 1,
             std::string data_input_directory,
-            std::vector<std::string> data_input_filename,
+            std::string data_input_filename,
             
             std::string MC_input_directory,
             std::string MC1_input_filename,

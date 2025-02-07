@@ -86,28 +86,27 @@ void GetFinalResult::PrepareRunSegment(
 }
 
 void GetFinalResult::PrepareClusAdcCut(
+    int run_index,
     std::string data_input_directory,
-    std::vector<std::string> data_input_filename,
+    std::string data_input_filename,
     
     std::string MC_input_directory,
     std::string MC1_input_filename,
     std::string MC2_input_filename
 ) // todo : can be twice
 {
-    for (int i = 0; i < data_input_filename.size(); i++){
-        PreparedNdEtaPlain(
-            i,
-            true,
-            true,
-            Folder_ClusAdcCut,
-            data_input_directory,
-            data_input_filename[i],
+    PreparedNdEtaPlain(
+        run_index,
+        true,
+        true,
+        Folder_ClusAdcCut,
+        data_input_directory,
+        data_input_filename,
 
-            MC_input_directory,
-            MC1_input_filename,
-            MC2_input_filename
-        );
-    }
+        MC_input_directory,
+        MC1_input_filename,
+        MC2_input_filename
+    );
 }
 
 void GetFinalResult::PrepareClusPhiCut(
