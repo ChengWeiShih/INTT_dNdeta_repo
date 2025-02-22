@@ -134,6 +134,82 @@ void GetFinalResult::PrepareClusPhiCut(
     }
 }
 
+void GetFinalResult::PrepareAMPT(
+    std::string data_input_directory,
+    std::vector<std::string> data_input_filename,
+    
+    std::string MC_input_directory,
+    std::string MC1_input_filename,
+    std::string MC2_input_filename  
+)
+{
+    for (int i = 0; i < data_input_filename.size(); i++){
+        PreparedNdEtaPlain(
+            i,
+            true,
+            true,
+            Folder_AMPT,
+            data_input_directory,
+            data_input_filename[i],
+
+            MC_input_directory,
+            MC1_input_filename,
+            MC2_input_filename
+        );
+    }
+}
+
+void GetFinalResult::PrepareEPOS(
+    std::string data_input_directory,
+    std::vector<std::string> data_input_filename,
+    
+    std::string MC_input_directory,
+    std::string MC1_input_filename,
+    std::string MC2_input_filename  
+)
+{
+    for (int i = 0; i < data_input_filename.size(); i++){
+        PreparedNdEtaPlain(
+            i,
+            true,
+            true,
+            Folder_EPOS,
+            data_input_directory,
+            data_input_filename[i],
+
+            MC_input_directory,
+            MC1_input_filename,
+            MC2_input_filename
+        );
+    }
+}
+
+void GetFinalResult::PrepareHIJING_strange(
+    std::string data_input_directory,
+    std::vector<std::string> data_input_filename,
+    
+    std::string MC_input_directory,
+    std::string MC1_input_filename,
+    std::string MC2_input_filename  
+)
+{
+    for (int i = 0; i < data_input_filename.size(); i++){
+        PreparedNdEtaPlain(
+            i,
+            true,
+            true,
+            Folder_HIJING_strange,
+            data_input_directory,
+            data_input_filename[i],
+
+            MC_input_directory,
+            MC1_input_filename,
+            MC2_input_filename
+        );
+    }
+}
+
+
 void GetFinalResult::PrepareDeltaPhiCut(
     std::vector<double> cut_SigDeltaPhi,    
     std::string data_input_directory,
@@ -178,7 +254,7 @@ std::vector<std::string> GetFinalResult::PreparedNdEtaPlain(
     std::string MC1_input_filename,
     std::string MC2_input_filename,
 
-    std::pair<bool, std::pair<double,double>> cut_DeltaPhi_Signal_range
+    std::pair<bool, std::pair<double,double>> cut_DeltaPhi_Signal_range // note : default : {false, {-0.021, 0.021}}
 )
 {
     std::string Plain_output_directory = SemiMotherFolderName + "/" + sub_folder_name + "/Run_" + std::to_string(index);

@@ -9,7 +9,7 @@ job_lease_duration = 86400
 
 job_offset    = 0
 process_shift      = $(Process) + $(job_offset) 
-output_directory   = /sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Jan172025/Run4/EvtVtxZ/FinalResult
+output_directory   = /sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Feb102025/Run6_EvtZFitWidthChange/EvtVtxZ/FinalResult_10cm_Pol2BkgFit
 macro_name         = Run_54280
 
 Output             = $(output_directory)/cw_log/condor_$INT(process_shift,%05d).out

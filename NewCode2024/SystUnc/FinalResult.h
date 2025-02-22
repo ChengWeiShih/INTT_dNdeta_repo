@@ -28,6 +28,7 @@
 
 #include <TColor.h>
 #include <TLegend.h>
+#include <TLine.h>
 
 #include <TObjArray.h>
 
@@ -152,12 +153,14 @@ class FinalResult{
 
         // note : the TGraph
         TGraph * gr_dNdEta_baseline;
+        TGraph * gr_recoTracklet_baseline;
 
         // note : for the final results 
         std::pair<double, double> eta_range = {-1.9, 1.9}; // todo : the default eta range
         void PrepareOutputFolderName();
         TH1D * h1D_FindLargestOnes(std::string hist_name, std::vector<TH1D*> h1D_vec_in);
         TGraph * h1D_to_TGraph(TH1D * hist_in);
+        TGraph * GetRatioGr(TGraph * gr_numerator, TGraph * gr_denominator);
         std::string output_folder_name;
         TFile * file_out;
         TTree * tree_out;
@@ -172,12 +175,15 @@ class FinalResult{
 
         TCanvas * c1;
         TPad * pad1;
+        TPad * pad2; // note : for ratio
+        TLine * line;
 
         TLatex * ltx;
         TLatex * draw_text;
         TLegend * leg_errors;
         TLegend * leg_final;
         TLegend * leg_variation;
+        TLegend * leg_variation_recoTracklet;
         TLegend * leg_TruthReco;
 
         double SystUncPlot_Ymax = 0.11;
@@ -193,10 +199,10 @@ class FinalResult{
 
         const std::vector<std::string> color_code = {
             "#9e0142",
-            "#fee08b",
             "#66c2a5",
             "#f46d43",
             "#3288bd",
+            "#fee08b",
             "#5e4fa2",
             "#000000",
             

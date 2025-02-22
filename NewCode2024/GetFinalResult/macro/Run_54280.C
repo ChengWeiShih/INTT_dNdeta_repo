@@ -17,7 +17,7 @@ int Run_54280(int condor_index)
 
     std::string output_file_name_suffix = "";
 
-    std::string output_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Jan172025/Run4/EvtVtxZ/FinalResult";
+    std::string output_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Feb102025/Run6_EvtZFitWidthChange/EvtVtxZ/FinalResult_10cm_Pol2BkgFit";
 
     GetFinalResult * GFR = new GetFinalResult(
         runnumber,
@@ -32,47 +32,48 @@ int Run_54280(int condor_index)
         output_directory
     );
 
-    std::string data_input_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Jan172025/Run4/EvtVtxZ";
-    std::string MC_input_directory = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_ananew_20250131/Run4/EvtVtxZ";
+    std::string data_input_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Feb102025/Run6_EvtZFitWidthChange/EvtVtxZ";
+    std::string MC_input_directory = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_ananew_20250131/Run6_EvtZFitWidthChange/EvtVtxZ";
 
     std::string SetResultRangeFolderName = GFR -> GetSetResultRangeFolderName();
 
     system(Form("if [ -d %s/completed/%s ]; then rm -r %s/completed/%s; fi;", output_directory.c_str(), SetResultRangeFolderName.c_str(), output_directory.c_str(), SetResultRangeFolderName.c_str()));
 
-    std::string baseline_subfolder = "TrackHist/completed";
+    std::string baseline_subfolder = "TrackHist/baseline/completed";
     // note : here are for preparing the reco. dNdEta
     GFR -> PrepareBaseLine(
         data_input_directory + "/" + baseline_subfolder,
-        "Data_TrackHist_BcoFullDiffCut_VtxZQA_ClusQAAdc35PhiSize39_ColMulMask_00054280_merged.root",
+        "Data_TrackHist_BcoFullDiffCut_VtxZQA_ClusQAAdc35PhiSize40_ColMulMask_00054280_merged_merged_001.root",
         
         MC_input_directory + "/" + baseline_subfolder,
-        "MC_TrackHist_vtxZReweight_VtxZQA_ClusQAAdc35PhiSize39_ColMulMask_merged_001.root",
-        "MC_TrackHist_vtxZReweight_VtxZQA_ClusQAAdc35PhiSize39_ColMulMask_merged_002.root"
+        "MC_TrackHist_vtxZReweight_VtxZQA_ClusQAAdc35PhiSize40_ColMulMask_merged_001.root",
+        "MC_TrackHist_vtxZReweight_VtxZQA_ClusQAAdc35PhiSize40_ColMulMask_merged_002.root"
     );
 
 
-    std::string runseg_subfolder = "merged_files_Data_TrackHist_BcoFullDiffCut_VtxZQA_ClusQAAdc35PhiSize39_ColMulMask_00054280_"; 
+    std::string runseg_subfolder = ""; 
     GFR -> PrepareRunSegment(
-        data_input_directory + "/" + baseline_subfolder + "/" + runseg_subfolder,
+        // data_input_directory + "/" + baseline_subfolder + "/" + runseg_subfolder,
+        data_input_directory + "/" + baseline_subfolder,
         {
-            "Data_TrackHist_BcoFullDiffCut_VtxZQA_ClusQAAdc35PhiSize39_ColMulMask_00054280_merged_001.root",
-            "Data_TrackHist_BcoFullDiffCut_VtxZQA_ClusQAAdc35PhiSize39_ColMulMask_00054280_merged_002.root"
+            "Data_TrackHist_BcoFullDiffCut_VtxZQA_ClusQAAdc35PhiSize40_ColMulMask_00054280_merged_merged_002.root"
+            // "Data_TrackHist_BcoFullDiffCut_VtxZQA_ClusQAAdc35PhiSize40_ColMulMask_00054280_merged_002.root"
         },
         
         MC_input_directory + "/" + baseline_subfolder,
-        "MC_TrackHist_vtxZReweight_VtxZQA_ClusQAAdc35PhiSize39_ColMulMask_merged_001.root",
-        "MC_TrackHist_vtxZReweight_VtxZQA_ClusQAAdc35PhiSize39_ColMulMask_merged_002.root"
+        "MC_TrackHist_vtxZReweight_VtxZQA_ClusQAAdc35PhiSize40_ColMulMask_merged_001.root",
+        "MC_TrackHist_vtxZReweight_VtxZQA_ClusQAAdc35PhiSize40_ColMulMask_merged_002.root"
     ); // note : two times
 
 
     GFR -> PrepareDeltaPhiCut(
-        {0.018, 0.024},    
+        {0.018, 0.024, 0.030, 0.040, 0.050, 0.060, 0.070},    
         data_input_directory + "/" + baseline_subfolder,
-        "Data_TrackHist_BcoFullDiffCut_VtxZQA_ClusQAAdc35PhiSize39_ColMulMask_00054280_merged.root",
+        "Data_TrackHist_BcoFullDiffCut_VtxZQA_ClusQAAdc35PhiSize40_ColMulMask_00054280_merged_merged_001.root",
         
         MC_input_directory + "/" + baseline_subfolder,
-        "MC_TrackHist_vtxZReweight_VtxZQA_ClusQAAdc35PhiSize39_ColMulMask_merged_001.root",
-        "MC_TrackHist_vtxZReweight_VtxZQA_ClusQAAdc35PhiSize39_ColMulMask_merged_002.root"
+        "MC_TrackHist_vtxZReweight_VtxZQA_ClusQAAdc35PhiSize40_ColMulMask_merged_001.root",
+        "MC_TrackHist_vtxZReweight_VtxZQA_ClusQAAdc35PhiSize40_ColMulMask_merged_002.root"
     ); // note : two times 
 
 
@@ -89,34 +90,34 @@ int Run_54280(int condor_index)
     // );
 
 
-    std::string NoClusAdcCut_subfolder = "TrackHist_noAdcCut/completed";
+    std::string NoClusAdcCut_subfolder = "TrackHist/noAdcCut/completed";
     GFR -> PrepareClusAdcCut(
         0,
         data_input_directory + "/" + NoClusAdcCut_subfolder,
-        "Data_TrackHist_BcoFullDiffCut_VtxZQA_ClusQAAdc0PhiSize39_ColMulMask_00054280_merged.root",
+        "Data_TrackHist_BcoFullDiffCut_VtxZQA_ClusQAAdc0PhiSize40_ColMulMask_00054280_merged_merged_001.root",
 
         MC_input_directory + "/" + NoClusAdcCut_subfolder,
-        "MC_TrackHist_vtxZReweight_VtxZQA_ClusQAAdc0PhiSize39_ColMulMask_merged_001.root",
-        "MC_TrackHist_vtxZReweight_VtxZQA_ClusQAAdc0PhiSize39_ColMulMask_merged_002.root"
+        "MC_TrackHist_vtxZReweight_VtxZQA_ClusQAAdc0PhiSize40_ColMulMask_merged_001.root",
+        "MC_TrackHist_vtxZReweight_VtxZQA_ClusQAAdc0PhiSize40_ColMulMask_merged_002.root"
     ); 
-    std::string ClusAdcCut50_subfolder = "TrackHist_50AdcCut/completed";
+    std::string ClusAdcCut50_subfolder = "TrackHist/50AdcCut/completed";
     GFR -> PrepareClusAdcCut(
         1,
         data_input_directory + "/" + ClusAdcCut50_subfolder,
-        "Data_TrackHist_BcoFullDiffCut_VtxZQA_ClusQAAdc50PhiSize39_ColMulMask_00054280_merged.root",
+        "Data_TrackHist_BcoFullDiffCut_VtxZQA_ClusQAAdc50PhiSize40_ColMulMask_00054280_merged_merged_001.root",
 
         MC_input_directory + "/" + ClusAdcCut50_subfolder,
-        "MC_TrackHist_vtxZReweight_VtxZQA_ClusQAAdc50PhiSize39_ColMulMask_merged_001.root",
-        "MC_TrackHist_vtxZReweight_VtxZQA_ClusQAAdc50PhiSize39_ColMulMask_merged_002.root"
+        "MC_TrackHist_vtxZReweight_VtxZQA_ClusQAAdc50PhiSize40_ColMulMask_merged_001.root",
+        "MC_TrackHist_vtxZReweight_VtxZQA_ClusQAAdc50PhiSize40_ColMulMask_merged_002.root"
     ); 
 
     
 
-    std::string ClusPhiCut_subfolder = "TrackHist_noPhiCut/completed";
+    std::string ClusPhiCut_subfolder = "TrackHist/noPhiCut/completed";
     GFR -> PrepareClusPhiCut(
         data_input_directory + "/" + ClusPhiCut_subfolder,
         {
-            "Data_TrackHist_BcoFullDiffCut_VtxZQA_ClusQAAdc35PhiSize350_ColMulMask_00054280_merged.root"
+            "Data_TrackHist_BcoFullDiffCut_VtxZQA_ClusQAAdc35PhiSize350_ColMulMask_00054280_merged_merged_001.root"
         },
 
         MC_input_directory + "/" + ClusPhiCut_subfolder,

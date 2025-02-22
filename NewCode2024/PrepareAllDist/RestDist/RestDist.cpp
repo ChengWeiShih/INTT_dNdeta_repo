@@ -352,6 +352,13 @@ void RestDist::PrepareHist()
         )
     );
 
+    h1D_map.insert(
+        std::make_pair(
+            "h1D_confirm_MBDvtxZ_Inclusive70",
+            new TH1D("h1D_confirm_MBDvtxZ_Inclusive70","h1D_confirm_MBDvtxZ_Inclusive70;MBD vtx Z [cm];Entries (/0.6)",60,-60,60)
+        )
+    );
+
     for (auto &hist : h1D_map)
     {
         std::string YTitle = hist.second -> GetYaxis() -> GetTitle();
@@ -540,13 +547,13 @@ void RestDist::PrepareEvent()
         if (runnumber != -1 && MBDNSg2 != 1) {continue;} // todo: assume MC no trigger
 
         // note : for MC
-        if (runnumber == -1 && NTruthVtx != 1) {continue;}
+        // if (runnumber == -1 && NTruthVtx != 1) {continue;}
 
         // note : both data and MC
         if (is_min_bias != 1) {continue;}
         if (MBD_z_vtx != MBD_z_vtx) {continue;}
         if (MBD_centrality != MBD_centrality) {continue;}
-        if (MBD_centrality < 0 || MBD_centrality > 1) {continue;}
+        if (MBD_centrality < 0 || MBD_centrality > 100) {continue;}
         if (INTTvtxZ != INTTvtxZ) {continue;}
         if (MBD_z_vtx < cut_GlobalMBDvtxZ.first || MBD_z_vtx > cut_GlobalMBDvtxZ.second) {continue;} // todo: the hard cut 60 cm 
 
@@ -593,6 +600,7 @@ void RestDist::PrepareEvent()
 
         if (Mbin <= Semi_inclusive_bin){
             h1D_map["h1D_confirm_INTTvtxZ_Inclusive70"] -> Fill(INTTvtxZ, INTTvtxZWeighting);
+            h1D_map["h1D_confirm_MBDvtxZ_Inclusive70"] -> Fill(MBD_z_vtx, INTTvtxZWeighting);
         }
 
         int total_NClus = NClus_inner_typeA + NClus_inner_typeB + NClus_outer_typeA + NClus_outer_typeB;

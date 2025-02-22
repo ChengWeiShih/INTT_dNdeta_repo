@@ -26,7 +26,7 @@ vector<string> read_list(string folder_direction, string MC_list_name)
 
 float SystUncRange()
 {
-    std::string file_list_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Jan172025/Run4/EvtVtxZ/FinalResult/completed";
+    std::string file_list_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Feb102025/Run5/EvtVtxZ/FinalResult/completed";
     std::string file_list_name = "file_list.txt";
 
     std::vector<std::string> file_list = read_list(file_list_directory, file_list_name);

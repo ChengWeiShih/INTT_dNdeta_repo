@@ -13,7 +13,8 @@ int Run_Final_new(int Mbin = 70)
     std::string sPH_label = "Internal";
     std::string Collision_str = "Au+Au #sqrt{s_{NN}} = 200 GeV";
 
-    std::string mother_folder = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Jan172025/Run4/EvtVtxZ/FinalResult/completed";
+    // std::string mother_folder = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Jan172025/Run4/EvtVtxZ/FinalResult_FitPol0Bkg_MoreDeltaPhi/completed";
+    std::string mother_folder = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Feb102025/Run6_EvtZFitWidthChange/EvtVtxZ/FinalResult_10cm_Pol2BkgFit/completed";
     std::string range_folder = Form("vtxZ_%.0f_%.0fcm_MBin%d",vtxZ_range.first, vtxZ_range.second, Mbin);
 
     std::string Centrality_str = Constants::centrality_text[Mbin];
@@ -70,13 +71,13 @@ int Run_Final_new(int Mbin = 70)
     std::string RunSegMother_directory = mother_folder + "/" + range_folder + "/Folder_RunSegment"; 
     final -> PrepareRunSegmentError(
         {
-            RunSegMother_directory + Form("/Run_0/completed/%s",StandardData_file_name.c_str()),
-            RunSegMother_directory + Form("/Run_1/completed/%s",StandardData_file_name.c_str())
+            RunSegMother_directory + Form("/Run_0/completed/%s",StandardData_file_name.c_str())
+            // RunSegMother_directory + Form("/Run_1/completed/%s",StandardData_file_name.c_str())
         },
         {
-            "Segment1 (First 1.5M)",
-            "Segment2 (Second 1.5M)",
-            "Baseline (Full statistics)"
+            "Segment1 (Second 4.39M)",
+            // "Segment2 (Second 4M)",
+            "Baseline (First 4.39M)"
         },
         Form("Run segment variation, Centrality [%s]%%, VtxZ [%.0f, %.0f] cm", Centrality_str.c_str(), vtxZ_range.first, vtxZ_range.second)
     ); // note : run1, run2
@@ -85,12 +86,12 @@ int Run_Final_new(int Mbin = 70)
     std::string ClusAdcMother_directory = mother_folder + "/" + range_folder + "/Folder_ClusAdcCut";
     final -> PrepareClusAdcError(
         {
-            ClusAdcMother_directory + Form("/Run_0/completed/%s",StandardData_file_name.c_str()),
-            ClusAdcMother_directory + Form("/Run_1/completed/%s",StandardData_file_name.c_str())
+            ClusAdcMother_directory + Form("/Run_0/completed/%s",StandardData_file_name.c_str()) //,
+            // ClusAdcMother_directory + Form("/Run_1/completed/%s",StandardData_file_name.c_str())
         },
         {
             "w.o Cluster ADC cut",
-            "Cluster ADC > 50",
+            // "Cluster ADC > 50",
             "Baseline (Cluster ADC > 35)"
         },
         Form("Cluster ADC variation, Centrality [%s]%%, VtxZ [%.0f, %.0f] cm", Centrality_str.c_str(), vtxZ_range.first, vtxZ_range.second)
@@ -98,7 +99,7 @@ int Run_Final_new(int Mbin = 70)
     
     // Division : -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     final -> PrepareGeoOffsetError(
-        "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_Ntuple_HIJING_ana443_20241102/GeoOffset_v1/completed/merged_result/FromdNdEta.root",
+        "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_Ntuple_HIJING_ana443_20241102/GeoOffset_v1/completed/merged_result/FromdNdEta_New.root",
         StandardData_directory + "/" + Form("MC_PreparedNdEtaEach_AllSensor_VtxZ%.0f_Mbin%d_00001_dNdEta.root", vtxZ_range.second, Mbin) // note : for the alpha correction
     );
 
@@ -107,12 +108,16 @@ int Run_Final_new(int Mbin = 70)
     final -> PrepareDeltaPhiError(
         {
             DeltaPhiMother_directory + Form("/Run_0/completed/%s",StandardData_file_name.c_str()),
-            DeltaPhiMother_directory + Form("/Run_1/completed/%s",StandardData_file_name.c_str())
+            DeltaPhiMother_directory + Form("/Run_1/completed/%s",StandardData_file_name.c_str()),
+            DeltaPhiMother_directory + Form("/Run_2/completed/%s",StandardData_file_name.c_str()),
+            DeltaPhiMother_directory + Form("/Run_6/completed/%s",StandardData_file_name.c_str())
         },
         {
-            "#Delta#phi < 0.018",
-            "#Delta#phi < 0.024",
-            "Baseline (#Delta#phi < 0.021)"
+            "|#Delta#phi| < 0.018",
+            "|#Delta#phi| < 0.024",
+            "|#Delta#phi| < 0.030",
+            "|#Delta#phi| < 0.070",
+            "Baseline (|#Delta#phi| < 0.021)"
         },
         Form("#Delta#phi variation, Centrality [%s]%%, VtxZ [%.0f, %.0f] cm", Centrality_str.c_str(), vtxZ_range.first, vtxZ_range.second)
 

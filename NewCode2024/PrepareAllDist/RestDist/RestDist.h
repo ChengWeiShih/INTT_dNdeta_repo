@@ -207,11 +207,11 @@ class RestDist{
         std::vector<double> centrality_edges = Constants::centrality_edges;
         int nCentrality_bin;
 
-        int nVtxZ_bin = 60;
-        std::pair<double, double> vtxZ_range = {-60, 60};
+        // int nVtxZ_bin = 60;
+        // std::pair<double, double> vtxZ_range = {-60, 60};
 
-        int nVtxZ_bin_narrow = 20;
-        std::pair<double, double> vtxZ_range_narrow = {-20, 20};
+        // int nVtxZ_bin_narrow = 20;
+        // std::pair<double, double> vtxZ_range_narrow = {-20, 20};
 
         // note : for deta_phi
         double DeltaPhiEdge_min = -0.07; // note : rad ~ -4 degree

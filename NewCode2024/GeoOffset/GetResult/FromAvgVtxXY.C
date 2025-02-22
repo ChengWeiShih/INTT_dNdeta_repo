@@ -33,12 +33,12 @@ vector<string> read_list(string folder_direction, string MC_list_name)
 int FromAvgVtxXY()
 {
 
-    std::string input_directory = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_Ntuple_HIJING_ana443_20241102/GeoOffset_v1/completed";
+    std::string input_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_ananew_20250131/GeoOffset_v1/completed";
     std::string input_foldername_NoIndex = "Run_00"; // note : Run_00XXX
     std::string filename_NoIndex = "MC_AvgVtxXY_GeoOffset_test1";
     std::string label_text = "Simulation";
 
-    std::pair<double,double> ideal_recoXY = {-0.0214921, 0.223299};
+    std::pair<double,double> ideal_recoXY = {-0.0217356, 0.223402};
 
     double frame_shift_forX = ideal_recoXY.first; // note : cm
     double frame_shift_forY = ideal_recoXY.second; // note : cm
@@ -195,6 +195,24 @@ int FromAvgVtxXY()
     ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", label_text.c_str()));
     c1 -> Print(Form("%s/h2D_AvgXY_GeoOffset.pdf", output_directory.c_str()));
     c1 -> Clear();
+
+
+    c1 -> cd();
+    h1D_GeoVaryX -> Draw("hist");
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", label_text.c_str()));
+    c1 -> Print(Form("%s/h1D_GeoVaryX.pdf", output_directory.c_str()));
+    c1 -> Clear();
+
+    h1D_GeoVaryY -> Draw("hist");
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", label_text.c_str()));
+    c1 -> Print(Form("%s/h1D_GeoVaryY.pdf", output_directory.c_str()));
+    c1 -> Clear();
+
+    h1D_GeoVaryZ -> Draw("hist");
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", label_text.c_str()));
+    c1 -> Print(Form("%s/h1D_GeoVaryZ.pdf", output_directory.c_str()));
+    c1 -> Clear();
+
     
 
     file_out -> Close();

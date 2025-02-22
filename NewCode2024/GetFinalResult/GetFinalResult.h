@@ -105,17 +105,44 @@ class GetFinalResult{
             std::string MC2_input_filename
         ); // note : two times 
 
-        // note : here are for preparing the systematic uncertainty
-        void PrepareStat_Unc();
-        void PrepareGeoMisalignment_Unc();
+        void PrepareAMPT(
+            std::string data_input_directory,
+            std::vector<std::string> data_input_filename,
+            
+            std::string MC_input_directory,
+            std::string MC1_input_filename,
+            std::string MC2_input_filename  
+        );
 
-        void PrepareRunSegment_Unc();
-        void PrepareClusAdcCut_Unc();
-        void PrepareClusPhiCut_Unc();
-        void PrepareDeltaPhiCut_Unc();
+        void PrepareEPOS(
+            std::string data_input_directory,
+            std::vector<std::string> data_input_filename,
+            
+            std::string MC_input_directory,
+            std::string MC1_input_filename,
+            std::string MC2_input_filename  
+        );
 
-        // note : here are for preparing the final result
-        void PrepareFinalResult();
+        void PrepareHIJING_strange(
+            std::string data_input_directory,
+            std::vector<std::string> data_input_filename,
+            
+            std::string MC_input_directory,
+            std::string MC1_input_filename,
+            std::string MC2_input_filename  
+        );
+
+        // // note : here are for preparing the systematic uncertainty
+        // void PrepareStat_Unc();
+        // void PrepareGeoMisalignment_Unc();
+
+        // void PrepareRunSegment_Unc();
+        // void PrepareClusAdcCut_Unc();
+        // void PrepareClusPhiCut_Unc();
+        // void PrepareDeltaPhiCut_Unc();
+
+        // // note : here are for preparing the final result
+        // void PrepareFinalResult();
 
     protected:
         // Division : -For constructor-----------------------------------------------------------
@@ -137,6 +164,10 @@ class GetFinalResult{
         std::string Folder_ClusAdcCut = "Folder_ClusAdcCut";
         std::string Folder_ClusPhiCut = "Folder_ClusPhiCut";
         std::string Folder_DeltaPhiCut = "Folder_DeltaPhiCut";
+
+        std::string Folder_AMPT = "Folder_AMPT";
+        std::string Folder_EPOS = "Folder_EPOS";
+        std::string Folder_HIJING_strange = "Folder_HIJING_strange";
 
         std::string BaseLine_AlphaCorr_directory;
         std::string BaseLine_dNdEta_directory;

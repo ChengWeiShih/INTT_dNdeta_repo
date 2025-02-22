@@ -176,7 +176,7 @@ void vtxZDist_comp::PrepareInputFiles()
                 data_h1D_map_map[pair.first][hist_name] -> SetMarkerStyle(20);
                 data_h1D_map_map[pair.first][hist_name] -> SetMarkerSize(0.8);
                 data_h1D_map_map[pair.first][hist_name] -> Sumw2(true);
-                data_h1D_map_map[pair.first][hist_name] -> Scale(1.0/data_h1D_map_map[pair.first][hist_name]->Integral(-1,-1));
+                data_h1D_map_map[pair.first][hist_name] -> Scale(1.0/data_h1D_map_map[pair.first][hist_name]->Integral());
 
                 std::string Yaxis_title = data_h1D_map_map[pair.first][hist_name] -> GetYaxis() -> GetTitle();
                 Yaxis_title += "(A.U.)";
@@ -240,7 +240,7 @@ void vtxZDist_comp::PrepareInputFiles()
                 MC_h1D_map_map[pair.first][hist_name] -> SetMarkerColor(TColor::GetColor( color_code[MC_h1D_map_map.size() - 1 + data_h1D_map_map.size()].c_str() ));
                 MC_h1D_map_map[pair.first][hist_name] -> SetMarkerStyle(20);
                 MC_h1D_map_map[pair.first][hist_name] -> Sumw2(true);
-                MC_h1D_map_map[pair.first][hist_name] -> Scale(1.0/MC_h1D_map_map[pair.first][hist_name]->Integral(-1,-1));
+                MC_h1D_map_map[pair.first][hist_name] -> Scale(1.0/MC_h1D_map_map[pair.first][hist_name]->Integral());
 
                 std::string Yaxis_title = MC_h1D_map_map[pair.first][hist_name] -> GetYaxis() -> GetTitle();
                 Yaxis_title += "(A.U.)";
@@ -428,7 +428,7 @@ void vtxZDist_comp::MakeVtxZCheckPlot()
         {
             make_comparison(
                 {
-                    {Form("Centrality [%s]%", Constants::centrality_text[i].c_str()), (TH1D*)(pair.second[Form("h1D_INTTz_Mbin%d", i)])->Clone(Form("h1D_INTTz_Mbin%d", i))}
+                    {Form("Centrality [%s]%%", Constants::centrality_text[i].c_str()), (TH1D*)(pair.second[Form("h1D_INTTz_Mbin%d", i)])->Clone(Form("h1D_INTTz_Mbin%d", i))}
                 },
                 {
                     {"Inclusive70", (TH1D*)(pair.second["h1D_INTTz_Inclusive70"])->Clone("h1D_INTTz_Inclusive70")}
@@ -444,7 +444,7 @@ void vtxZDist_comp::MakeVtxZCheckPlot()
 
             all_Mbin_vtxZ_map.push_back(
                 std::make_pair(
-                    Form("Centrality [%s]%", Constants::centrality_text[i].c_str()),
+                    Form("Centrality [%s]%%", Constants::centrality_text[i].c_str()),
                     (TH1D*) pair.second[Form("h1D_INTTz_Mbin%d", i)] -> Clone(Form("h1D_INTTz_Mbin%d", i))
                 )
             );
@@ -474,7 +474,7 @@ void vtxZDist_comp::MakeVtxZCheckPlot()
         {
             make_comparison(
                 {
-                    {Form("Centrality [%s]%", Constants::centrality_text[i].c_str()), (TH1D*)(pair.second[Form("h1D_INTTz_Mbin%d", i)])->Clone(Form("h1D_INTTz_Mbin%d", i))}
+                    {Form("Centrality [%s]%%", Constants::centrality_text[i].c_str()), (TH1D*)(pair.second[Form("h1D_INTTz_Mbin%d", i)])->Clone(Form("h1D_INTTz_Mbin%d", i))}
                 },
                 {
                     {"Inclusive70", (TH1D*)(pair.second["h1D_INTTz_Inclusive70"])->Clone("h1D_INTTz_Inclusive70")}
@@ -490,7 +490,7 @@ void vtxZDist_comp::MakeVtxZCheckPlot()
 
             all_Mbin_vtxZ_map.push_back(
                 std::make_pair(
-                    Form("Centrality [%s]%", Constants::centrality_text[i].c_str()),
+                    Form("Centrality [%s]%%", Constants::centrality_text[i].c_str()),
                     (TH1D*) pair.second[Form("h1D_INTTz_Mbin%d", i)] -> Clone(Form("h1D_INTTz_Mbin%d", i))
                 )
             );

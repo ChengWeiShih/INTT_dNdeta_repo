@@ -9,11 +9,11 @@ job_lease_duration = 86400
 
 runnumber          = -1
 nEvents            = -1
-input_directory    = /sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_ananew_20250131/Run4/EvtVtxZ/completed
+input_directory    = /sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_ananew_20250131/Run6_EvtZFitWidthChange/EvtVtxZ/completed
 job_offset    = 0
 process_shift      = $(Process) + $(job_offset) 
 input_filename     = MC_EvtVtxZProtoTracklet_FieldOff_VtxZReco_$INT(process_shift,%05d).root
-output_directory   = /sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_ananew_20250131/Run4/EvtVtxZ/ColumnCheck_50AdcCut
+output_directory   = /sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_ananew_20250131/Run6_EvtZFitWidthChange/EvtVtxZ/ColumnCheck
 macro_name         = Run_ColumnCheck
 
 Output             = $(output_directory)/cw_log/condor_$INT(process_shift,%05d).out

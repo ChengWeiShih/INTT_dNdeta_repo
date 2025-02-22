@@ -2,8 +2,8 @@
 
 int MakePlot_ColumnUniformity()
 {
-    std::string input_file_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Jan172025/Run4/EvtVtxZ/ColumnCheck/completed/MulMap/completed"; 
-    std::string input_file_name = "MulMap_BcoFullDiffCut_Mbin70_VtxZ-30to30cm_ClusQAAdc35PhiSize39_00054280.root";
+    std::string input_file_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Feb102025/Run6_EvtZFitWidthChange/EvtVtxZ/ColumnCheck/baseline/completed/MulMap/completed"; 
+    std::string input_file_name = "MulMap_BcoFullDiffCut_Mbin70_VtxZ-30to30cm_ClusQAAdc35PhiSize40_00054280.root";
     std::string output_directory = input_file_directory;
 
     std::vector<std::tuple<double,double,std::string>> additional_text = {

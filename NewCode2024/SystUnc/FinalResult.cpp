@@ -70,9 +70,13 @@ FinalResult::FinalResult(
     leg_errors -> SetBorderSize(0);
     leg_errors -> SetTextSize(0.03);
 
-    leg_variation = new TLegend(0.21,0.7,0.41,1);
+    leg_variation = new TLegend(0.21,0.85,0.41,1);
     leg_variation -> SetBorderSize(0);
     leg_variation -> SetTextSize(0.03);
+
+    leg_variation_recoTracklet = new TLegend(0.21,0.85,0.41,1);
+    leg_variation_recoTracklet -> SetBorderSize(0);
+    leg_variation_recoTracklet -> SetTextSize(0.03);
 
     leg_final = new TLegend(0.45,0.78,0.8,0.87);
     leg_final -> SetBorderSize(0);
@@ -82,6 +86,11 @@ FinalResult::FinalResult(
     leg_TruthReco -> SetBorderSize(0);
     leg_TruthReco -> SetTextSize(0.025);
     leg_TruthReco -> SetMargin(0.2);
+
+    line = new TLine();
+    line -> SetLineStyle(2);
+    line -> SetLineWidth(2);
+    line -> SetLineColor(28);
 
     file_out = new TFile(Form("%s/%s.root", final_output_directory.c_str(), output_folder_name.c_str()), "RECREATE");
     tree_out = new TTree("tree","max min unc.");
@@ -102,17 +111,45 @@ void FinalResult::PrepareBaseLineTGraph()
 {
     gr_dNdEta_baseline = h1D_to_TGraph(h1D_data_standard);
     gr_dNdEta_baseline -> SetMarkerStyle(20);
-    gr_dNdEta_baseline -> SetMarkerSize(0.8);
+    gr_dNdEta_baseline -> SetMarkerSize(1);
     gr_dNdEta_baseline -> SetMarkerColor(1);
     gr_dNdEta_baseline -> GetXaxis() -> SetTitle("Pseudorapidity #eta");
     gr_dNdEta_baseline -> GetYaxis() -> SetTitle("dN_{ch}/d#eta");
+
+    gr_dNdEta_baseline -> GetXaxis() -> SetLabelOffset(999);
+    gr_dNdEta_baseline -> GetXaxis() -> SetLabelSize(0);
+    gr_dNdEta_baseline -> GetXaxis() -> SetTitleOffset(999);
+
+    // todo : set the range of the graph here
+    gr_dNdEta_baseline -> GetYaxis() -> SetRangeUser(
+        gr_dNdEta_baseline -> GetYaxis() -> GetXmin() * 0.8,
+        gr_dNdEta_baseline -> GetYaxis() -> GetXmax() * 1.2
+    );
+
+    gr_recoTracklet_baseline = h1D_to_TGraph(
+        (TH1D*) file_in_data_standard -> Get(h1D_RecoTracklet_name.c_str())
+    );
+    gr_recoTracklet_baseline -> SetMarkerStyle(20);
+    gr_recoTracklet_baseline -> SetMarkerSize(1);
+    gr_recoTracklet_baseline -> SetMarkerColor(1);
+    gr_recoTracklet_baseline -> GetXaxis() -> SetTitle("Pseudorapidity #eta");
+    gr_recoTracklet_baseline -> GetYaxis() -> SetTitle("Avg. reco. tracklets per event");
+
+    gr_recoTracklet_baseline -> GetXaxis() -> SetLabelOffset(999);
+    gr_recoTracklet_baseline -> GetXaxis() -> SetLabelSize(0);
+    gr_recoTracklet_baseline -> GetXaxis() -> SetTitleOffset(999);
+
+    gr_recoTracklet_baseline -> GetYaxis() -> SetRangeUser(
+        gr_recoTracklet_baseline -> GetYaxis() -> GetXmin() * 0.8,
+        gr_recoTracklet_baseline -> GetYaxis() -> GetXmax() * 1.2
+    );
 }
 
 void FinalResult::PrepareMCClosureTGraph()
 {
     gr_MC_closure_standard = h1D_to_TGraph(h1D_MC_closure_standard);
     gr_MC_closure_standard -> SetMarkerStyle(20);
-    gr_MC_closure_standard -> SetMarkerSize(0.8);
+    gr_MC_closure_standard -> SetMarkerSize(1);
     gr_MC_closure_standard -> SetMarkerColor(2);
 }
 
@@ -144,12 +181,12 @@ void FinalResult::PrepareStatisticalError()
     }
 
     h1D_error_statistic -> SetMarkerStyle(20);
-    h1D_error_statistic -> SetMarkerSize(0.8);
+    h1D_error_statistic -> SetMarkerSize(1);
     h1D_error_statistic -> SetLineWidth(0);
     h1D_error_statistic -> SetLineColorAlpha(1,0);
     h1D_error_statistic -> SetMarkerColor(TColor::GetColor(color_code[0].c_str()));
 
-    UncRange_StatUnc = GetH1DMinMax(h1D_error_statistic);
+    UncRange_StatUnc = GetH1DMinMax(h1D_error_statistic); // note: with eta cut
 }
 
 
@@ -159,15 +196,10 @@ void FinalResult::PrepareRunSegmentError(std::vector<std::string> file_directory
 
     c1 -> Clear();
     c1 -> cd();
-    pad1 = new TPad("pad1", "pad1", 0, 0., 1, 0.7);
+    pad1 = new TPad("pad1", "pad1", 0, 0.31, 1, 0.85);
     pad1 -> Draw();
     pad1 -> cd();
 
-    // todo : set the range of the graph here
-    gr_dNdEta_baseline -> GetYaxis() -> SetRangeUser(
-        gr_dNdEta_baseline -> GetYaxis() -> GetXmin() * 0.8,
-        gr_dNdEta_baseline -> GetYaxis() -> GetXmax() * 1.2
-    );
     gr_dNdEta_baseline -> Draw("ap");
     leg_variation -> AddEntry(gr_dNdEta_baseline, file_title_in.back().c_str(), "p");
     leg_variation -> SetHeader(leg_header_in.c_str());
@@ -182,7 +214,7 @@ void FinalResult::PrepareRunSegmentError(std::vector<std::string> file_directory
 
         gr_variation_vec.push_back( h1D_to_TGraph(h1D_RunSegmentError_vec.back()) );
         gr_variation_vec.back() -> SetMarkerStyle(marker_code[i]);
-        gr_variation_vec.back() -> SetMarkerSize(0.8);
+        gr_variation_vec.back() -> SetMarkerSize(1);
         gr_variation_vec.back() -> SetMarkerColor(TColor::GetColor(color_code[i].c_str()));
         std::cout<<"test, run seg variation: "<<gr_variation_vec.back() -> GetN()<<", "<<gr_variation_vec.back() -> GetPointY(0)<<std::endl;
         gr_variation_vec.back() -> Draw("p same");
@@ -195,13 +227,34 @@ void FinalResult::PrepareRunSegmentError(std::vector<std::string> file_directory
 
     h1D_error_Run_segmentation = h1D_FindLargestOnes("h1D_error_Run_segmentation", h1D_RunSegmentError_vec);
 
-    h1D_error_Run_segmentation -> SetMarkerStyle(20);
-    h1D_error_Run_segmentation -> SetMarkerSize(0.8);
+    h1D_error_Run_segmentation -> SetMarkerStyle(25);
+    h1D_error_Run_segmentation -> SetMarkerSize(1);
     h1D_error_Run_segmentation -> SetLineWidth(0);
     h1D_error_Run_segmentation -> SetLineColorAlpha(1,0);
     h1D_error_Run_segmentation -> SetMarkerColor(TColor::GetColor(color_code[1].c_str()));
 
-    UncRange_RunSegment = GetH1DMinMax(h1D_error_Run_segmentation);
+    UncRange_RunSegment = GetH1DMinMax(h1D_error_Run_segmentation); // note: with eta cut
+
+
+    c1 -> cd();
+    pad2 = new TPad("pad2", "pad2", 0, 0., 1, 0.38);
+    pad2 -> Draw();
+    pad2 -> cd();
+
+    for (int i = 0; i < gr_variation_vec.size(); i++){
+        std::string plot_draw_text = (i == 0) ? "ap" : "p same";
+        
+        TGraph * temp_gr = GetRatioGr(
+            gr_variation_vec[i],
+            gr_dNdEta_baseline
+        );
+        temp_gr -> GetYaxis() -> SetRangeUser(0.9,1.1);
+        temp_gr -> GetXaxis() -> SetTitle("Pseudorapidity #eta");
+        temp_gr -> GetYaxis() -> SetTitle("Ratio to baseline");
+        temp_gr -> Draw(plot_draw_text.c_str());
+    }
+    line -> DrawLine(gr_variation_vec.back()->GetXaxis()->GetXmin(), 1, gr_variation_vec.back()->GetXaxis()->GetXmax(), 1);
+
 
     c1 -> cd();
     leg_variation -> Draw("same");
@@ -216,15 +269,19 @@ void FinalResult::PrepareClusAdcError(std::vector<std::string> file_directory_ve
 
     c1 -> Clear();
     c1 -> cd();
-    pad1 = new TPad("pad1", "pad1", 0, 0., 1, 0.7);
+    pad1 = new TPad("pad1", "pad1", 0, 0.31, 1, 0.85);
     pad1 -> Draw();
     pad1 -> cd();
 
     gr_dNdEta_baseline -> Draw("ap");
     leg_variation -> AddEntry(gr_dNdEta_baseline, file_title_in.back().c_str(), "p");
     leg_variation -> SetHeader(leg_header_in.c_str());
+    
+    leg_variation_recoTracklet -> AddEntry(gr_recoTracklet_baseline, file_title_in.back().c_str(), "p");
+    leg_variation_recoTracklet -> SetHeader(leg_header_in.c_str());
 
     std::vector<TGraph*> gr_variation_vec; gr_variation_vec.clear();
+    std::vector<TGraph*> gr_variation_recoTracklet_vec; gr_variation_recoTracklet_vec.clear();
 
     for (int i = 0; i < file_directory_vec_in.size(); i++)
     {
@@ -232,35 +289,102 @@ void FinalResult::PrepareClusAdcError(std::vector<std::string> file_directory_ve
 
         h1D_ClusAdcError_vec.push_back( (TH1D*) temp_file_in -> Get(StandardData_h1D_name.c_str()) );
 
-
         gr_variation_vec.push_back( h1D_to_TGraph(h1D_ClusAdcError_vec.back()) );
         gr_variation_vec.back() -> SetMarkerStyle(marker_code[i]);
-        gr_variation_vec.back() -> SetMarkerSize(0.8);
+        gr_variation_vec.back() -> SetMarkerSize(1);
         gr_variation_vec.back() -> SetMarkerColor(TColor::GetColor(color_code[i].c_str()));
         gr_variation_vec.back() -> Draw("p same");
 
         leg_variation -> AddEntry(gr_variation_vec.back(), file_title_in[i].c_str(), "p");
 
-
         h1D_ClusAdcError_vec.back() -> Divide(h1D_data_standard);
         h1D_to_AbsRatio(h1D_ClusAdcError_vec.back());
+
+        // Division : -----------------------------------
+        gr_variation_recoTracklet_vec.push_back(
+            h1D_to_TGraph(
+                (TH1D*) temp_file_in -> Get(h1D_RecoTracklet_name.c_str())
+            )
+        );
+        gr_variation_recoTracklet_vec.back() -> SetMarkerStyle(marker_code[i]);
+        gr_variation_recoTracklet_vec.back() -> SetMarkerSize(1);
+        gr_variation_recoTracklet_vec.back() -> SetMarkerColor(TColor::GetColor(color_code[i].c_str()));
+
+        leg_variation_recoTracklet -> AddEntry(gr_variation_vec.back(), file_title_in[i].c_str(), "p");
     }
 
     h1D_error_ClusAdc = h1D_FindLargestOnes("h1D_error_ClusAdc", h1D_ClusAdcError_vec);
 
-    h1D_error_ClusAdc -> SetMarkerStyle(20);
-    h1D_error_ClusAdc -> SetMarkerSize(0.8);
+    h1D_error_ClusAdc -> SetMarkerStyle(26);
+    h1D_error_ClusAdc -> SetMarkerSize(1);
     h1D_error_ClusAdc -> SetLineWidth(0);
     h1D_error_ClusAdc -> SetLineColorAlpha(1,0);
     h1D_error_ClusAdc -> SetMarkerColor(TColor::GetColor(color_code[2].c_str()));
 
-    UncRange_ClusAdc = GetH1DMinMax(h1D_error_ClusAdc);
+    c1 -> cd();
+    pad2 = new TPad("pad2", "pad2", 0, 0., 1, 0.38);
+    pad2 -> Draw();
+    pad2 -> cd();
+
+    for (int i = 0; i < gr_variation_vec.size(); i++){
+        std::string plot_draw_text = (i == 0) ? "ap" : "p same";
+        
+        TGraph * temp_gr = GetRatioGr(
+            gr_variation_vec[i],
+            gr_dNdEta_baseline
+        );
+        temp_gr -> GetYaxis() -> SetRangeUser(0.9,1.1);
+        temp_gr -> GetXaxis() -> SetTitle("Pseudorapidity #eta");
+        temp_gr -> GetYaxis() -> SetTitle("Ratio to baseline");
+        temp_gr -> Draw(plot_draw_text.c_str());
+    }
+    line -> DrawLine(gr_variation_vec.back()->GetXaxis()->GetXmin(), 1, gr_variation_vec.back()->GetXaxis()->GetXmax(), 1);
+
+    UncRange_ClusAdc = GetH1DMinMax(h1D_error_ClusAdc); // note: with eta cut
 
     c1 -> cd();
     leg_variation -> Draw("same");
     c1 -> Print(Form("%s/RunClusAdcVariation_Mbin%d.pdf", final_output_directory.c_str(), Mbin));
     c1 -> Clear();
+
+    // Division: --------------------------------------------------------------
+    c1 -> cd();
+    pad1 = new TPad("pad1", "pad1", 0, 0.31, 1, 0.85);
+    pad1 -> Draw();
+    pad1 -> cd();
+
+    gr_recoTracklet_baseline -> Draw("ap");
+    for (int i = 0; i < gr_variation_recoTracklet_vec.size(); i++){
+        gr_variation_recoTracklet_vec[i] -> Draw("p same");
+    }
+
+    c1 -> cd();
+    pad2 = new TPad("pad2", "pad2", 0, 0., 1, 0.38);
+    pad2 -> Draw();
+    pad2 -> cd();
+
+    for (int i = 0; i < gr_variation_recoTracklet_vec.size(); i++){
+        std::string plot_draw_text = (i == 0) ? "ap" : "p same";
+        
+        TGraph * temp_gr = GetRatioGr(
+            gr_variation_recoTracklet_vec[i],
+            gr_recoTracklet_baseline
+        );
+        temp_gr -> GetYaxis() -> SetRangeUser(0.9,1.1);
+        temp_gr -> GetXaxis() -> SetTitle("Pseudorapidity #eta");
+        temp_gr -> GetYaxis() -> SetTitle("Ratio to baseline");
+        temp_gr -> Draw(plot_draw_text.c_str());
+    }
+    line -> DrawLine(gr_variation_recoTracklet_vec.back()->GetXaxis()->GetXmin(), 1, gr_variation_recoTracklet_vec.back()->GetXaxis()->GetXmax(), 1);
+
+    c1 -> cd();
+    leg_variation_recoTracklet -> Draw("same");
+    c1 -> Print(Form("%s/RunClusAdcVariation_RecoTracklet_Mbin%d.pdf", final_output_directory.c_str(), Mbin));
+    c1 -> Clear();
+
+
     leg_variation -> Clear();
+    leg_variation_recoTracklet -> Clear();
 
 }
 
@@ -288,13 +412,13 @@ void FinalResult::PrepareGeoOffsetError(std::string file_directory_in, std::stri
     }
     
 
-    h1D_error_GeoOffset -> SetMarkerStyle(20);
-    h1D_error_GeoOffset -> SetMarkerSize(0.8);
+    h1D_error_GeoOffset -> SetMarkerStyle(27);
+    h1D_error_GeoOffset -> SetMarkerSize(1);
     h1D_error_GeoOffset -> SetLineWidth(0);
     h1D_error_GeoOffset -> SetLineColorAlpha(1,0);
     h1D_error_GeoOffset -> SetMarkerColor(TColor::GetColor(color_code[3].c_str()));
 
-    UncRange_GeoOffset = GetH1DMinMax(h1D_error_GeoOffset);
+    UncRange_GeoOffset = GetH1DMinMax(h1D_error_GeoOffset); // note: with eta cut
 }
 
 
@@ -304,7 +428,7 @@ void FinalResult::PrepareDeltaPhiError(std::vector<std::string> file_directory_v
 
     c1 -> Clear();
     c1 -> cd();
-    pad1 = new TPad("pad1", "pad1", 0, 0., 1, 0.7);
+    pad1 = new TPad("pad1", "pad1", 0, 0.31, 1, 0.85);
     pad1 -> Draw();
     pad1 -> cd();
 
@@ -312,7 +436,11 @@ void FinalResult::PrepareDeltaPhiError(std::vector<std::string> file_directory_v
     leg_variation -> AddEntry(gr_dNdEta_baseline, file_title_in.back().c_str(), "p");
     leg_variation -> SetHeader(leg_header_in.c_str());
 
+    leg_variation_recoTracklet -> AddEntry(gr_recoTracklet_baseline, file_title_in.back().c_str(), "p");
+    leg_variation_recoTracklet -> SetHeader(leg_header_in.c_str());
+
     std::vector<TGraph*> gr_variation_vec; gr_variation_vec.clear();
+    std::vector<TGraph*> gr_variation_recoTracklet_vec; gr_variation_recoTracklet_vec.clear();
 
     for (int i = 0; i < file_directory_vec_in.size(); i++)
     {
@@ -323,7 +451,7 @@ void FinalResult::PrepareDeltaPhiError(std::vector<std::string> file_directory_v
 
         gr_variation_vec.push_back( h1D_to_TGraph(h1D_DeltaPhiError_vec.back()) );
         gr_variation_vec.back() -> SetMarkerStyle(marker_code[i]);
-        gr_variation_vec.back() -> SetMarkerSize(0.8);
+        gr_variation_vec.back() -> SetMarkerSize(1);
         gr_variation_vec.back() -> SetMarkerColor(TColor::GetColor(color_code[i].c_str()));
         gr_variation_vec.back() -> Draw("p same");
 
@@ -332,24 +460,91 @@ void FinalResult::PrepareDeltaPhiError(std::vector<std::string> file_directory_v
 
         h1D_DeltaPhiError_vec.back() -> Divide(h1D_data_standard);
         h1D_to_AbsRatio(h1D_DeltaPhiError_vec.back());
+
+        // Division : -----------------------------------
+        gr_variation_recoTracklet_vec.push_back(
+            h1D_to_TGraph(
+                (TH1D*) temp_file_in -> Get(h1D_RecoTracklet_name.c_str())
+            )
+        );
+        gr_variation_recoTracklet_vec.back() -> SetMarkerStyle(marker_code[i]);
+        gr_variation_recoTracklet_vec.back() -> SetMarkerSize(1);
+        gr_variation_recoTracklet_vec.back() -> SetMarkerColor(TColor::GetColor(color_code[i].c_str()));
+
+        leg_variation_recoTracklet -> AddEntry(gr_variation_vec.back(), file_title_in[i].c_str(), "p");
     }
 
     h1D_error_DeltaPhi = h1D_FindLargestOnes("h1D_error_DeltaPhi", h1D_DeltaPhiError_vec);
 
-    h1D_error_DeltaPhi -> SetMarkerStyle(20);
-    h1D_error_DeltaPhi -> SetMarkerSize(0.8);
+    h1D_error_DeltaPhi -> SetMarkerStyle(28);
+    h1D_error_DeltaPhi -> SetMarkerSize(1);
     h1D_error_DeltaPhi -> SetLineWidth(0);
     h1D_error_DeltaPhi -> SetLineColorAlpha(1,0);
     h1D_error_DeltaPhi -> SetMarkerColor(TColor::GetColor(color_code[4].c_str()));
 
-    UncRange_DeltaPhi = GetH1DMinMax(h1D_error_DeltaPhi);
+    UncRange_DeltaPhi = GetH1DMinMax(h1D_error_DeltaPhi); // note: with eta cut
+
+    c1 -> cd();
+    pad2 = new TPad("pad2", "pad2", 0, 0., 1, 0.38);
+    pad2 -> Draw();
+    pad2 -> cd();
+
+    for (int i = 0; i < gr_variation_vec.size(); i++){
+        std::string plot_draw_text = (i == 0) ? "ap" : "p same";
+        
+        TGraph * temp_gr = GetRatioGr(
+            gr_variation_vec[i],
+            gr_dNdEta_baseline
+        );
+        temp_gr -> GetYaxis() -> SetRangeUser(0.9,1.1);
+        temp_gr -> GetXaxis() -> SetTitle("Pseudorapidity #eta");
+        temp_gr -> GetYaxis() -> SetTitle("Ratio to baseline");
+        temp_gr -> Draw(plot_draw_text.c_str());
+    }
+    line -> DrawLine(gr_variation_vec.back()->GetXaxis()->GetXmin(), 1, gr_variation_vec.back()->GetXaxis()->GetXmax(), 1);
 
     c1 -> cd();
     leg_variation -> Draw("same");
     c1 -> Print(Form("%s/RunDeltaPhiVariation_Mbin%d.pdf", final_output_directory.c_str(), Mbin));
     c1 -> Clear();
-    leg_variation -> Clear();
 
+    // Division: --------------------------------------------------------------
+    c1 -> cd();
+    pad1 = new TPad("pad1", "pad1", 0, 0.31, 1, 0.85);
+    pad1 -> Draw();
+    pad1 -> cd();
+
+    gr_recoTracklet_baseline -> Draw("ap");
+    for (int i = 0; i < gr_variation_recoTracklet_vec.size(); i++){
+        gr_variation_recoTracklet_vec[i] -> Draw("p same");
+    }
+
+    c1 -> cd();
+    pad2 = new TPad("pad2", "pad2", 0, 0., 1, 0.38);
+    pad2 -> Draw();
+    pad2 -> cd();
+
+    for (int i = 0; i < gr_variation_recoTracklet_vec.size(); i++){
+        std::string plot_draw_text = (i == 0) ? "ap" : "p same";
+        
+        TGraph * temp_gr = GetRatioGr(
+            gr_variation_recoTracklet_vec[i],
+            gr_recoTracklet_baseline
+        );
+        temp_gr -> GetYaxis() -> SetRangeUser(0.9,1.1);
+        temp_gr -> GetXaxis() -> SetTitle("Pseudorapidity #eta");
+        temp_gr -> GetYaxis() -> SetTitle("Ratio to baseline");
+        temp_gr -> Draw(plot_draw_text.c_str());
+    }
+    line -> DrawLine(gr_variation_recoTracklet_vec.back()->GetXaxis()->GetXmin(), 1, gr_variation_recoTracklet_vec.back()->GetXaxis()->GetXmax(), 1);
+
+    c1 -> cd();
+    leg_variation_recoTracklet -> Draw("same");
+    c1 -> Print(Form("%s/RunDeltaPhiVariation_RecoTracklet_Mbin%d.pdf", final_output_directory.c_str(), Mbin));
+    c1 -> Clear();
+
+    leg_variation -> Clear();
+    leg_variation_recoTracklet -> Clear();
 }
 
 void FinalResult::PrepareClusPhiSizeError(std::vector<std::string> file_directory_vec_in, std::vector<std::string> file_title_in, std::string leg_header_in)
@@ -358,7 +553,7 @@ void FinalResult::PrepareClusPhiSizeError(std::vector<std::string> file_director
 
     c1 -> Clear();
     c1 -> cd();
-    pad1 = new TPad("pad1", "pad1", 0, 0., 1, 0.7);
+    pad1 = new TPad("pad1", "pad1", 0, 0.31, 1, 0.85);
     pad1 -> Draw();
     pad1 -> cd();
 
@@ -377,7 +572,7 @@ void FinalResult::PrepareClusPhiSizeError(std::vector<std::string> file_director
 
         gr_variation_vec.push_back( h1D_to_TGraph(h1D_ClusPhiSizeError_vec.back()) );
         gr_variation_vec.back() -> SetMarkerStyle(marker_code[i]);
-        gr_variation_vec.back() -> SetMarkerSize(0.8);
+        gr_variation_vec.back() -> SetMarkerSize(1);
         gr_variation_vec.back() -> SetMarkerColor(TColor::GetColor(color_code[i].c_str()));
         gr_variation_vec.back() -> Draw("p same");
 
@@ -390,13 +585,32 @@ void FinalResult::PrepareClusPhiSizeError(std::vector<std::string> file_director
 
     h1D_error_ClusPhiSize = h1D_FindLargestOnes("h1D_error_ClusPhiSize", h1D_ClusPhiSizeError_vec);
 
-    h1D_error_ClusPhiSize -> SetMarkerStyle(20);
-    h1D_error_ClusPhiSize -> SetMarkerSize(0.8);
+    h1D_error_ClusPhiSize -> SetMarkerStyle(30);
+    h1D_error_ClusPhiSize -> SetMarkerSize(1);
     h1D_error_ClusPhiSize -> SetLineWidth(0);
     h1D_error_ClusPhiSize -> SetLineColorAlpha(1,0);
     h1D_error_ClusPhiSize -> SetMarkerColor(TColor::GetColor(color_code[5].c_str()));
 
-    UncRange_ClusPhiSize = GetH1DMinMax(h1D_error_ClusPhiSize);
+    UncRange_ClusPhiSize = GetH1DMinMax(h1D_error_ClusPhiSize); // note: with eta cut
+
+    c1 -> cd();
+    pad2 = new TPad("pad2", "pad2", 0, 0., 1, 0.38);
+    pad2 -> Draw();
+    pad2 -> cd();
+
+    for (int i = 0; i < gr_variation_vec.size(); i++){
+        std::string plot_draw_text = (i == 0) ? "ap" : "p same";
+        
+        TGraph * temp_gr = GetRatioGr(
+            gr_variation_vec[i],
+            gr_dNdEta_baseline
+        );
+        temp_gr -> GetYaxis() -> SetRangeUser(0.9,1.1);
+        temp_gr -> GetXaxis() -> SetTitle("Pseudorapidity #eta");
+        temp_gr -> GetYaxis() -> SetTitle("Ratio to baseline");
+        temp_gr -> Draw(plot_draw_text.c_str());
+    }
+    line -> DrawLine(gr_variation_vec.back()->GetXaxis()->GetXmin(), 1, gr_variation_vec.back()->GetXaxis()->GetXmax(), 1);
 
     c1 -> cd();
     leg_variation -> Draw("same");
@@ -422,7 +636,7 @@ void FinalResult::PrepareMCMergedError(std::vector<std::string> file_directory_v
     h1D_error_MCMerged = h1D_FindLargestOnes("h1D_error_MCMerged", h1D_MCMergedError_vec);
 
     h1D_error_MCMerged -> SetMarkerStyle(20);
-    h1D_error_MCMerged -> SetMarkerSize(0.8);
+    h1D_error_MCMerged -> SetMarkerSize(1);
     h1D_error_MCMerged -> SetLineWidth(0);
     h1D_error_MCMerged -> SetLineColorAlpha(1,0);
     h1D_error_MCMerged -> SetMarkerColor(TColor::GetColor(color_code[6].c_str()));
@@ -475,14 +689,14 @@ void FinalResult::PrepareFinalError()
         );
 
         std::cout<<"bin: "<< i <<", eta: ["<<h1D_error_Final->GetXaxis()->GetBinLowEdge(i)<<", "<<h1D_error_Final->GetXaxis()->GetBinUpEdge(i)<<"]"
-        << ", statistic: " << _error_statistic 
-        << ", Run_segmentation: " << _error_Run_segmentation 
-        << ", ClusAdc: " << _error_ClusAdc 
-        << ", GeoOffset: " << _error_GeoOffset 
-        << ", DeltaPhi: " << _error_DeltaPhi 
-        << ", ClusPhiSize: " << _error_ClusPhiSize
-        << ", MCMerged: " << _error_MCMerged
-        << " final_error: " << _final_error 
+        << ", statistic: " << Form("%.5f",_error_statistic) 
+        << ", Run_segmentation: " << Form("%.5f",_error_Run_segmentation) 
+        << ", ClusAdc: " << Form("%.5f",_error_ClusAdc) 
+        << ", GeoOffset: " << Form("%.5f",_error_GeoOffset) 
+        << ", DeltaPhi: " << Form("%.5f",_error_DeltaPhi) 
+        << ", ClusPhiSize: " << Form("%.5f",_error_ClusPhiSize)
+        << ", MCMerged: " << Form("%.5f",_error_MCMerged)
+        << " final_error: " << Form("%.5f",_final_error) 
         << std::endl;
 
         h1D_error_Final -> SetBinContent(i, _final_error);
@@ -566,7 +780,7 @@ void FinalResult::PrepareFinalError()
     c1 -> cd();
     h1D_error_Final -> Draw("hist");
 
-    UncRange_Final = GetH1DMinMax(h1D_error_Final);
+    UncRange_Final = GetH1DMinMax(h1D_error_Final); // note: with eta cut
 
     if (h1D_error_statistic != nullptr) {h1D_error_statistic -> Draw("p same");}
     if (h1D_error_Run_segmentation != nullptr) {h1D_error_Run_segmentation -> Draw("p same");}
@@ -588,17 +802,17 @@ void FinalResult::PrepareFinalError()
     c1 -> Write("SystUnc_Summary");
 
     c1 -> Clear();
-    c1 -> cd();
-    if (h1D_error_statistic != nullptr) {
-        h1D_error_statistic -> Draw("p");
-        c1 -> Print(Form("%s/SystUnc_Stat_Mbin%d.pdf", final_output_directory.c_str(), Mbin));
-    }
+    // c1 -> cd();
+    // if (h1D_error_statistic != nullptr) {
+    //     h1D_error_statistic -> Draw("p");
+    //     c1 -> Print(Form("%s/SystUnc_Stat_Mbin%d.pdf", final_output_directory.c_str(), Mbin));
+    // }
 }
 
 void FinalResult::PrepareFinalResult(double Hist_Y_max)
 {
     h1D_data_standard -> SetMarkerStyle(20);
-    h1D_data_standard -> SetMarkerSize(0.8);
+    h1D_data_standard -> SetMarkerSize(1);
     h1D_data_standard -> SetMarkerColor(1);
     h1D_data_standard -> SetFillColorAlpha(1,0.5);
     h1D_data_standard -> SetLineColorAlpha(1,0);
@@ -606,7 +820,7 @@ void FinalResult::PrepareFinalResult(double Hist_Y_max)
 
     gE_data_final = new TGraphErrors();
     gE_data_final -> SetMarkerStyle(20);
-    gE_data_final -> SetMarkerSize(0.8);
+    gE_data_final -> SetMarkerSize(1);
     gE_data_final -> SetMarkerColor(1);
     gE_data_final -> SetFillColorAlpha(1,0.5);
     gE_data_final -> SetLineColorAlpha(1,0);
@@ -623,23 +837,23 @@ void FinalResult::PrepareFinalResult(double Hist_Y_max)
 
         h1D_data_standard -> SetBinError(i, _error * _content);
 
-        if (_BinCenter >= eta_range.first && _BinCenter <= eta_range.second){
-            gE_data_final -> SetPoint(gE_data_final -> GetN(), _BinCenter, _content);
-            gE_data_final -> SetPointError(gE_data_final -> GetN() - 1, 0, final_error);
-        }
-
         // if (_content == 0) {h1D_data_standard -> SetBinContent(i, -10);}
         if (_BinCenter < eta_range.first || _BinCenter > eta_range.second){
             h1D_data_standard -> SetBinContent(i, -10);
             h1D_data_standard -> SetBinError(i, 0);
         }
+        
+        if (_BinCenter >= eta_range.first && _BinCenter <= eta_range.second){
+            gE_data_final -> SetPoint(gE_data_final -> GetN(), _BinCenter, _content);
+            gE_data_final -> SetPointError(gE_data_final -> GetN() - 1, _BinWidth/2., final_error);
 
+            std::cout<<"bin: "<< i <<", eta: ["<<h1D_data_standard->GetXaxis()->GetBinLowEdge(i)<<", "<<h1D_data_standard->GetXaxis()->GetBinUpEdge(i)<<"]"
+            << ", content: " << Form("%.3f",_content)
+            << ", error: " << Form("%.3f",_error)
+            << ", final_error: " << Form("%.3f",final_error)
+            << std::endl;
 
-        std::cout<<"bin: "<< i <<", eta: ["<<h1D_data_standard->GetXaxis()->GetBinLowEdge(i)<<", "<<h1D_data_standard->GetXaxis()->GetBinUpEdge(i)<<"]"
-        << ", content: " << _content
-        << ", error: " << _error
-        << ", final_error: " << final_error
-        << std::endl;
+        }
     }
 
     gE_data_final -> GetYaxis() -> SetRangeUser(0, Hist_Y_max);
@@ -671,8 +885,9 @@ void FinalResult::PrepareFinalResult(double Hist_Y_max)
     // h1D_data_standard -> Draw("E3");
     h1D_truth_standard -> Draw("hist");
     gr_MC_closure_standard -> Draw("p same");
-    gE_data_final -> Draw("E3");
-    gE_data_final -> Draw("p same");
+    // gE_data_final -> Draw("E3");
+    gE_data_final -> Draw("P2 same");
+    // gE_data_final -> Draw("p same");
     // h1D_data_standard -> Draw("p same");
 
     if (AnaDescription.second.size() > 0){
@@ -711,6 +926,16 @@ void FinalResult::EndRun()
     h1D_truth_standard -> Write("h1D_dNdEta_truth");
     h1D_MC_closure_standard -> Write("h1D_MC_closure");
     gr_MC_closure_standard -> Write("gr_MC_closure");
+
+    if(h1D_error_statistic != nullptr) {h1D_error_statistic->SetMarkerColor(1); h1D_error_statistic -> Write();}
+    if(h1D_error_Run_segmentation != nullptr) {h1D_error_Run_segmentation -> Write();}
+    if(h1D_error_ClusAdc != nullptr) {h1D_error_ClusAdc -> Write();}
+    if(h1D_error_GeoOffset != nullptr) {h1D_error_GeoOffset -> Write();}
+    if(h1D_error_DeltaPhi != nullptr) {h1D_error_DeltaPhi -> Write();}
+    if(h1D_error_ClusPhiSize != nullptr) {h1D_error_ClusPhiSize -> Write();}
+    if(h1D_error_MCMerged != nullptr) {h1D_error_MCMerged -> Write();}
+    if(h1D_error_Final != nullptr) {h1D_error_Final -> Write();}
+
     file_out -> Close();
 }
 
@@ -768,9 +993,9 @@ void FinalResult::DrawAlphaCorrectionPlots(
     
     TH1D * h1D_AlphaCorr = (TH1D*) temp_file_in -> Get(h1D_AlphaCorr_name.c_str());
     h1D_AlphaCorr -> GetXaxis() -> SetTitle("Pseudorapidity #eta");
-    h1D_AlphaCorr -> GetYaxis() -> SetTitle("Effi. correction (Reco. / Gen.)");
+    h1D_AlphaCorr -> GetYaxis() -> SetTitle("Acc. & Effi. correction (Reco. / Gen.)");
     h1D_AlphaCorr -> SetMinimum(0);
-    h1D_AlphaCorr -> SetMaximum(1.3);
+    h1D_AlphaCorr -> SetMaximum(1.4);
     h1D_AlphaCorr -> SetLineWidth(2);
 
     h1D_AlphaCorr -> SetMarkerSize(1);
@@ -802,7 +1027,7 @@ void FinalResult::DrawAlphaCorrectionPlots(
         h1D_truth_hadron_001 -> GetBinContent(h1D_truth_hadron_001 -> GetMaximumBin()) * 1.45
     );
     h1D_truth_hadron_001 -> GetXaxis() -> SetTitle("Pseudorapidity #eta");
-    h1D_truth_hadron_001 -> GetYaxis() -> SetTitle("Avg. Multiplicity per event");
+    h1D_truth_hadron_001 -> GetYaxis() -> SetTitle("Avg. multiplicity per event");
     h1D_truth_hadron_001 -> SetLineWidth(2);
 
     h1D_recoTracklet_001  -> SetMarkerColor(std::get<0>(legend_text[1]));
@@ -908,4 +1133,34 @@ std::pair<double, double> FinalResult::GetH1DMinMax(TH1D * h1D_in)
     }
 
     return std::make_pair(min, max);
+}
+
+TGraph * FinalResult::GetRatioGr(TGraph * gr_numerator, TGraph * gr_denominator)
+{
+    TGraph * gr_out = new TGraph();
+    
+    if (gr_numerator -> GetN() != gr_denominator -> GetN()){
+        std::cout<<"Error : the number of points in the numerator and denominator are not the same"<<std::endl;
+        exit(1);
+    }
+
+    for (int i = 0; i < gr_numerator -> GetN(); i++){
+        double x = 0;
+        double y = 0;
+        gr_numerator -> GetPoint(i, x, y);
+
+        double x2 = 0;
+        double y2 = 0;
+        gr_denominator -> GetPoint(i, x2, y2);
+
+        if (y2 == 0) {continue;}
+
+        gr_out -> SetPoint(gr_out -> GetN(), x, y / y2);
+    }
+
+    gr_out -> SetMarkerStyle(gr_numerator -> GetMarkerStyle());
+    gr_out -> SetMarkerSize(gr_numerator -> GetMarkerSize());
+    gr_out -> SetMarkerColor(gr_numerator -> GetMarkerColor());
+
+    return gr_out;
 }

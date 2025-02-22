@@ -13,7 +13,7 @@ input_directory    = /sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_an
 job_offset    = 0
 process_shift      = $(Process) + $(job_offset) 
 input_filename     = ntuple_per10k_$INT(process_shift,%05d).root
-output_directory   = /sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_ananew_20250131/Run4/EvtVtxZ
+output_directory   = /sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_ananew_20250131/Run6_EvtZFitWidthChange/EvtVtxZ
 
 Output             = $(output_directory)/cw_log/condor_$INT(process_shift,%05d).out
 Error              = $(output_directory)/cw_log/condor_$INT(process_shift,%05d).err

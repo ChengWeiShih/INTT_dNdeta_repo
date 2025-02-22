@@ -217,11 +217,13 @@ class PreparedNdEtaEach{
         std::vector<std::string> GeoAccCorr_name_map;
 
         // Division:---fitting------------------------------------------------------------------------------------------------
-        std::map<std::string, TF1*> f1_BkgPol2_Fit_map;
-        std::map<std::string, TF1*> f1_BkgPol2_Draw_map;
+        // std::map<std::string, TF1*> f1_BkgPol2_Fit_map;
+        // std::map<std::string, TF1*> f1_BkgPol2_Draw_map;
         std::map<std::string, TF1*> f1_SigBkgPol2_Fit_map;
         std::map<std::string, TF1*> f1_SigBkgPol2_DrawSig_map;
         std::map<std::string, TF1*> f1_SigBkgPol2_DrawBkgPol2_map;
+
+        std::map<std::string, TF1*> f1_BkgPolTwo_Fit_map;
 
         // Division:---Constants------------------------------------------------------------------------------------------------
         int Semi_inclusive_Mbin = Constants::Semi_inclusive_bin;

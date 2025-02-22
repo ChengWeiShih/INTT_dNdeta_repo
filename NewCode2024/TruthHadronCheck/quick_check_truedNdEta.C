@@ -117,9 +117,14 @@ int quick_check_truedNdEta(
     system(Form("if [ -f %s/completed/%s ]; then rm %s/completed/%s; fi", output_directory.c_str(), output_filename.c_str(), output_directory.c_str(), output_filename.c_str()));
 
     TFile * file_out = new TFile(Form("%s/%s", output_directory.c_str(), output_filename.c_str()), "recreate");
+    
     TH1D * h1D_NHadronCount = new TH1D("h1D_NHadronCount","h1D_NHadronCount;#eta;Entries",27,-2.7,2.7);
     TH1D * h1D_TrueEvtCount = new TH1D("h1D_TrueEvtCount","h1D_TrueEvtCount;#True vtx Z;Entries",20,-10,10);
     TH1D * h1D_TruedNdEta = new TH1D("h1D_TruedNdEta","h1D_TruedNdEta;#eta;Entries",27,-2.7,2.7);
+
+    TH1D * h1D_NHadronCount_NTrueVtxCut = new TH1D("h1D_NHadronCount_NTrueVtxCut","h1D_NHadronCount_NTrueVtxCut;#eta;Entries",27,-2.7,2.7);
+    TH1D * h1D_TrueEvtCount_NTrueVtxCut = new TH1D("h1D_TrueEvtCount_NTrueVtxCut","h1D_TrueEvtCount_NTrueVtxCut;#True vtx Z;Entries",20,-10,10);
+    TH1D * h1D_TruedNdEta_NTrueVtxCut = new TH1D("h1D_TruedNdEta_NTrueVtxCut","h1D_TruedNdEta_NTrueVtxCut;#eta;Entries",27,-2.7,2.7);
 
     for (int i = 0; i < tree_in -> GetEntries(); i++)
     {
@@ -135,11 +140,31 @@ int quick_check_truedNdEta(
         // note : for MC
         // if (NTruthVtx != 1) {continue;}
 
+        // if (is_min_bias != 1) {continue;}
+        // if (INTTvtxZ != INTTvtxZ) {continue;}
+        // if (INTTvtxZ < -10 || INTTvtxZ >= 10) {continue;}
+        // if (MBD_centrality < 0) {continue;}
+        // if (MBD_centrality > 3) {continue;} // note : [0-3)% centrality interval
+
+
+         // note : both data and MC
         if (is_min_bias != 1) {continue;}
+        if (MBD_z_vtx != MBD_z_vtx) {continue;}
+        if (MBD_centrality != MBD_centrality) {continue;}
+        if (MBD_centrality < 0 || MBD_centrality > 100) {continue;}
         if (INTTvtxZ != INTTvtxZ) {continue;}
+        // =======================================================================================================================================================
+        // note : optional cut
+        if ((MBD_z_vtx - INTTvtxZ < Constants::cut_vtxZDiff.first || MBD_z_vtx - INTTvtxZ > Constants::cut_vtxZDiff.second) ) {continue;}
+        if ((TrapezoidalFitWidth < Constants::cut_TrapezoidalFitWidth.first || TrapezoidalFitWidth > Constants::cut_TrapezoidalFitWidth.second)){continue;}
+        if ((TrapezoidalFWHM < Constants::cut_TrapezoidalFWHM.first || TrapezoidalFWHM > Constants::cut_TrapezoidalFWHM.second)){continue;}
+        if ((INTTvtxZError < Constants::cut_INTTvtxZError.first || INTTvtxZError > Constants::cut_INTTvtxZError.second)){continue;}
+        // =======================================================================================================================================================
+
         if (INTTvtxZ < -10 || INTTvtxZ >= 10) {continue;}
         if (MBD_centrality < 0) {continue;}
         if (MBD_centrality > 3) {continue;} // note : [0-3)% centrality interval
+
 
         // if (MBD_z_vtx < -10 || MBD_z_vtx >= 10) {continue;}
 
@@ -176,6 +201,24 @@ int quick_check_truedNdEta(
         std::cout<<"eID: "<<i<<", nHadron_count: "<<nHadron_count<<", TruthPV_trig_z: "<<TruthPV_trig_z<<std::endl;
 
         h1D_TrueEvtCount -> Fill(INTTvtxZ);
+
+
+        if (NTruthVtx != 1) {continue;}
+
+
+        for (int true_i = 0; true_i < PrimaryG4P_isChargeHadron -> size(); true_i++)
+        {
+            if (PrimaryG4P_isChargeHadron -> at(true_i) == 1)
+            {
+                h1D_NHadronCount_NTrueVtxCut -> Fill(PrimaryG4P_Eta -> at(true_i));
+
+                // if (fabs(PrimaryG4P_Eta->at(true_i)) < 4){
+                //     nHadron_count++;
+                // }
+            }
+        } 
+
+        h1D_TrueEvtCount_NTrueVtxCut -> Fill(INTTvtxZ);
     }    
 
     h1D_TruedNdEta = (TH1D*) h1D_NHadronCount -> Clone("h1D_TruedNdEta");
@@ -187,6 +230,9 @@ int quick_check_truedNdEta(
     h1D_NHadronCount -> Write();
     h1D_TrueEvtCount -> Write();
     h1D_TruedNdEta -> Write();
+
+    h1D_NHadronCount_NTrueVtxCut -> Write();
+    h1D_TrueEvtCount_NTrueVtxCut -> Write();
 
     file_out -> Close();
 

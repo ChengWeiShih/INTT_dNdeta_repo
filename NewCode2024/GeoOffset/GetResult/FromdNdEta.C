@@ -108,11 +108,11 @@ int FromdNdEta()
     TFile * file_in_ideal = TFile::Open(Form("%s", file_directory_ideal.c_str()));
     TH1D * h1D_BestPair_RecoTrackletEtaPerEvt_ideal = (TH1D*)file_in_ideal->Get("h1D_BestPair_RecoTrackletEtaPerEvt");
     h1D_BestPair_RecoTrackletEtaPerEvt_ideal -> SetLineColor(2);
-    h1D_BestPair_RecoTrackletEtaPerEvt_ideal -> Scale(1. / h1D_BestPair_RecoTrackletEtaPerEvt_ideal -> Integral(-1,-1));
+    // h1D_BestPair_RecoTrackletEtaPerEvt_ideal -> Scale(1. / h1D_BestPair_RecoTrackletEtaPerEvt_ideal -> Integral(-1,-1));
 
     TH1D * h1D_RotatedBkg_RecoTrackletEtaPerEvt_ideal = (TH1D*)file_in_ideal->Get("h1D_RotatedBkg_RecoTrackletEtaPerEvt");
     h1D_RotatedBkg_RecoTrackletEtaPerEvt_ideal -> SetLineColor(2);
-    h1D_RotatedBkg_RecoTrackletEtaPerEvt_ideal -> Scale(1. / h1D_RotatedBkg_RecoTrackletEtaPerEvt_ideal -> Integral(-1,-1));
+    // h1D_RotatedBkg_RecoTrackletEtaPerEvt_ideal -> Scale(1. / h1D_RotatedBkg_RecoTrackletEtaPerEvt_ideal -> Integral(-1,-1));
 
 
     TLatex * ltx = new TLatex();
@@ -141,8 +141,8 @@ int FromdNdEta()
         h1D_BestPair_RecoTrackletEtaPerEvt = (TH1D*) file_in -> Get("h1D_BestPair_RecoTrackletEtaPerEvt");
         h1D_RotatedBkg_RecoTrackletEtaPerEvt = (TH1D*) file_in -> Get("h1D_RotatedBkg_RecoTrackletEtaPerEvt");
 
-        h1D_BestPair_RecoTrackletEtaPerEvt -> Scale(1. / h1D_BestPair_RecoTrackletEtaPerEvt -> Integral(-1, -1));
-        h1D_RotatedBkg_RecoTrackletEtaPerEvt -> Scale(1. / h1D_RotatedBkg_RecoTrackletEtaPerEvt -> Integral(-1, -1));
+        // h1D_BestPair_RecoTrackletEtaPerEvt -> Scale(1. / h1D_BestPair_RecoTrackletEtaPerEvt -> Integral(-1, -1));
+        // h1D_RotatedBkg_RecoTrackletEtaPerEvt -> Scale(1. / h1D_RotatedBkg_RecoTrackletEtaPerEvt -> Integral(-1, -1));
 
         FindH1DUpperLowBound(h1D_RotatedBkg_RecoTrackletEtaPerEvt_LowerBound, h1D_RotatedBkg_RecoTrackletEtaPerEvt, false);
         FindH1DUpperLowBound(h1D_RotatedBkg_RecoTrackletEtaPerEvt_UpperBound, h1D_RotatedBkg_RecoTrackletEtaPerEvt, true);
@@ -194,7 +194,7 @@ int FromdNdEta()
         h1D_RotatedBkg_RecoTrackletEtaPerEvt_VariationMax -> SetBinContent(i, bin_content);
     }
 
-    TFile * file_out = new TFile(Form("%s/FromdNdEta.root", output_directory.c_str()), "RECREATE");
+    TFile * file_out = new TFile(Form("%s/FromdNdEta_New.root", output_directory.c_str()), "RECREATE");
     h2D_BestPair_RecoTrackletEtaPerEvt -> Write();
     h2D_RotatedBkg_RecoTrackletEtaPerEvt -> Write();
 

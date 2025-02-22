@@ -9,7 +9,7 @@ int Run_vtxZDist_comp()
     std::string output_folder_name = "vtxZ_comp_withVtxZQA"; // note : auto generated
     // std::string output_folder_name = "vtxZ_comp_noVtxZQA"; // note : auto generated
 
-    std::string data_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Jan172025/Run4/EvtVtxZ/completed/VtxZDist/completed";
+    std::string data_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Feb102025/Run6_EvtZFitWidthChange/EvtVtxZ/completed/VtxZDist/completed";
 
     std::vector<std::pair<std::string, std::pair<std::string,std::string>>> data_input_directory_pair_vec = {
         {
@@ -20,7 +20,7 @@ int Run_vtxZDist_comp()
 
     std::vector<std::pair<std::string, std::pair<std::string,std::string>>> MC_input_directory_pair_vec = {
         {
-            "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_ananew_20250131/Run4/EvtVtxZ/completed/VtxZDist/completed/MC_vtxZDist_VtxZQA_merged.root",
+            "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_ananew_20250131/Run6_EvtZFitWidthChange/EvtVtxZ/completed/VtxZDist/completed/MC_vtxZDist_VtxZQA_merged.root",
             {"HIJING, |MbdVtxZ| < 60 cm", "HIJING_noZWeight_VtxZQA"}
         }
     };
@@ -77,11 +77,17 @@ int Run_vtxZDist_comp()
         WithVtxZReWeighting
     );
 
+    cout<<"11111"<<endl;
     VZDC -> MakeDataPlot("hist");
+    cout<<"22222"<<endl;
     VZDC -> MakeMCPlot("hist");
+    cout<<"33333"<<endl;
     VZDC -> MakeComparisonPlot();
+    cout<<"44444"<<endl;
     VZDC -> MakeVtxZCheckPlot();
+    cout<<"55555"<<endl;
     VZDC -> PrepareINTTvtxZReWeight();
+    cout<<"66666"<<endl;
 
     return 0;
 }
