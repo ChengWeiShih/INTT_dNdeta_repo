@@ -476,7 +476,7 @@ void vtxZDist::PrepareEvent()
         }
         else if (ApplyVtxZReWeighting && h1D_INTT_vtxZ_reweighting == nullptr){
             std::cout << "ApplyVtxZReWeighting is true, but h1D_INTT_vtxZ_reweighting is nullptr" << std::endl;
-            exit(1);
+            exit(1); 
         }
         else {
             INTTvtxZWeighting = 1.0;
