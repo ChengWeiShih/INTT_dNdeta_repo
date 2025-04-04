@@ -26,7 +26,13 @@ void Run_PrepareHist_MC(
   
   // todo : modify here
   std::string output_file_name_suffix = "",
-  std::pair<double, double> vertexXYIncm = {-0.0217356, 0.223402},
+  // std::pair<double, double> vertexXYIncm = {-0.0218978, 0.223183}, // note : in cm // note : HIJING
+  // std::pair<double, double> vertexXYIncm = {-0.0216964, 0.223331}, // note : in cm // note : HIJING + strangeness
+  std::pair<double, double> vertexXYIncm = {-0.0218667, 0.223296}, // note : in cm // note : AMPT
+  // std::pair<double, double> vertexXYIncm = {-0.021907, 0.223293}, // note : in cm // note : EPOS
+  
+  std::string zvtx_weight_file_index = "_001", // todo switch between _002 and _001
+
 
   std::pair<bool, TH1D*> vtxZReweight = {true, nullptr},
   bool BcoFullDiffCut = false,
@@ -38,21 +44,15 @@ void Run_PrepareHist_MC(
   bool RandInttZ = false,
   bool ColMulMask = true,
 
-  std::string vtxZReWeighting_input_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Feb102025/Run6_EvtZFitWidthChange/EvtVtxZ/completed/VtxZDist/completed/vtxZ_comp_withVtxZQA/INTTvtxZReWeight.root",
-  std::string map_name = "HIJING_noZWeight_VtxZQA_Inclusive70",
-
-  std::string ColMulMask_map_mother_dir = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Feb102025/Run6_EvtZFitWidthChange/EvtVtxZ/ColumnCheck"
-  
-  // std::string ColMulMask_map_dir = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Dec042024/completed/Run3/EvtVtxZ/ColumnCheck/completed/MulMap/completed",
-  // std::string ColMulMask_map_file = "MulMap_BcoFullDiffCut_Mbin50_VtxZ-30to30cm_ClusQAAdc35PhiSize500_00054280.root"
-
-  // std::string ColMulMask_map_dir = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Dec042024/completed/Run3/EvtVtxZ/ColumnCheck_NoClusQA/completed/MulMap/completed",
-  // std::string ColMulMask_map_file = "MulMap_BcoFullDiffCut_Mbin50_VtxZ-30to30cm_00054280.root"
-
-  // std::string ColMulMask_map_dir = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Jan172025/Run4/EvtVtxZ/ColumnCheck_noPhiCut/completed/MulMap/completed",
-  // std::string ColMulMask_map_file = "MulMap_BcoFullDiffCut_Mbin70_VtxZ-30to30cm_ClusQAAdc35PhiSize350_00054280.root"
+  std::string ColMulMask_map_mother_dir = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_MDC2_ana472_20250307/Run7/EvtVtxZ/ColumnCheck"
 )
 {
+  // todo : modify here
+  std::string vtxZReWeighting_input_directory = Form("/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_AMPT_MDC2_ana472_20250310/Run7/EvtVtxZ/completed/VtxZDist/completed/vtxZ_comp_WithVtxZQA%s/INTTvtxZReWeight.root",zvtx_weight_file_index.c_str());
+  // std::string map_name = "HIJING_noZWeight_WithVtxZQA_Inclusive70";
+  std::string map_name = "AMPT_noZWeight_WithVtxZQA_Inclusive70";
+
+  std::cout<<"vtxZReWeighting_input_directory: "<<vtxZReWeighting_input_directory<<std::endl;
 
   if (vtxZReweight.first) {vtxZReweight.second = (TH1D*)(GetReweighting_hist(vtxZReWeighting_input_directory, map_name))->Clone();}
 

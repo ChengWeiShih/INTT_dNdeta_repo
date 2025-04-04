@@ -57,6 +57,10 @@ class GetFinalResult{
             return SetResultRangeFolderName;
         }
 
+        void SetBaseLineDeltaPhiCut(std::pair<double,double> DeltaPhiCut_in) {
+            BaseLineDeltaPhiCut = DeltaPhiCut_in;
+        }
+
         // note : here are for preparing the reco. dNdEta
         void PrepareBaseLine(
             std::string data_input_directory,
@@ -176,6 +180,8 @@ class GetFinalResult{
 
         // Division : -The constants-----------------------------------------------------------
         std::pair<double,double> eta_range_dNdEta_Preparation = {-1.9, 1.9};
+        std::pair<double,double> BaseLineDeltaPhiCut = {-0.026, 0.026};
+
 
         // Division : -the macros-----------------------------------------------------------
         std::string Run_PreparedNdEtaEach(
@@ -213,7 +219,7 @@ class GetFinalResult{
             std::string MC1_input_filename,
             std::string MC2_input_filename,
 
-            std::pair<bool, std::pair<double,double>> cut_DeltaPhi_Signal_range = {false, {-0.021, 0.021}}
+            std::pair<bool, std::pair<double,double>> cut_DeltaPhi_Signal_range = {false, {-0.026, 0.026}}
         );
 
         int DataMcComp(string data_directory_in, string MC_directory_in, string output_directory_in, string output_filename_in);

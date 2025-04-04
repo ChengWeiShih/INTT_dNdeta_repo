@@ -92,6 +92,8 @@ TCanvas * make_comparison(
 
         std::cout<<"Data: "<<pair.first<<", "<<pair.second->GetName()<<", "<<pair.second->GetNbinsX()<<std::endl;
 
+        pair.second -> SetStats(0);
+
         data_hist_nbinsX.push_back(pair.second->GetNbinsX());
         
         if (DoNormalize) {
@@ -103,6 +105,7 @@ TCanvas * make_comparison(
 
         pair.second->SetLineColor(TColor::GetColor(color_code[color_index].c_str()));
         pair.second->SetMarkerColor(TColor::GetColor(color_code[color_index].c_str()));
+        pair.second->SetFillColorAlpha(2,0);
         color_index += 1;
     }
 
@@ -111,6 +114,8 @@ TCanvas * make_comparison(
         std::cout<<"MC: "<<pair.first<<", "<<pair.second->GetName()<<", "<<pair.second->GetNbinsX()<<std::endl;
 
         MC_hist_nbinsX.push_back(pair.second->GetNbinsX());
+
+        pair.second -> SetStats(0);
 
         if (DoNormalize) {
             pair.second->Scale(1.0/pair.second->Integral());
@@ -121,6 +126,7 @@ TCanvas * make_comparison(
 
         pair.second->SetLineColor(TColor::GetColor(color_code[color_index].c_str()));
         pair.second->SetMarkerColor(TColor::GetColor(color_code[color_index].c_str()));
+        pair.second->SetFillColorAlpha(2,0);
         color_index += 1;
     }
 
@@ -130,6 +136,16 @@ TCanvas * make_comparison(
                 std::cout<<"Error: Different binning for data and MC, data: "<<data_nbin<<", MC: "<<MC_nbin<<std::endl;
                 exit(1);
             }
+        }
+    }
+
+    bool bins_are_same = true;
+    for (int i = 1; i <= data_hist_vec_in[0].second->GetNbinsX(); i++)
+    {
+        if (data_hist_vec_in[0].second->GetBinCenter(i) != MC_hist_vec_in[0].second->GetBinCenter(i))
+        {
+            bins_are_same = false;
+            break;
         }
     }
 
@@ -303,7 +319,7 @@ TCanvas * make_comparison(
             );
 
             ratio_hist_vec_in.back() -> Sumw2(true);
-            ratio_hist_vec_in.back() -> Divide(pair.second, ratio_hist_vec_in.back());
+            if (bins_are_same) {ratio_hist_vec_in.back() -> Divide(pair.second, ratio_hist_vec_in.back());}
 
         }
         else { // note : hist_vec_in: MC
@@ -312,7 +328,7 @@ TCanvas * make_comparison(
             );
 
             ratio_hist_vec_in.back() -> Sumw2(true);
-            ratio_hist_vec_in.back() -> Divide(pair.second);
+            if (bins_are_same) {ratio_hist_vec_in.back() -> Divide(pair.second);}
         }
 
 
@@ -398,22 +414,24 @@ TH1D * GetHist(std::string directory, std::string file_name, std::string hist_na
 
 int TwoPlot_ratio()
 {
-    std::string black_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Feb102025/Run6_EvtZFitWidthChange/EvtVtxZ/TrackHist/baseline/completed";
-    std::string black_file_name = "Data_TrackHist_BcoFullDiffCut_VtxZQA_ClusQAAdc35PhiSize40_ColMulMask_00054280_merged_merged_001.root";
-    std::string black_hist_name = "h1D_INTTvtxZ";
-    std::string black_str = "Baseline";
+    std::string black_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Feb102025/Run6_EvtZFitWidthChange/EvtVtxZ/old_folder/FinalResult_10cm_Pol2BkgFit/completed/vtxZ_-10_10cm_MBin14/Folder_BaseLine/Run_0/completed";
+    std::string black_file_name = "Data_PreparedNdEtaEach_AlphaCorr_AllSensor_VtxZ10_Mbin14_00054280_00000_dNdEta.root";
+    std::string black_hist_name = "h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC";
+    std::string black_str = "Old";
 
-    std::string red_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Feb102025/Run6_EvtZFitWidthChange/EvtVtxZ/TrackHist/baseline/completed";
-    std::string red_file_name = "Data_TrackHist_BcoFullDiffCut_VtxZQA_ClusQAAdc35PhiSize40_ColMulMask_00054280_merged_merged_002.root";
-    std::string red_hist_name = "h1D_INTTvtxZ";
-    std::string red_str = "RunSegment";
+    std::string red_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Feb102025/Run6_EvtZFitWidthChange/EvtVtxZ/FinalResult_10cm_Pol2BkgFit/completed/vtxZ_-10_10cm_MBin14/Folder_DeltaPhiCut/Run_0/completed";
+    std::string red_file_name = "Data_PreparedNdEtaEach_AlphaCorr_AllSensor_VtxZ10_Mbin14_00054280_00000_dNdEta.root";
+    std::string red_hist_name = "h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC";
+    std::string red_str = "New";
 
     std::string output_directory = black_directory;
-    std::string output_filename = "comp_test_recoTrack_RunSeg.root";
+    // std::string output_filename = "comp_h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC.root";
+    std::string output_filename_pdf = "comp_data_h1D_RotatedBkg_RecoTrackletEtaPerEvtPostAC"; 
 
-    bool set_log_y = true;
+    bool DoNormalize = false;
+    bool set_log_y = false;
 
-    TFile * file_out = new TFile(Form("%s/%s", output_directory.c_str(), output_filename.c_str()), "RECREATE");
+    // TFile * file_out = new TFile(Form("%s/%s", output_directory.c_str(), output_filename.c_str()), "RECREATE");
 
     TH1D * black_hist = GetHist(black_directory, black_file_name, black_hist_name);
     TH1D * red_hist = GetHist(red_directory, red_file_name, red_hist_name);
@@ -423,10 +441,10 @@ int TwoPlot_ratio()
         {{red_str, red_hist}},
 
         output_directory, 
-        black_hist_name, 
+        output_filename_pdf, 
         "", // note : "Data", "MC", "Comp"
-        set_log_y, // note : DoNormalize
-        false,  // note : set_log_y
+        DoNormalize, // note : DoNormalize
+        set_log_y,  // note : set_log_y
         false, // note : isData_more
         0,  // note : MainPlot_y_low
         -99,  // note : MainPlot_y_top
@@ -434,11 +452,11 @@ int TwoPlot_ratio()
         1.5 // note : ratio_y_top
     );
 
-    file_out -> cd();
+    // file_out -> cd();
 
-    c1 -> Write();
+    // c1 -> Write();
 
-    file_out -> Close();
+    // file_out -> Close();
 
     return 0;    
 }

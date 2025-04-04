@@ -765,6 +765,16 @@ std::pair<double,double> vtxZDist_comp::make_comparison(
         }
     }
 
+    bool bins_are_same = true;
+    for (int i = 1; i <= data_hist_vec_in[0].second->GetNbinsX(); i++)
+    {
+        if (data_hist_vec_in[0].second->GetBinCenter(i) != MC_hist_vec_in[0].second->GetBinCenter(i))
+        {
+            bins_are_same = false;
+            break;
+        }
+    }
+
     TH1D * h1D_pad1 = (TH1D*)data_hist_vec_in.front().second->Clone("h1D_pad1");
     TH1D * h1D_pad2 = (TH1D*)data_hist_vec_in.front().second->Clone("h1D_pad2");
     h1D_pad1 -> Reset("ICESM");
@@ -875,7 +885,7 @@ std::pair<double,double> vtxZDist_comp::make_comparison(
             );
 
             ratio_hist_vec_in.back() -> Sumw2(true);
-            ratio_hist_vec_in.back() -> Divide(pair.second, ratio_hist_vec_in.back());
+            if (bins_are_same) {ratio_hist_vec_in.back() -> Divide(pair.second, ratio_hist_vec_in.back());}
 
         }
         else { // note : hist_vec_in: MC
@@ -884,7 +894,7 @@ std::pair<double,double> vtxZDist_comp::make_comparison(
             );
 
             ratio_hist_vec_in.back() -> Sumw2(true);
-            ratio_hist_vec_in.back() -> Divide(pair.second);
+            if (bins_are_same) {ratio_hist_vec_in.back() -> Divide(pair.second);}
         }
 
 

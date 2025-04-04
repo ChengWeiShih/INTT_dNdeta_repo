@@ -293,7 +293,9 @@ void RestDist::PrepareHist()
         )
     );
 
-    h1D_map.insert(std::make_pair("h1D_ClusPhi", new TH1D("h1D_ClusPhi", "h1D_ClusPhi;Cluster #phi (w.r.t avg. PV);Entries (/0.05)",140,-3.5,3.5)));
+    h1D_map.insert(std::make_pair("h1D_ClusPhi", new TH1D("h1D_ClusPhi", "h1D_ClusPhi;Cluster #phi (w.r.t beam spot);Entries (/0.05)",140,-3.5,3.5)));
+    h1D_map.insert(std::make_pair("h1D_inner_ClusPhi", new TH1D("h1D_inner_ClusPhi", "h1D_inner_ClusPhi;Inner cluster #phi (w.r.t beam spot);Entries (/0.05)",140,-3.5,3.5)));
+    h1D_map.insert(std::make_pair("h1D_outer_ClusPhi", new TH1D("h1D_outer_ClusPhi", "h1D_outer_ClusPhi;Outer cluster #phi (w.r.t beam spot);Entries (/0.05)",140,-3.5,3.5)));
 
     h1D_map.insert(std::make_pair("h1D_Cluster_phi_size", new TH1D("h1D_Cluster_phi_size", "h1D_Cluster_phi_size;Cluster #phi size;Entries (/1)",128,0,128)));
     h1D_map.insert(std::make_pair("h1D_Cluster_adc_size1", new TH1D("h1D_Cluster_adc_size1", "h1D_Cluster_adc_size1;Cluster Adc (PhiSize=1);Entries (/7)",25,0,250)));
@@ -372,6 +374,9 @@ void RestDist::PrepareHist()
             hist.second -> GetYaxis() -> SetTitle(YTitle_post.c_str());
         }
     }
+
+    std::vector<double> used_edep_bins_vec = (runnumber != -1) ? data_edep_bins_vec : MC_edep_bins_vec;
+    h1D_map.insert(std::make_pair("h1D_Cluster_adc_size1_real", new TH1D("h1D_Cluster_adc_size1_real", "h1D_Cluster_adc_size1_real;Cluster Adc (PhiSize=1);Entries",used_edep_bins_vec.size()-1,&used_edep_bins_vec[0])));
 
     // Division : ---h2D-----------------------------------------------------------------------------------------------
     h2D_map.clear();
@@ -635,7 +640,17 @@ void RestDist::PrepareEvent()
                 h1D_map["h1D_ClusEta_INTTz"] -> Fill(this_clu.eta_INTTz, INTTvtxZWeighting);
                 h1D_map["h1D_Cluster_phi_size"] -> Fill(this_clu.phi_size, INTTvtxZWeighting);
                 h1D_map["h1D_Cluster_adc"] -> Fill(this_clu.adc, INTTvtxZWeighting);
+
+                if (layer_index == 0){
+                    h1D_map["h1D_inner_ClusPhi"] -> Fill(this_clu.phi_avgXY, INTTvtxZWeighting);
+                }
+                else if (layer_index == 1){
+                    h1D_map["h1D_outer_ClusPhi"] -> Fill(this_clu.phi_avgXY, INTTvtxZWeighting);
+                }
+                
                 if (this_clu.phi_size == 1) {h1D_map["h1D_Cluster_adc_size1"] -> Fill(this_clu.adc, INTTvtxZWeighting);}
+                if (this_clu.phi_size == 1) {h1D_map["h1D_Cluster_adc_size1_real"] -> Fill(this_clu.adc, INTTvtxZWeighting);}
+
                 if (runnumber == -1) {h1D_map["h1D_ClusPhi_TrueXY"] -> Fill(this_clu.phi_TrueXY), INTTvtxZWeighting;}
                 if (runnumber == -1) {h1D_map["h1D_ClusEta_TrueXYZ"] -> Fill(this_clu.eta_TrueXYZ), INTTvtxZWeighting;}
 

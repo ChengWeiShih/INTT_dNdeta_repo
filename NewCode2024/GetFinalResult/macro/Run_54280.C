@@ -17,7 +17,7 @@ int Run_54280(int condor_index)
 
     std::string output_file_name_suffix = "";
 
-    std::string output_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Feb102025/Run6_EvtZFitWidthChange/EvtVtxZ/FinalResult_10cm_Pol2BkgFit";
+    std::string output_directory = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_MDC2_ana472_20250307/Run7/EvtVtxZ/FinalResult_10cm_Pol2BkgFit_DeltaPhi0p026";
 
     GetFinalResult * GFR = new GetFinalResult(
         runnumber,
@@ -32,22 +32,26 @@ int Run_54280(int condor_index)
         output_directory
     );
 
+    GFR -> SetBaseLineDeltaPhiCut({-0.026,0.026}); // todo : change here
+
     std::string data_input_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Feb102025/Run6_EvtZFitWidthChange/EvtVtxZ";
-    std::string MC_input_directory = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_ananew_20250131/Run6_EvtZFitWidthChange/EvtVtxZ";
+    std::string MC_input_directory = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_MDC2_ana472_20250307/Run7/EvtVtxZ";
 
     std::string SetResultRangeFolderName = GFR -> GetSetResultRangeFolderName();
 
     system(Form("if [ -d %s/completed/%s ]; then rm -r %s/completed/%s; fi;", output_directory.c_str(), SetResultRangeFolderName.c_str(), output_directory.c_str(), SetResultRangeFolderName.c_str()));
 
     std::string baseline_subfolder = "TrackHist/baseline/completed";
+    std::string baseline_subfolder_MC_001 = "TrackHist_001/baseline/completed"; // note : for the first half of data
+    std::string baseline_subfolder_MC_002 = "TrackHist_002/baseline/completed"; // note : for the second half of data 
     // note : here are for preparing the reco. dNdEta
     GFR -> PrepareBaseLine(
         data_input_directory + "/" + baseline_subfolder,
         "Data_TrackHist_BcoFullDiffCut_VtxZQA_ClusQAAdc35PhiSize40_ColMulMask_00054280_merged_merged_001.root",
         
-        MC_input_directory + "/" + baseline_subfolder,
-        "MC_TrackHist_vtxZReweight_VtxZQA_ClusQAAdc35PhiSize40_ColMulMask_merged_001.root",
-        "MC_TrackHist_vtxZReweight_VtxZQA_ClusQAAdc35PhiSize40_ColMulMask_merged_002.root"
+        MC_input_directory + "/" + baseline_subfolder_MC_001,
+        "MC_TrackHist_vtxZReweight_VtxZQA_ClusQAAdc35PhiSize40_ColMulMask_merged_001.root", // note : derive the alpha correction
+        "MC_TrackHist_vtxZReweight_VtxZQA_ClusQAAdc35PhiSize40_ColMulMask_merged_002.root"  // note : closure test
     );
 
 
@@ -60,20 +64,20 @@ int Run_54280(int condor_index)
             // "Data_TrackHist_BcoFullDiffCut_VtxZQA_ClusQAAdc35PhiSize40_ColMulMask_00054280_merged_002.root"
         },
         
-        MC_input_directory + "/" + baseline_subfolder,
-        "MC_TrackHist_vtxZReweight_VtxZQA_ClusQAAdc35PhiSize40_ColMulMask_merged_001.root",
-        "MC_TrackHist_vtxZReweight_VtxZQA_ClusQAAdc35PhiSize40_ColMulMask_merged_002.root"
+        MC_input_directory + "/" + baseline_subfolder_MC_002,
+        "MC_TrackHist_vtxZReweight_VtxZQA_ClusQAAdc35PhiSize40_ColMulMask_merged_001.root", // note : derive the alpha correction,
+        "MC_TrackHist_vtxZReweight_VtxZQA_ClusQAAdc35PhiSize40_ColMulMask_merged_002.root"  // note : closure test
     ); // note : two times
 
 
     GFR -> PrepareDeltaPhiCut(
-        {0.018, 0.024, 0.030, 0.040, 0.050, 0.060, 0.070},    
+        {0.021, 0.031},    
         data_input_directory + "/" + baseline_subfolder,
         "Data_TrackHist_BcoFullDiffCut_VtxZQA_ClusQAAdc35PhiSize40_ColMulMask_00054280_merged_merged_001.root",
         
-        MC_input_directory + "/" + baseline_subfolder,
-        "MC_TrackHist_vtxZReweight_VtxZQA_ClusQAAdc35PhiSize40_ColMulMask_merged_001.root",
-        "MC_TrackHist_vtxZReweight_VtxZQA_ClusQAAdc35PhiSize40_ColMulMask_merged_002.root"
+        MC_input_directory + "/" + baseline_subfolder_MC_001,
+        "MC_TrackHist_vtxZReweight_VtxZQA_ClusQAAdc35PhiSize40_ColMulMask_merged_001.root", // note : derive the alpha correction,
+        "MC_TrackHist_vtxZReweight_VtxZQA_ClusQAAdc35PhiSize40_ColMulMask_merged_002.root"  // note : closure test
     ); // note : two times 
 
 
@@ -91,38 +95,41 @@ int Run_54280(int condor_index)
 
 
     std::string NoClusAdcCut_subfolder = "TrackHist/noAdcCut/completed";
+    std::string NoClusAdcCut_subfolder_MC_001 = "TrackHist_001/noAdcCut/completed";
     GFR -> PrepareClusAdcCut(
         0,
         data_input_directory + "/" + NoClusAdcCut_subfolder,
         "Data_TrackHist_BcoFullDiffCut_VtxZQA_ClusQAAdc0PhiSize40_ColMulMask_00054280_merged_merged_001.root",
 
-        MC_input_directory + "/" + NoClusAdcCut_subfolder,
-        "MC_TrackHist_vtxZReweight_VtxZQA_ClusQAAdc0PhiSize40_ColMulMask_merged_001.root",
-        "MC_TrackHist_vtxZReweight_VtxZQA_ClusQAAdc0PhiSize40_ColMulMask_merged_002.root"
+        MC_input_directory + "/" + NoClusAdcCut_subfolder_MC_001,
+        "MC_TrackHist_vtxZReweight_VtxZQA_ClusQAAdc0PhiSize40_ColMulMask_merged_001.root", // note : derive the alpha correction,
+        "MC_TrackHist_vtxZReweight_VtxZQA_ClusQAAdc0PhiSize40_ColMulMask_merged_002.root"  // note : closure test
     ); 
     std::string ClusAdcCut50_subfolder = "TrackHist/50AdcCut/completed";
+    std::string ClusAdcCut50_subfolder_MC_001 = "TrackHist_001/50AdcCut/completed";
     GFR -> PrepareClusAdcCut(
         1,
         data_input_directory + "/" + ClusAdcCut50_subfolder,
         "Data_TrackHist_BcoFullDiffCut_VtxZQA_ClusQAAdc50PhiSize40_ColMulMask_00054280_merged_merged_001.root",
 
-        MC_input_directory + "/" + ClusAdcCut50_subfolder,
-        "MC_TrackHist_vtxZReweight_VtxZQA_ClusQAAdc50PhiSize40_ColMulMask_merged_001.root",
-        "MC_TrackHist_vtxZReweight_VtxZQA_ClusQAAdc50PhiSize40_ColMulMask_merged_002.root"
+        MC_input_directory + "/" + ClusAdcCut50_subfolder_MC_001,
+        "MC_TrackHist_vtxZReweight_VtxZQA_ClusQAAdc50PhiSize40_ColMulMask_merged_001.root", // note : derive the alpha correction,
+        "MC_TrackHist_vtxZReweight_VtxZQA_ClusQAAdc50PhiSize40_ColMulMask_merged_002.root"  // note : closure test
     ); 
 
     
 
     std::string ClusPhiCut_subfolder = "TrackHist/noPhiCut/completed";
+    std::string ClusPhiCut_subfolder_MC_001 = "TrackHist_001/noPhiCut/completed";
     GFR -> PrepareClusPhiCut(
         data_input_directory + "/" + ClusPhiCut_subfolder,
         {
             "Data_TrackHist_BcoFullDiffCut_VtxZQA_ClusQAAdc35PhiSize350_ColMulMask_00054280_merged_merged_001.root"
         },
 
-        MC_input_directory + "/" + ClusPhiCut_subfolder,
-        "MC_TrackHist_vtxZReweight_VtxZQA_ClusQAAdc35PhiSize350_ColMulMask_merged_001.root",
-        "MC_TrackHist_vtxZReweight_VtxZQA_ClusQAAdc35PhiSize350_ColMulMask_merged_002.root"
+        MC_input_directory + "/" + ClusPhiCut_subfolder_MC_001,
+        "MC_TrackHist_vtxZReweight_VtxZQA_ClusQAAdc35PhiSize350_ColMulMask_merged_001.root", // note : derive the alpha correction,
+        "MC_TrackHist_vtxZReweight_VtxZQA_ClusQAAdc35PhiSize350_ColMulMask_merged_002.root"  // note : closure test
     ); 
 
     system(Form("mv %s/%s %s/completed", output_directory.c_str(), SetResultRangeFolderName.c_str(), output_directory.c_str()));

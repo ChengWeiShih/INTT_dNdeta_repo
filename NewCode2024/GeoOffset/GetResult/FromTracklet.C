@@ -34,11 +34,11 @@ vector<string> read_list(string folder_direction, string MC_list_name)
 int FromTracklet()
 {
 
-    std::string input_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_ananew_20250131/GeoOffset_v1/completed";
+    std::string input_directory = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_MDC2_ana472_20250307/GeoOffset/completed";
     std::string input_foldername_NoIndex = "Run_00"; // note : Run_00XXX
-    std::string filename_NoIndex = "MC_TrackHist_VtxZQA_ClusQAAdc35PhiSize500_GeoOffset_test1";
+    std::string filename_NoIndex = "MC_TrackHist_VtxZQA_ClusQAAdc35PhiSize40_ColMulMask_GeoOffset_test1";
 
-    std::string ideal_directory = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_Ntuple_HIJING_ana443_20241102/Run3/TrackHist_ForGeoOffset/completed/MC_TrackHist_VtxZQA_ClusQAAdc35PhiSize500_ForGeoOffset_merged.root";
+    std::string ideal_directory = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_MDC2_ana472_20250307/GeoOffset/completed/Run_NoGeoOffset_00000/MC_TrackHist_VtxZQA_ClusQAAdc35PhiSize40_ColMulMask_test1_00000.root"; // note : to .root
 
     std::string label_text = "Simulation";
 

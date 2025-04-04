@@ -49,6 +49,8 @@ FinalResult::FinalResult(
     h1D_ClusAdcError_vec.clear();
     h1D_GeoOffsetError_vec.clear();
     h1D_DeltaPhiError_vec.clear();
+    h1D_StrangenessError_vec.clear();
+    h1D_GeneratorError_vec.clear();
 
     SetsPhenixStyle();
     c1 = new TCanvas("c1", "c1", 950, 800);
@@ -66,7 +68,7 @@ FinalResult::FinalResult(
     draw_text -> SetNDC();
     draw_text -> SetTextSize(0.03);
 
-    leg_errors = new TLegend(0.31,0.67,0.41,0.87);
+    leg_errors = new TLegend(0.31,0.58,0.41,0.87);
     leg_errors -> SetBorderSize(0);
     leg_errors -> SetTextSize(0.03);
 
@@ -78,7 +80,7 @@ FinalResult::FinalResult(
     leg_variation_recoTracklet -> SetBorderSize(0);
     leg_variation_recoTracklet -> SetTextSize(0.03);
 
-    leg_final = new TLegend(0.45,0.78,0.8,0.87);
+    leg_final = new TLegend(0.45,0.75,0.8,0.87);
     leg_final -> SetBorderSize(0);
     leg_final -> SetTextSize(0.03);
 
@@ -100,6 +102,8 @@ FinalResult::FinalResult(
     tree_out -> Branch("UncRange_ClusAdc", &UncRange_ClusAdc);
     tree_out -> Branch("UncRange_GeoOffset", &UncRange_GeoOffset);
     tree_out -> Branch("UncRange_DeltaPhi", &UncRange_DeltaPhi);
+    tree_out -> Branch("UncRange_Strangeness", &UncRange_Strangeness);
+    tree_out -> Branch("UncRange_Generator", &UncRange_Generator);
     tree_out -> Branch("UncRange_ClusPhiSize", &UncRange_ClusPhiSize);
     tree_out -> Branch("UncRange_Final", &UncRange_Final);
 
@@ -395,7 +399,7 @@ void FinalResult::PrepareGeoOffsetError(std::string file_directory_in, std::stri
 
     h1D_error_GeoOffset = (TH1D*) h1D_data_standard -> Clone("h1D_error_GeoOffset");
 
-    auto temp_h1D_GeoUnc = (TH1D*) temp_file_in_GeoUnc -> Get("h1D_RotatedBkg_RecoTrackletEtaPerEvt_VariationMax");
+    auto temp_h1D_GeoUnc = (TH1D*) temp_file_in_GeoUnc -> Get("h1D_RotatedBkg_RecoTrackletEtaPerEvt_VariationSigma"); // note : it was: h1D_RotatedBkg_RecoTrackletEtaPerEvt_VariationMax
     auto temp_h1D_AlphaCorr = (TH1D*) temp_file_in_AlphaCorr -> Get("h1D_RotatedBkg_alpha_correction");
 
     h1D_error_GeoOffset -> Divide(
@@ -547,6 +551,256 @@ void FinalResult::PrepareDeltaPhiError(std::vector<std::string> file_directory_v
     leg_variation_recoTracklet -> Clear();
 }
 
+void FinalResult::PrepareStrangenessError(std::vector<std::string> file_directory_vec_in, std::vector<std::string> file_title_in, std::string leg_header_in)
+{
+    TFile * temp_file_in;
+
+    c1 -> Clear();
+    c1 -> cd();
+    pad1 = new TPad("pad1", "pad1", 0, 0.31, 1, 0.85);
+    pad1 -> Draw();
+    pad1 -> cd();
+
+    gr_dNdEta_baseline -> Draw("ap");
+    leg_variation -> AddEntry(gr_dNdEta_baseline, file_title_in.back().c_str(), "p");
+    leg_variation -> SetHeader(leg_header_in.c_str());
+
+    leg_variation_recoTracklet -> AddEntry(gr_recoTracklet_baseline, file_title_in.back().c_str(), "p");
+    leg_variation_recoTracklet -> SetHeader(leg_header_in.c_str());
+
+    std::vector<TGraph*> gr_variation_vec; gr_variation_vec.clear();
+    std::vector<TGraph*> gr_variation_recoTracklet_vec; gr_variation_recoTracklet_vec.clear();
+
+    for (int i = 0; i < file_directory_vec_in.size(); i++)
+    {
+        temp_file_in = TFile::Open(file_directory_vec_in[i].c_str());
+
+        h1D_StrangenessError_vec.push_back( (TH1D*) temp_file_in -> Get(StandardData_h1D_name.c_str()) );
+
+
+        gr_variation_vec.push_back( h1D_to_TGraph(h1D_StrangenessError_vec.back()) );
+        gr_variation_vec.back() -> SetMarkerStyle(marker_code[i]);
+        gr_variation_vec.back() -> SetMarkerSize(1);
+        gr_variation_vec.back() -> SetMarkerColor(TColor::GetColor(color_code[i].c_str()));
+        gr_variation_vec.back() -> Draw("p same");
+
+        leg_variation -> AddEntry(gr_variation_vec.back(), file_title_in[i].c_str(), "p");
+
+
+        h1D_StrangenessError_vec.back() -> Divide(h1D_data_standard);
+        h1D_to_AbsRatio(h1D_StrangenessError_vec.back());
+
+        // Division : -----------------------------------
+        gr_variation_recoTracklet_vec.push_back(
+            h1D_to_TGraph(
+                (TH1D*) temp_file_in -> Get(h1D_RecoTracklet_name.c_str())
+            )
+        );
+        gr_variation_recoTracklet_vec.back() -> SetMarkerStyle(marker_code[i]);
+        gr_variation_recoTracklet_vec.back() -> SetMarkerSize(1);
+        gr_variation_recoTracklet_vec.back() -> SetMarkerColor(TColor::GetColor(color_code[i].c_str()));
+
+        leg_variation_recoTracklet -> AddEntry(gr_variation_vec.back(), file_title_in[i].c_str(), "p");
+    }
+
+    h1D_error_Strangeness = h1D_FindLargestOnes("h1D_error_Strangeness", h1D_StrangenessError_vec);
+
+    h1D_error_Strangeness -> SetMarkerStyle(42);
+    h1D_error_Strangeness -> SetMarkerSize(1);
+    h1D_error_Strangeness -> SetLineWidth(0);
+    h1D_error_Strangeness -> SetLineColorAlpha(1,0);
+    h1D_error_Strangeness -> SetMarkerColor(TColor::GetColor(color_code[6].c_str()));
+
+    UncRange_Strangeness = GetH1DMinMax(h1D_error_Strangeness); // note: with eta cut
+
+    c1 -> cd();
+    pad2 = new TPad("pad2", "pad2", 0, 0., 1, 0.38);
+    pad2 -> Draw();
+    pad2 -> cd();
+
+    for (int i = 0; i < gr_variation_vec.size(); i++){
+        std::string plot_draw_text = (i == 0) ? "ap" : "p same";
+        
+        TGraph * temp_gr = GetRatioGr(
+            gr_variation_vec[i],
+            gr_dNdEta_baseline
+        );
+        temp_gr -> GetYaxis() -> SetRangeUser(0.9,1.1);
+        temp_gr -> GetXaxis() -> SetTitle("Pseudorapidity #eta");
+        temp_gr -> GetYaxis() -> SetTitle("Ratio to baseline");
+        temp_gr -> Draw(plot_draw_text.c_str());
+    }
+    line -> DrawLine(gr_variation_vec.back()->GetXaxis()->GetXmin(), 1, gr_variation_vec.back()->GetXaxis()->GetXmax(), 1);
+
+    c1 -> cd();
+    leg_variation -> Draw("same");
+    c1 -> Print(Form("%s/RunStrangenessVariation_Mbin%d.pdf", final_output_directory.c_str(), Mbin));
+    c1 -> Clear();
+
+    // Division: --------------------------------------------------------------
+    c1 -> cd();
+    pad1 = new TPad("pad1", "pad1", 0, 0.31, 1, 0.85);
+    pad1 -> Draw();
+    pad1 -> cd();
+
+    gr_recoTracklet_baseline -> Draw("ap");
+    for (int i = 0; i < gr_variation_recoTracklet_vec.size(); i++){
+        gr_variation_recoTracklet_vec[i] -> Draw("p same");
+    }
+
+    c1 -> cd();
+    pad2 = new TPad("pad2", "pad2", 0, 0., 1, 0.38);
+    pad2 -> Draw();
+    pad2 -> cd();
+
+    for (int i = 0; i < gr_variation_recoTracklet_vec.size(); i++){
+        std::string plot_draw_text = (i == 0) ? "ap" : "p same";
+        
+        TGraph * temp_gr = GetRatioGr(
+            gr_variation_recoTracklet_vec[i],
+            gr_recoTracklet_baseline
+        );
+        temp_gr -> GetYaxis() -> SetRangeUser(0.9,1.1);
+        temp_gr -> GetXaxis() -> SetTitle("Pseudorapidity #eta");
+        temp_gr -> GetYaxis() -> SetTitle("Ratio to baseline");
+        temp_gr -> Draw(plot_draw_text.c_str());
+    }
+    line -> DrawLine(gr_variation_recoTracklet_vec.back()->GetXaxis()->GetXmin(), 1, gr_variation_recoTracklet_vec.back()->GetXaxis()->GetXmax(), 1);
+
+    c1 -> cd();
+    leg_variation_recoTracklet -> Draw("same");
+    c1 -> Print(Form("%s/RunStrangenessVariation_RecoTracklet_Mbin%d.pdf", final_output_directory.c_str(), Mbin));
+    c1 -> Clear();
+
+    leg_variation -> Clear();
+    leg_variation_recoTracklet -> Clear();
+}
+
+void FinalResult::PrepareGeneratorError(std::vector<std::string> file_directory_vec_in, std::vector<std::string> file_title_in, std::string leg_header_in)
+{
+    TFile * temp_file_in;
+
+    c1 -> Clear();
+    c1 -> cd();
+    pad1 = new TPad("pad1", "pad1", 0, 0.31, 1, 0.85);
+    pad1 -> Draw();
+    pad1 -> cd();
+
+    gr_dNdEta_baseline -> Draw("ap");
+    leg_variation -> AddEntry(gr_dNdEta_baseline, file_title_in.back().c_str(), "p");
+    leg_variation -> SetHeader(leg_header_in.c_str());
+
+    leg_variation_recoTracklet -> AddEntry(gr_recoTracklet_baseline, file_title_in.back().c_str(), "p");
+    leg_variation_recoTracklet -> SetHeader(leg_header_in.c_str());
+
+    std::vector<TGraph*> gr_variation_vec; gr_variation_vec.clear();
+    std::vector<TGraph*> gr_variation_recoTracklet_vec; gr_variation_recoTracklet_vec.clear();
+
+    for (int i = 0; i < file_directory_vec_in.size(); i++)
+    {
+        temp_file_in = TFile::Open(file_directory_vec_in[i].c_str());
+
+        h1D_GeneratorError_vec.push_back( (TH1D*) temp_file_in -> Get(StandardData_h1D_name.c_str()) );
+
+
+        gr_variation_vec.push_back( h1D_to_TGraph(h1D_GeneratorError_vec.back()) );
+        gr_variation_vec.back() -> SetMarkerStyle(marker_code[i]);
+        gr_variation_vec.back() -> SetMarkerSize(1);
+        gr_variation_vec.back() -> SetMarkerColor(TColor::GetColor(color_code[i].c_str()));
+        gr_variation_vec.back() -> Draw("p same");
+
+        leg_variation -> AddEntry(gr_variation_vec.back(), file_title_in[i].c_str(), "p");
+
+
+        h1D_GeneratorError_vec.back() -> Divide(h1D_data_standard);
+        h1D_to_AbsRatio(h1D_GeneratorError_vec.back());
+
+        // Division : -----------------------------------
+        gr_variation_recoTracklet_vec.push_back(
+            h1D_to_TGraph(
+                (TH1D*) temp_file_in -> Get(h1D_RecoTracklet_name.c_str())
+            )
+        );
+        gr_variation_recoTracklet_vec.back() -> SetMarkerStyle(marker_code[i]);
+        gr_variation_recoTracklet_vec.back() -> SetMarkerSize(1);
+        gr_variation_recoTracklet_vec.back() -> SetMarkerColor(TColor::GetColor(color_code[i].c_str()));
+
+        leg_variation_recoTracklet -> AddEntry(gr_variation_vec.back(), file_title_in[i].c_str(), "p");
+    }
+
+    h1D_error_Generator = h1D_FindLargestOnes("h1D_error_Generator", h1D_GeneratorError_vec);
+
+    h1D_error_Generator -> SetMarkerStyle(32);
+    h1D_error_Generator -> SetMarkerSize(1);
+    h1D_error_Generator -> SetLineWidth(0);
+    h1D_error_Generator -> SetLineColorAlpha(1,0);
+    h1D_error_Generator -> SetMarkerColor(TColor::GetColor(color_code[7].c_str()));
+
+    UncRange_Generator = GetH1DMinMax(h1D_error_Generator); // note: with eta cut
+
+    c1 -> cd();
+    pad2 = new TPad("pad2", "pad2", 0, 0., 1, 0.38);
+    pad2 -> Draw();
+    pad2 -> cd();
+
+    for (int i = 0; i < gr_variation_vec.size(); i++){
+        std::string plot_draw_text = (i == 0) ? "ap" : "p same";
+        
+        TGraph * temp_gr = GetRatioGr(
+            gr_variation_vec[i],
+            gr_dNdEta_baseline
+        );
+        temp_gr -> GetYaxis() -> SetRangeUser(0.9,1.1);
+        temp_gr -> GetXaxis() -> SetTitle("Pseudorapidity #eta");
+        temp_gr -> GetYaxis() -> SetTitle("Ratio to baseline");
+        temp_gr -> Draw(plot_draw_text.c_str());
+    }
+    line -> DrawLine(gr_variation_vec.back()->GetXaxis()->GetXmin(), 1, gr_variation_vec.back()->GetXaxis()->GetXmax(), 1);
+
+    c1 -> cd();
+    leg_variation -> Draw("same");
+    c1 -> Print(Form("%s/RunGeneratorVariation_Mbin%d.pdf", final_output_directory.c_str(), Mbin));
+    c1 -> Clear();
+
+    // Division: --------------------------------------------------------------
+    c1 -> cd();
+    pad1 = new TPad("pad1", "pad1", 0, 0.31, 1, 0.85);
+    pad1 -> Draw();
+    pad1 -> cd();
+
+    gr_recoTracklet_baseline -> Draw("ap");
+    for (int i = 0; i < gr_variation_recoTracklet_vec.size(); i++){
+        gr_variation_recoTracklet_vec[i] -> Draw("p same");
+    }
+
+    c1 -> cd();
+    pad2 = new TPad("pad2", "pad2", 0, 0., 1, 0.38);
+    pad2 -> Draw();
+    pad2 -> cd();
+
+    for (int i = 0; i < gr_variation_recoTracklet_vec.size(); i++){
+        std::string plot_draw_text = (i == 0) ? "ap" : "p same";
+        
+        TGraph * temp_gr = GetRatioGr(
+            gr_variation_recoTracklet_vec[i],
+            gr_recoTracklet_baseline
+        );
+        temp_gr -> GetYaxis() -> SetRangeUser(0.9,1.1);
+        temp_gr -> GetXaxis() -> SetTitle("Pseudorapidity #eta");
+        temp_gr -> GetYaxis() -> SetTitle("Ratio to baseline");
+        temp_gr -> Draw(plot_draw_text.c_str());
+    }
+    line -> DrawLine(gr_variation_recoTracklet_vec.back()->GetXaxis()->GetXmin(), 1, gr_variation_recoTracklet_vec.back()->GetXaxis()->GetXmax(), 1);
+
+    c1 -> cd();
+    leg_variation_recoTracklet -> Draw("same");
+    c1 -> Print(Form("%s/RunGeneratorVariation_RecoTracklet_Mbin%d.pdf", final_output_directory.c_str(), Mbin));
+    c1 -> Clear();
+
+    leg_variation -> Clear();
+    leg_variation_recoTracklet -> Clear();
+}
+
 void FinalResult::PrepareClusPhiSizeError(std::vector<std::string> file_directory_vec_in, std::vector<std::string> file_title_in, std::string leg_header_in)
 {
     TFile * temp_file_in;
@@ -671,6 +925,12 @@ void FinalResult::PrepareFinalError()
         double _error_DeltaPhi = (h1D_error_DeltaPhi != nullptr) ? h1D_error_DeltaPhi -> GetBinContent(i) : 0;
         _error_DeltaPhi = (_error_DeltaPhi == _error_DeltaPhi && _error_DeltaPhi != 1) ? _error_DeltaPhi : 0;
 
+        double _error_Strangeness = (h1D_error_Strangeness != nullptr) ? h1D_error_Strangeness -> GetBinContent(i) : 0;
+        _error_Strangeness = (_error_Strangeness == _error_Strangeness && _error_Strangeness != 1) ? _error_Strangeness : 0;
+
+        double _error_Generator = (h1D_error_Generator != nullptr) ? h1D_error_Generator -> GetBinContent(i) : 0;
+        _error_Generator = (_error_Generator == _error_Generator && _error_Generator != 1) ? _error_Generator : 0;
+
         double _error_ClusPhiSize = (h1D_error_ClusPhiSize != nullptr) ? h1D_error_ClusPhiSize -> GetBinContent(i) : 0;
         _error_ClusPhiSize = (_error_ClusPhiSize == _error_ClusPhiSize && _error_ClusPhiSize != 1) ? _error_ClusPhiSize : 0;
 
@@ -683,7 +943,9 @@ void FinalResult::PrepareFinalError()
             pow(_error_Run_segmentation, 2) +
             pow(_error_ClusAdc, 2) +
             pow(_error_GeoOffset, 2) +
-            pow(_error_DeltaPhi, 2) + 
+            pow(_error_DeltaPhi, 2) +
+            pow(_error_Strangeness, 2) +
+            pow(_error_Generator, 2) + 
             pow(_error_ClusPhiSize, 2) +
             pow(_error_MCMerged, 2)
         );
@@ -695,7 +957,9 @@ void FinalResult::PrepareFinalError()
         << ", GeoOffset: " << Form("%.5f",_error_GeoOffset) 
         << ", DeltaPhi: " << Form("%.5f",_error_DeltaPhi) 
         << ", ClusPhiSize: " << Form("%.5f",_error_ClusPhiSize)
-        << ", MCMerged: " << Form("%.5f",_error_MCMerged)
+        << ", Strangeness: " << Form("%.5f",_error_Strangeness)
+        << ", Generator: " << Form("%.5f",_error_Generator)
+        // << ", MCMerged: " << Form("%.5f",_error_MCMerged)
         << " final_error: " << Form("%.5f",_final_error) 
         << std::endl;
 
@@ -743,6 +1007,16 @@ void FinalResult::PrepareFinalError()
                 h1D_error_DeltaPhi -> SetBinError(i, 0);
             }
 
+            if (h1D_error_Strangeness != nullptr) {
+                h1D_error_Strangeness -> SetBinContent(i, -30);
+                h1D_error_Strangeness -> SetBinError(i, 0);
+            }
+
+            if (h1D_error_Generator != nullptr) {
+                h1D_error_Generator -> SetBinContent(i, -30);
+                h1D_error_Generator -> SetBinError(i, 0);
+            }
+
             if (h1D_error_ClusPhiSize != nullptr) {
                 h1D_error_ClusPhiSize -> SetBinContent(i, -30);
                 h1D_error_ClusPhiSize -> SetBinError(i, 0);
@@ -773,6 +1047,8 @@ void FinalResult::PrepareFinalError()
     if (h1D_error_GeoOffset != nullptr) {leg_errors -> AddEntry(h1D_error_GeoOffset, "Geo. misalignment variation", "p");}
     if (h1D_error_DeltaPhi != nullptr) {leg_errors -> AddEntry(h1D_error_DeltaPhi, "#Delta#phi cut variation", "p");}
     if (h1D_error_ClusPhiSize != nullptr) {leg_errors -> AddEntry(h1D_error_ClusPhiSize, "Cluster#kern[0.4]{#phi} size variation", "p");}
+    if (h1D_error_Strangeness != nullptr) {leg_errors -> AddEntry(h1D_error_Strangeness, "Strangeness variation", "p");}
+    if (h1D_error_Generator != nullptr) {leg_errors -> AddEntry(h1D_error_Generator, "Generator variation", "p");}
     if (h1D_error_MCMerged != nullptr) {leg_errors -> AddEntry(h1D_error_MCMerged, "MC merge variation", "p");}
 
     file_out -> cd();
@@ -788,6 +1064,8 @@ void FinalResult::PrepareFinalError()
     if (h1D_error_GeoOffset != nullptr) {h1D_error_GeoOffset -> Draw("p same");}
     if (h1D_error_DeltaPhi != nullptr) {h1D_error_DeltaPhi -> Draw("p same");}
     if (h1D_error_ClusPhiSize != nullptr) {h1D_error_ClusPhiSize -> Draw("p same");}
+    if (h1D_error_Strangeness != nullptr) {h1D_error_Strangeness -> Draw("p same");}
+    if (h1D_error_Generator != nullptr) {h1D_error_Generator -> Draw("p same");}
     if (h1D_error_MCMerged != nullptr) {h1D_error_MCMerged -> Draw("p same");}
 
     if (AnaDescription.second.size() > 0){
@@ -881,11 +1159,20 @@ void FinalResult::PrepareFinalResult(double Hist_Y_max)
     file_out -> cd();
     c1 -> cd();
     c1 -> Clear();
-    
+
     // h1D_data_standard -> Draw("E3");
     h1D_truth_standard -> Draw("hist");
     gr_MC_closure_standard -> Draw("p same");
     // gE_data_final -> Draw("E3");
+
+    if (Have_PHOBOS && Mbin < 11) // note : only up to 50%
+    {
+        TGraphAsymmErrors * PHOBOS_grae = GetPHOBOSData();
+        leg_final -> AddEntry(PHOBOS_grae, "PHOBOS", "fp");
+        PHOBOS_grae -> Draw("E3 same");
+        PHOBOS_grae -> Draw("p same");
+    }
+
     gE_data_final -> Draw("P2 same");
     // gE_data_final -> Draw("p same");
     // h1D_data_standard -> Draw("p same");
@@ -918,6 +1205,8 @@ void FinalResult::EndRun()
     std::cout<<Form("GeoOffset,   min: %.4f%, max: %.4f%", 100 * UncRange_GeoOffset.first, 100 * UncRange_GeoOffset.second)<<std::endl;
     std::cout<<Form("DeltaPhi,    min: %.4f%, max: %.4f%", 100 * UncRange_DeltaPhi.first, 100 * UncRange_DeltaPhi.second)<<std::endl;
     std::cout<<Form("ClusPhiSize, min: %.4f%, max: %.4f%", 100 * UncRange_ClusPhiSize.first, 100 * UncRange_ClusPhiSize.second)<<std::endl;
+    std::cout<<Form("Strangeness,    min: %.4f%, max: %.4f%", 100 * UncRange_Strangeness.first, 100 * UncRange_Strangeness.second)<<std::endl;
+    std::cout<<Form("Generator,    min: %.4f%, max: %.4f%", 100 * UncRange_Generator.first, 100 * UncRange_Generator.second)<<std::endl;
     std::cout<<Form("Final,       min: %.4f%, max: %.4f%", 100 * UncRange_Final.first, 100 * UncRange_Final.second)<<std::endl;
     std::cout<<"========================================================================================="<<std::endl;
 
@@ -933,6 +1222,8 @@ void FinalResult::EndRun()
     if(h1D_error_GeoOffset != nullptr) {h1D_error_GeoOffset -> Write();}
     if(h1D_error_DeltaPhi != nullptr) {h1D_error_DeltaPhi -> Write();}
     if(h1D_error_ClusPhiSize != nullptr) {h1D_error_ClusPhiSize -> Write();}
+    if(h1D_error_Strangeness != nullptr) {h1D_error_Strangeness -> Write();}
+    if(h1D_error_Generator != nullptr) {h1D_error_Generator -> Write();}
     if(h1D_error_MCMerged != nullptr) {h1D_error_MCMerged -> Write();}
     if(h1D_error_Final != nullptr) {h1D_error_Final -> Write();}
 
@@ -1163,4 +1454,55 @@ TGraph * FinalResult::GetRatioGr(TGraph * gr_numerator, TGraph * gr_denominator)
     gr_out -> SetMarkerColor(gr_numerator -> GetMarkerColor());
 
     return gr_out;
+}
+
+TGraphAsymmErrors * FinalResult::GetPHOBOSData()
+{
+    std::ifstream PHOBOS_file(Form("%s/%s",PHOBOS_data_directory.c_str(),PHOBOS_data_file_name.c_str()));
+    if(!PHOBOS_file.is_open())
+    {
+        std::cout<<"Error: PHOBOS file not found!"<<std::endl;
+        return nullptr;
+    }
+
+    TGraphAsymmErrors * PHOBOS_data = new TGraphAsymmErrors();
+    PHOBOS_data -> SetTitle("PHOBOS_data;#eta;dN_{ch}/d#eta");
+
+    std::string line;
+    while (std::getline(PHOBOS_file, line)) {
+        // Ignore lines that start with '#' or '&'
+        if (line.empty() || line[0] == '#' || line[0] == '&') continue;
+
+        std::istringstream iss(line);
+        double eta;
+        double dNdEta; 
+        double err_plus; 
+        double err_neg;
+        
+        if (iss >> eta >> dNdEta >> err_plus >> err_neg) {
+            PHOBOS_data -> SetPoint(PHOBOS_data -> GetN(), eta, dNdEta);
+            PHOBOS_data -> SetPointError(PHOBOS_data -> GetN()-1, 0, 0, fabs(err_neg), err_plus);
+
+            // std::cout<<eta<<" "<<dNdEta<<" "<<err_plus<<" "<<err_neg<<std::endl;
+
+            // eta.push_back(eta);
+            // dN_dEta.push_back(dNdEta);
+            // err_plus.push_back(err_plus);
+            // err_minus.push_back(err_neg);
+        }
+    }
+
+    PHOBOS_file.close();
+
+    PHOBOS_data -> SetMarkerStyle(21);
+    PHOBOS_data -> SetMarkerSize(1);
+    PHOBOS_data -> SetMarkerColor(9);
+    PHOBOS_data -> SetFillColorAlpha(9,0.5);
+    PHOBOS_data -> SetLineColorAlpha(1,0);
+    PHOBOS_data -> SetLineWidth(0);
+    // PHOBOS_data -> GetXaxis() -> SetLimits(-2.7,2.7);
+
+
+    return PHOBOS_data;
+
 }

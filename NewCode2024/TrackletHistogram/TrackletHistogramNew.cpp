@@ -142,8 +142,8 @@ void TrackletHistogramNew::PrepareHistograms()
     h1D_vtxz_template = new TH1D("h1D_vtxz_template", "h1D_vtxz_template", nVtxZBin, VtxZEdge_min, VtxZEdge_max); // note : coarse
 
     // note : for inclusive 
-    h1D_PairDeltaEta_inclusive = new TH1D("h1D_PairDeltaEta_inclusive", "h1D_PairDeltaEta_inclusive;Pair #eta;Entries", nDeltaEtaBin, DeltaEtaEdge_min, DeltaEtaEdge_max);
-    h1D_PairDeltaPhi_inclusive = new TH1D("h1D_PairDeltaPhi_inclusive", "h1D_PairDeltaPhi_inclusive;Pair #eta;Entries", nDeltaPhiBin, DeltaPhiEdge_min, DeltaPhiEdge_max);
+    h1D_PairDeltaEta_inclusive = new TH1D("h1D_PairDeltaEta_inclusive", "h1D_PairDeltaEta_inclusive;Pair #Delta#eta;Entries", nDeltaEtaBin, DeltaEtaEdge_min, DeltaEtaEdge_max);
+    h1D_PairDeltaPhi_inclusive = new TH1D("h1D_PairDeltaPhi_inclusive", "h1D_PairDeltaPhi_inclusive;Pair #Delta#phi;Entries", nDeltaPhiBin, DeltaPhiEdge_min, DeltaPhiEdge_max);
 
     // note : cluster Eta
     h1D_Inner_ClusEta_INTTz = new TH1D("h1D_Inner_ClusEta_INTTz","h1D_Inner_ClusEta_INTTz;ClusEta (Inner, w.r.t INTTz);Entries", nEtaBin, EtaEdge_min, EtaEdge_max);

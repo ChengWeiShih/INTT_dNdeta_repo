@@ -146,7 +146,7 @@ void ColumnCheck::MainProcess()
         if (MBD_z_vtx != MBD_z_vtx) {continue;}
         if (MBD_centrality != MBD_centrality) {continue;}
         if (MBD_centrality < 0 || MBD_centrality > 100) {continue;}
-        if (INTTvtxZ != INTTvtxZ) {continue;}
+        // if (INTTvtxZ != INTTvtxZ) {continue;}
 
         if (MBD_centrality > SetMbinFloat) {continue;}
         if (MBD_z_vtx < VtxZRange.first || MBD_z_vtx > VtxZRange.second) {continue;}

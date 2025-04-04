@@ -44,6 +44,7 @@ double GetNonZeroMinimalBin(TH1D * hist_in)
 
 
 std::pair<double,double> make_comparison(
+    bool isData_in,
     std::vector<std::pair<std::string, TH1D*>> data_hist_vec_in,  // note : description, hist // note : postQA
     std::vector<std::pair<std::string, TH1D*>> MC_hist_vec_in,    // note : description, hist // note : noQA
     std::string output_directory_in, 
@@ -60,7 +61,7 @@ std::pair<double,double> make_comparison(
 {
     double logy_max_factor = 1000;
     double lineary_max_factor = 1.6;
-    std::string sPH_labeling = "Internal";
+    std::string sPH_labeling = (isData_in) ? "Internal" : "Simulation";
 
     std::cout<<"In make_comparison, working on "<<output_filename_in<<std::endl;
 
@@ -392,9 +393,11 @@ int MakePlot()
 {
     // string input_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Feb102025/Run6_EvtZFitWidthChange/EvtVtxZ/completed/VtxZQABias/completed";
     // string input_file_name = "Data_InttVtxZBias_EvtBcoFullDiffCut61_00054280_merged.root";
+    // bool isData = true;
 
-    string input_directory = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_ananew_20250131/Run6_EvtZFitWidthChange/EvtVtxZ/completed/VtxZQABias/completed";
+    string input_directory = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_MDC2_ana472_20250307/Run7/EvtVtxZ/completed/VtxZQABias/completed";
     string input_file_name = "MC_InttVtxZBias_merged.root";
+    bool isData = false;
 
     std::string output_directory = input_directory + "/CompPlot";
 
@@ -421,6 +424,7 @@ int MakePlot()
     {
         std::cout<<"Working on "<<hist_name<<std::endl;
         make_comparison(
+            isData,
             {{"PostQA", (TH1D*)file_in->Get(Form("PostQA_%s", hist_name.c_str()))}},
             {{"NoQA", (TH1D*)file_in->Get(Form("NoQA_%s", hist_name.c_str()))}},
 

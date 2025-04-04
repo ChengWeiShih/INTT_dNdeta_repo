@@ -63,14 +63,17 @@ int Run_GeoOffset(
     // std::string data_vtxZ_hist_name = "h1D_INTTz_Inclusive70",
 
     // todo: the map file should be updated
-    std::string ColMulMask_map_dir = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Jan172025/Run4/EvtVtxZ/ColumnCheck/completed/MulMap/completed",
-    std::string ColMulMask_map_file = "MulMap_BcoFullDiffCut_Mbin70_VtxZ-30to30cm_ClusQAAdc35PhiSize39_00054280.root"
+    std::string ColMulMask_map_dir = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_MDC2_ana472_20250307/Run7/EvtVtxZ/ColumnCheck/baseline/completed/MulMap/completed",
+    std::string ColMulMask_map_file = "MulMap_BcoFullDiffCut_Mbin70_VtxZ-30to30cm_ClusQAAdc35PhiSize40_00054280.root"
 )
 {
     
     bool Global_GeoOffsetTag = (process_id == 0) ? false : true;
     int Global_ClusAdcCut = 35;
     int Global_ClusPhiSizeCut = 40;
+
+    bool is_tracklet_DeltaPhiCut_changed = true;
+    std::pair<double,double> tracklet_DeltaPhiCut = {-0.04, 0.04}; 
 
     std::string GeoOffset_string = (Global_GeoOffsetTag) ? "" : "_NoGeoOffset";
 
@@ -284,6 +287,9 @@ int Run_GeoOffset(
         dNdeta_cut_INTTvtxZ,
         dNdeta_SelectedMbin
     );
+
+    // todo: if change cut
+    if (is_tracklet_DeltaPhiCut_changed) {pdndeta->SetBkgRotated_DeltaPhi_Signal_range(tracklet_DeltaPhiCut);}
 
     std::vector<std::string> dNdeta_output_filename = pdndeta->GetOutputFileName();
     cout<<"dNdeta: final_output_file_name: "<<dNdeta_output_filename[0]<<endl;

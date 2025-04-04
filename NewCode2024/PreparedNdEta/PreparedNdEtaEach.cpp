@@ -45,6 +45,7 @@ PreparedNdEtaEach::PreparedNdEtaEach(
     PrepareHistFits();
 
     c1 = new TCanvas("c1", "c1", 950, 800);
+    c1 -> Print(Form("%s/%s(", output_directory.c_str(), output_filename_pdf.c_str()));
 
     h1D_alpha_correction_map_in.clear();
     h1D_alpha_correction_map_out.clear();
@@ -200,10 +201,12 @@ void PreparedNdEtaEach::PrepareOutPutFileName()
     
     output_filename_DeltaPhi = output_filename;
     output_filename_dNdEta = output_filename;
+    output_filename_pdf = output_filename;
     
     // todo: check th name 
     output_filename_DeltaPhi += (runnumber != -1) ? Form("_%s_%s_DeltaPhi.root",runnumber_str.c_str(),job_index.c_str()) : Form("_%s_DeltaPhi.root",job_index.c_str());
-    output_filename_dNdEta   += (runnumber != -1) ? Form("_%s_%s_dNdEta.root",runnumber_str.c_str(),job_index.c_str()) : Form("_%s_dNdEta.root",job_index.c_str());    
+    output_filename_dNdEta   += (runnumber != -1) ? Form("_%s_%s_dNdEta.root",runnumber_str.c_str(),job_index.c_str()) : Form("_%s_dNdEta.root",job_index.c_str());
+    output_filename_pdf      += (runnumber != -1) ? Form("_%s_%s.pdf",runnumber_str.c_str(),job_index.c_str()) : Form("_%s.pdf",job_index.c_str());
 }
 
 void PreparedNdEtaEach::PrepareOutPutRootFile()
@@ -1003,7 +1006,7 @@ void PreparedNdEtaEach::DoFittings()
                 temp_hist_rotate -> SetLineColor(46);
                 
                 temp_hist -> Draw("hist");
-                temp_hist_rotate -> Draw("hist same");
+                temp_hist_rotate -> Draw("ep same");
                 h1D_RotatedBkg_DeltaPhi_Signal_map[Form("h1D_RotatedBkg_DeltaPhi_Signal_Eta%d", l_eta_bin)] -> Draw("hist same");
                 f1_BkgPolTwo_Fit_map[f1_BkgPolTwo_Fit_map_key] -> Draw("l same");
                 c1 -> Write(Form("c1_%s", pair.first.c_str()));
@@ -1011,7 +1014,7 @@ void PreparedNdEtaEach::DoFittings()
                 // f1_BkgPol2_Fit_map[f1_BkgPol2_Fit_map_key] -> Draw("l same");
                 // f1_BkgPol2_Draw_map[f1_BkgPol2_Draw_map_key] -> Draw("l same");
                 // c1 -> Write(Form("c1_%s", f1_BkgPol2_Draw_map_key.c_str()));
-                c1 -> Write(Form("c1_%s", f1_BkgPolTwo_Fit_map_key.c_str()));
+                // c1 -> Write(Form("c1_%s", f1_BkgPolTwo_Fit_map_key.c_str()));
                 c1 -> Clear();
 
                 temp_hist -> Draw("hist");
@@ -1019,6 +1022,16 @@ void PreparedNdEtaEach::DoFittings()
                 f1_SigBkgPol2_DrawSig_map[f1_SigBkgPol2_DrawSig_map_key] -> Draw("l same");
                 f1_SigBkgPol2_DrawBkgPol2_map[f1_SigBkgPol2_DrawBkgPol2_map_key] -> Draw("l same");
                 c1 -> Write(Form("c1_%s", f1_SigBkgPol2_Fit_map_key.c_str()));
+                c1 -> Clear();
+
+                // todo : the range of the Y axis, for checking the bkg fittings.
+                temp_hist->SetMinimum(hist_offset * 0.9);
+                temp_hist->SetMaximum(hist_offset * 1.1);
+                temp_hist -> Draw("hist");
+                temp_hist_rotate -> Draw("ep same");
+                h1D_RotatedBkg_DeltaPhi_Signal_map[Form("h1D_RotatedBkg_DeltaPhi_Signal_Eta%d", l_eta_bin)] -> Draw("hist same");
+                f1_BkgPolTwo_Fit_map[f1_BkgPolTwo_Fit_map_key] -> Draw("l same");
+                c1 -> Print(Form("%s/%s", output_directory.c_str(), output_filename_pdf.c_str()));
                 c1 -> Clear();
             }
 
@@ -1258,6 +1271,8 @@ void PreparedNdEtaEach::DeriveAlphaCorrection()
 
 void PreparedNdEtaEach::EndRun()
 {
+    c1 -> Print(Form("%s/%s)", output_directory.c_str(), output_filename_pdf.c_str()));
+
     std::cout<<111<<std::endl;
 
     file_out_DeltaPhi -> cd();

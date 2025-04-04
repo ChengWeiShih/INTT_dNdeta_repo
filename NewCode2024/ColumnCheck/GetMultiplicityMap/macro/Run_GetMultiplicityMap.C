@@ -4,8 +4,8 @@ R__LOAD_LIBRARY(../libGetMultiplicityMap.so)
 
 int Run_GetMultiplicityMap()
 {
-    // string sub_folder_name = "noPhiCut";
-    // std::pair<bool, std::pair<double, double>> isClusQA = {true, {35,350}}; // note : {adc, phi size}
+    string sub_folder_name = "noPhiCut";
+    std::pair<bool, std::pair<double, double>> isClusQA = {true, {35,350}}; // note : {adc, phi size}
 
     // string sub_folder_name = "noAdcCut";
     // std::pair<bool, std::pair<double, double>> isClusQA = {true, {0,40}}; // note : {adc, phi size}
@@ -13,15 +13,20 @@ int Run_GetMultiplicityMap()
     // string sub_folder_name = "50AdcCut";
     // std::pair<bool, std::pair<double, double>> isClusQA = {true, {50,40}}; // note : {adc, phi size}
 
-    string sub_folder_name = "baseline";
-    std::pair<bool, std::pair<double, double>> isClusQA = {true, {35,40}}; // note : {adc, phi size}
+    // string sub_folder_name = "baseline";
+    // std::pair<bool, std::pair<double, double>> isClusQA = {true, {35,40}}; // note : {adc, phi size}
 
     int runnumber = 54280;
     std::string data_directory = Form("/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Feb102025/Run6_EvtZFitWidthChange/EvtVtxZ/ColumnCheck/%s/completed", sub_folder_name.c_str());
     std::string data_file_name = Form("Data_ColumnCheck_BcoFullDiffCut_Mbin70_VtxZ-30to30cm_ClusQAAdc%.0fPhiSize%.0f_00054280_merged.root", isClusQA.second.first, isClusQA.second.second);
-    std::string MC_directory = Form("/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_ananew_20250131/Run6_EvtZFitWidthChange/EvtVtxZ/ColumnCheck/%s/completed", sub_folder_name.c_str());
+
+    // std::string MC_directory = Form("/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_MDC2_ana472_20250307/Run7/EvtVtxZ/ColumnCheck/%s/completed", sub_folder_name.c_str());
+    // std::string MC_file_name = Form("MC_ColumnCheck_Mbin70_VtxZ-30to30cm_ClusQAAdc%.0fPhiSize%.0f_merged.root", isClusQA.second.first, isClusQA.second.second);
+    // std::string output_directory = MC_directory + "/MulMap"; // note : AUTO
+
+    std::string MC_directory = Form("/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_strangeness_MDC2_ana472_20250310/Run7/EvtVtxZ/ColumnCheck/%s/completed", sub_folder_name.c_str());
     std::string MC_file_name = Form("MC_ColumnCheck_Mbin70_VtxZ-30to30cm_ClusQAAdc%.0fPhiSize%.0f_merged.root", isClusQA.second.first, isClusQA.second.second);
-    std::string output_directory = data_directory + "/MulMap"; // note : AUTO
+    std::string output_directory = MC_directory + "/MulMap"; // note : AUTO
 
     std::string output_file_name_suffix = "";
 

@@ -22,10 +22,16 @@ void Run_ColumnCheck(
 )
 {
   std::pair<double, double> vertexXYIncm_data = {-0.0220728, 0.222956};
-  std::pair<double, double> vertexXYIncm_MC = {-0.0217356, 0.223402};
+
+  // std::pair<double, double> vertexXYIncm_MC = {-0.0218978, 0.223183}; // note : HIJING
+  // std::pair<double, double> vertexXYIncm_MC = {-0.0216964, 0.223331}; // note : HIJING + strangeness increase
+  std::pair<double, double> vertexXYIncm_MC = {-0.0218667, 0.223296}; // note : AMPT
+  // std::pair<double, double> vertexXYIncm_MC = {-0.021907, 0.223293}; // note : EPOS
 
   std::pair<double, double> vertexXYIncm = (run_num == -1) ? vertexXYIncm_MC : vertexXYIncm_data;
   bool BcoFullDiffCut = (run_num == -1) ? false : true;
+
+  std::cout<<"vertexXYIncm: "<<vertexXYIncm.first<<" "<<vertexXYIncm.second<<std::endl;
 
   // Division : -------------------------------------------------------------------------------------------------------------------------------------------------------------------
   // note : baseline
